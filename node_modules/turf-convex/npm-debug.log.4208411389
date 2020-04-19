@@ -1,0 +1,105 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/Cellar/node/5.11.0/bin/node',
+1 verbose cli   '/usr/local/bin/npm',
+1 verbose cli   'publish',
+1 verbose cli   '--tag',
+1 verbose cli   'lerna-temp' ]
+2 info using npm@3.9.2
+3 info using node@v5.11.0
+4 verbose publish [ '.' ]
+5 silly cache add args [ '.', null ]
+6 verbose cache add spec .
+7 silly cache add parsed spec Result {
+7 silly cache add   raw: '.',
+7 silly cache add   scope: null,
+7 silly cache add   name: null,
+7 silly cache add   rawSpec: '.',
+7 silly cache add   spec: '/Users/tmcw/src/turf/packages/turf-convex',
+7 silly cache add   type: 'directory' }
+8 verbose addLocalDirectory /Users/tmcw/.npm/turf-convex/3.0.7/package.tgz not in flight; packing
+9 verbose correctMkdir /Users/tmcw/.npm correctMkdir not in flight; initializing
+10 info lifecycle turf-convex@3.0.7~prepublish: turf-convex@3.0.7
+11 silly lifecycle turf-convex@3.0.7~prepublish: no script for prepublish, continuing
+12 verbose tar pack [ '/Users/tmcw/.npm/turf-convex/3.0.7/package.tgz',
+12 verbose tar pack   '/Users/tmcw/src/turf/packages/turf-convex' ]
+13 verbose tarball /Users/tmcw/.npm/turf-convex/3.0.7/package.tgz
+14 verbose folder /Users/tmcw/src/turf/packages/turf-convex
+15 verbose addLocalTarball adding from inside cache /Users/tmcw/.npm/turf-convex/3.0.7/package.tgz
+16 verbose correctMkdir /Users/tmcw/.npm correctMkdir not in flight; initializing
+17 silly cache afterAdd turf-convex@3.0.7
+18 verbose afterAdd /Users/tmcw/.npm/turf-convex/3.0.7/package/package.json not in flight; writing
+19 verbose correctMkdir /Users/tmcw/.npm correctMkdir not in flight; initializing
+20 verbose afterAdd /Users/tmcw/.npm/turf-convex/3.0.7/package/package.json written
+21 silly publish { name: 'turf-convex',
+21 silly publish   version: '3.0.7',
+21 silly publish   description: '[![build status](https://secure.travis-ci.org/Turfjs/turf-convex.png)](http://travis-ci.org/Turfjs/turf-convex)',
+21 silly publish   main: 'index.js',
+21 silly publish   directories: { test: 'test' },
+21 silly publish   scripts: { test: 'tape test/*.js' },
+21 silly publish   repository: { type: 'git', url: 'git://github.com/Turfjs/turf-convex.git' },
+21 silly publish   keywords: [ 'turf', 'gis' ],
+21 silly publish   author: { name: 'Morgan Herlocker' },
+21 silly publish   license: 'ISC',
+21 silly publish   bugs: { url: 'https://github.com/Turfjs/turf-convex/issues' },
+21 silly publish   homepage: 'https://github.com/Turfjs/turf-convex',
+21 silly publish   devDependencies: { benchmark: '^1.0.0', glob: '~4.3.5', tape: '~3.5.0' },
+21 silly publish   dependencies:
+21 silly publish    { 'convex-hull': '^1.0.3',
+21 silly publish      'turf-meta': '^3.0.7',
+21 silly publish      'turf-helpers': '^3.0.7' },
+21 silly publish   readme: '# turf-convex\n\n[![build status](https://secure.travis-ci.org/Turfjs/turf-convex.png)](http://travis-ci.org/Turfjs/turf-convex)\n\n\n\n\n### `turf.convex(input)`\n\nTakes a set of Point|points and returns a\n[convex hull](http://en.wikipedia.org/wiki/Convex_hull) polygon.\n\nInternally this uses\nthe [convex-hull](https://github.com/mikolalysenko/convex-hull) module that\nimplements a [monotone chain hull](http://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain).\n\n\n### Parameters\n\n| parameter | type                         | description  |\n| --------- | ---------------------------- | ------------ |\n| `input`   | FeatureCollection\\.\\<Point\\> | input points |\n\n\n### Example\n\n```js\nvar points = {\n  "type": "FeatureCollection",\n  "features": [\n    {\n      "type": "Feature",\n      "properties": {},\n      "geometry": {\n        "type": "Point",\n        "coordinates": [10.195312, 43.755225]\n      }\n    }, {\n      "type": "Feature",\n      "properties": {},\n      "geometry": {\n        "type": "Point",\n        "coordinates": [10.404052, 43.8424511]\n      }\n    }, {\n      "type": "Feature",\n      "properties": {},\n      "geometry": {\n        "type": "Point",\n        "coordinates": [10.579833, 43.659924]\n      }\n    }, {\n      "type": "Feature",\n      "properties": {},\n      "geometry": {\n        "type": "Point",\n        "coordinates": [10.360107, 43.516688]\n      }\n    }, {\n      "type": "Feature",\n      "properties": {},\n      "geometry": {\n        "type": "Point",\n        "coordinates": [10.14038, 43.588348]\n      }\n    }, {\n      "type": "Feature",\n      "properties": {},\n      "geometry": {\n        "type": "Point",\n        "coordinates": [10.195312, 43.755225]\n      }\n    }\n  ]\n};\n\nvar hull = turf.convex(points);\n\nvar resultFeatures = points.features.concat(hull);\nvar result = {\n  "type": "FeatureCollection",\n  "features": resultFeatures\n};\n\n//=result\n```\n\n\n**Returns** `Feature.<Polygon>`, a convex hull\n\n## Installation\n\nRequires [nodejs](http://nodejs.org/).\n\n```sh\n$ npm install turf-convex\n```\n\n## Tests\n\n```sh\n$ npm test\n```\n\n\n',
+21 silly publish   readmeFilename: 'README.md',
+21 silly publish   _id: 'turf-convex@3.0.7',
+21 silly publish   _shasum: '2d75a10dd5f76a641383eb5f27441febeba05fa4',
+21 silly publish   _from: '.' }
+22 verbose getPublishConfig undefined
+23 silly mapToRegistry name turf-convex
+24 silly mapToRegistry using default registry
+25 silly mapToRegistry registry https://registry.npmjs.org/
+26 silly mapToRegistry data Result {
+26 silly mapToRegistry   raw: 'turf-convex',
+26 silly mapToRegistry   scope: null,
+26 silly mapToRegistry   name: 'turf-convex',
+26 silly mapToRegistry   rawSpec: '',
+26 silly mapToRegistry   spec: 'latest',
+26 silly mapToRegistry   type: 'tag' }
+27 silly mapToRegistry uri https://registry.npmjs.org/turf-convex
+28 verbose publish registryBase https://registry.npmjs.org/
+29 silly publish uploading /Users/tmcw/.npm/turf-convex/3.0.7/package.tgz
+30 verbose request uri https://registry.npmjs.org/turf-convex
+31 verbose request sending authorization for write operation
+32 info attempt registry request try #1 at 1:02:20 PM
+33 verbose request using bearer token for auth
+34 verbose request id ea4d6328d60998fc
+35 http request PUT https://registry.npmjs.org/turf-convex
+36 http 200 https://registry.npmjs.org/turf-convex
+37 verbose headers { 'content-type': 'application/json',
+37 verbose headers   'content-encoding': 'gzip',
+37 verbose headers   'cache-control': 'max-age=300',
+37 verbose headers   'transfer-encoding': 'chunked',
+37 verbose headers   'accept-ranges': 'bytes',
+37 verbose headers   date: 'Mon, 13 Jun 2016 17:02:24 GMT',
+37 verbose headers   via: '1.1 varnish',
+37 verbose headers   connection: 'keep-alive',
+37 verbose headers   'x-served-by': 'cache-atl6233-ATL',
+37 verbose headers   'x-cache': 'MISS',
+37 verbose headers   'x-cache-hits': '0',
+37 verbose headers   'x-timer': 'S1465837340.938697,VS0,VE3431',
+37 verbose headers   vary: 'Accept-Encoding' }
+38 verbose request invalidating /Users/tmcw/.npm/registry.npmjs.org/turf-convex on PUT
+39 info lifecycle turf-convex@3.0.7~publish: turf-convex@3.0.7
+40 verbose stack Error: write EPIPE
+40 verbose stack     at exports._errnoException (util.js:893:11)
+40 verbose stack     at WriteWrap.afterWrite (net.js:783:14)
+41 verbose cwd /Users/tmcw/src/turf/packages/turf-convex
+42 error Darwin 15.5.0
+43 error argv "/usr/local/Cellar/node/5.11.0/bin/node" "/usr/local/bin/npm" "publish" "--tag" "lerna-temp"
+44 error node v5.11.0
+45 error npm  v3.9.2
+46 error code EPIPE
+47 error errno EPIPE
+48 error syscall write
+49 error write EPIPE
+50 error If you need help, you may report this error at:
+50 error     <https://github.com/npm/npm/issues>
+51 verbose exit [ 1, true ]

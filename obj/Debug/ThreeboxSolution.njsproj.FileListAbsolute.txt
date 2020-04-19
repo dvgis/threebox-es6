@@ -1,0 +1,2 @@
+C:\Users\jscastro\source\repos\threebox\obj\Debug\ThreeboxSolution.njsproj.CoreCompileInputs.cache
+C:\Users\jscastro\source\repos\threebox\bin\Microsoft.NodejsTools.WebRole.dll

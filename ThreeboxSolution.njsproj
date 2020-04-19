@@ -1,0 +1,160 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{08293a0b-ff69-4a1d-bed6-d1ec4d502e9e}</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <ProjectView>ShowAllFiles</ProjectView>
+    <StartupFile>main.js</StartupFile>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{3AF33F2E-1136-4D97-BBB7-1795711AC8B8};{349c5851-65df-11da-9384-00065b846f21};{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}</ProjectTypeGuids>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">14.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+    <LastActiveSolutionConfig>Debug|Any CPU</LastActiveSolutionConfig>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <ItemGroup>
+    <Content Include=".npmrc" />
+    <Content Include="LICENSE.txt" />
+    <Content Include="package-lock.json" />
+    <Content Include="package.json" />
+    <Content Include="CHANGELOG.md" />
+    <Content Include="README.md" />
+    <Content Include="exports.js" />
+    <Content Include="main.js" />
+    <Content Include="dist\threebox.js" />
+    <Content Include="docs\gallery.jpg" />
+    <Content Include="docs\SymbolLayer3D.md" />
+    <Content Include="docs\Threebox.md" />
+    <Content Include="examples\basic.html" />
+    <Content Include="examples\line.html" />
+    <Content Include="examples\logistics.html" />
+    <Content Include="examples\mercator.html" />
+    <Content Include="examples\Object3D.html" />
+    <Content Include="examples\raycaster.html" />
+    <Content Include="examples\tube.html" />
+    <Content Include="examples\config_template.js" />
+    <Content Include="src\three.js" />
+    <Content Include="src\Threebox.js" />
+    <Content Include="tests\threebox-tests.html" />
+    <Content Include="tests\threebox-tests-bundle.js" />
+    <Content Include="tests\threebox-tests.js" />
+    <Content Include="docs\img\features-3D-paths.png" />
+    <Content Include="docs\img\features-3D-symbols.png" />
+    <Content Include="docs\img\features-complex-buildings.png" />
+    <Content Include="docs\img\features-point-clouds.png" />
+    <Content Include="docs\img\features-shaders.png" />
+    <Content Include="docs\img\features-terrain.png" />
+    <Content Include="examples\old\basic.html" />
+    <Content Include="examples\old\flocking.html" />
+    <Content Include="examples\old\orientation.html" />
+    <Content Include="src\Animation\AnimationManager.js" />
+    <Content Include="src\Camera\CameraSync.js" />
+    <Content Include="src\objects\line.js" />
+    <Content Include="src\objects\loadObj.js" />
+    <Content Include="src\objects\Object3D.js" />
+    <Content Include="src\objects\objects.js" />
+    <Content Include="src\objects\sphere.js" />
+    <Content Include="src\objects\tube.js" />
+    <Content Include="src\Utils\constants.js" />
+    <Content Include="src\Utils\material.js" />
+    <Content Include="src\Utils\Utils.js" />
+    <Content Include="src\Utils\validate.js" />
+    <Content Include="src\Utils\ValueGenerator.js" />
+    <Content Include="src\objects\customLines\Line2.js" />
+    <Content Include="src\objects\customLines\LineGeometry.js" />
+    <Content Include="src\objects\customLines\LineMaterial.js" />
+    <Content Include="src\objects\customLines\LineSegments2.js" />
+    <Content Include="src\objects\customLines\LineSegmentsGeometry.js" />
+    <Content Include="src\objects\customLines\Wireframe.js" />
+    <Content Include="src\objects\customLines\WireframeGeometry2.js" />
+    <Content Include="src\objects\loaders\MTLLoader.js" />
+    <Content Include="src\objects\loaders\OBJLoader.js" />
+    <Content Include="tests\unit\camera.test.js" />
+    <Content Include="tests\unit\material.test.js" />
+    <Content Include="tests\unit\object.test.js" />
+    <Content Include="tests\unit\utilities.test.js" />
+    <Content Include="tests\unit\validate.test.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="dist" />
+    <Folder Include="docs" />
+    <Folder Include="docs\img" />
+    <Folder Include="examples" />
+    <Folder Include="examples\models" />
+    <Folder Include="examples\old" />
+    <Folder Include="src" />
+    <Folder Include="src\Animation" />
+    <Folder Include="src\Camera" />
+    <Folder Include="src\objects" />
+    <Folder Include="src\objects\customLines" />
+    <Folder Include="src\objects\loaders" />
+    <Folder Include="src\Utils" />
+    <Folder Include="tests" />
+    <Folder Include="tests\unit" />
+    <Folder Include="ThreeboxSolution" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="dist\threebox.min.js" />
+    <Content Include="src\objects\CSS2DRenderer.js">
+      <Publish>False</Publish>
+    </Content>
+    <Content Include="src\objects\loaders\ColladaLoader.js">
+      <Publish>False</Publish>
+    </Content>
+    <Content Include="src\objects\loaders\FBXLoader.js">
+      <Publish>False</Publish>
+    </Content>
+    <Content Include="src\objects\loaders\GLTFLoader.js">
+      <Publish>False</Publish>
+    </Content>
+    <Content Include="src\objects\Zlib.Inflate.js">
+      <Publish>False</Publish>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <!--Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them.-->
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="False" />
+  <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsTools.targets" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <UseIIS>False</UseIIS>
+          <AutoAssignPort>True</AutoAssignPort>
+          <DevelopmentServerPort>0</DevelopmentServerPort>
+          <DevelopmentServerVPath>/</DevelopmentServerVPath>
+          <IISUrl>http://localhost:48022/</IISUrl>
+          <NTLMAuthentication>False</NTLMAuthentication>
+          <UseCustomServer>True</UseCustomServer>
+          <CustomServerUrl>http://localhost:1337</CustomServerUrl>
+          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}" User="">
+        <WebProjectProperties>
+          <StartPageUrl>
+          </StartPageUrl>
+          <StartAction>CurrentPage</StartAction>
+          <AspNetDebugging>True</AspNetDebugging>
+          <SilverlightDebugging>False</SilverlightDebugging>
+          <NativeDebugging>False</NativeDebugging>
+          <SQLDebugging>False</SQLDebugging>
+          <ExternalProgram>
+          </ExternalProgram>
+          <StartExternalURL>
+          </StartExternalURL>
+          <StartCmdLineArguments>
+          </StartCmdLineArguments>
+          <StartWorkingDirectory>
+          </StartWorkingDirectory>
+          <EnableENC>False</EnableENC>
+          <AlwaysStartWebServerOnDebug>False</AlwaysStartWebServerOnDebug>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>
