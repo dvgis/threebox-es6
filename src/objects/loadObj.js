@@ -83,7 +83,7 @@ function loadObj(options, cb) {
 			var projScaleGroup = new THREE.Group();
 			projScaleGroup.add(obj)
 			var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, options);
-			userScaleGroup.loadedModel = obj;
+			userScaleGroup.model = obj;
 			//[jscastro] assign the animations to the userScaleGroup before enrolling it in AnimationsManager through _addMethods
 			userScaleGroup.animations = animations;
 

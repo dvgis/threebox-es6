@@ -24,11 +24,11 @@ From scratch for Visual Studio 2017s:
 - Clone the repo and open a new Project using main.js
 - Update the packages @turf, tape, uglyfy, watchify
 - Right click on the project at the Solution Explorer > Open Node.js Interactive Window:
-- execute `.npm init -y`
-- execute `.npm install`
-- execute `.npm i`
-- execute `.npm C:\Users\jscastro\Source\Repos\threebox\ install azure@4.2.3`
-- execute `.npm run dev` or `.npm run build
+- execute `.npm [ProjectName] init -y`
+- execute `.npm [ProjectName] install`
+- execute `.npm [ProjectName] i`
+- execute `.npm [ProjectName] [LocalPath] install azure@4.2.3`
+- execute `.npm [ProjectName] run dev` or `.npm run build
 `
 Build the library with `npm run build`, or `npm run dev` to rebuild continuously as you develop. Both commands will output a bundle in `/dist/threebox.js`.
 

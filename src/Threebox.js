@@ -86,6 +86,9 @@ Threebox.prototype = {
 			let draggedAction; //dragged action to notify frontend
 			let overedObject; //overed object through mouseover
 
+			let overedFeature;//overed state for extrusion layer features
+			let selectedFeature;//selected state id for extrusion layer features
+
 			let canvas = this.getCanvasContainer();
 			this.getCanvasContainer().style.cursor = 'default';
 			// Variable to hold the starting xy coordinates
@@ -116,24 +119,29 @@ Threebox.prototype = {
 				);
 			}
 
-			//listener to the events
-			this.on('contextmenu', onContextMenu);
-			this.on('click', onClick);
-			this.on('mousemove', onMouseMove);
-			this.on('mousedown', onMouseDown);
-
-			function onContextMenu(e) {
+			map.onContextMenu = function (e) {
 				alert('contextMenu');
 			}
 
 			// onclick function
-			function onClick(e) {
-				let intersects = this.tb.queryRenderedFeatures(e.point);
-				let intersectionExists = typeof intersects[0] == 'object';
+			map.onClick = function (e) {
+				let intersectionExists, intersects;
+				//raycast only if we are in a custom layer, for other layers go to the else, this avoids duplicated calls to raycaster
+				intersects = this.tb.queryRenderedFeatures(e.point);
+				intersectionExists = typeof intersects[0] == 'object';
 				// if intersect exists, highlight it
 				if (intersectionExists) {
 					let nearestObject = Threebox.prototype.findParent3DObject(intersects[0]);
 
+					//if selected extrusion, unselect
+					if (selectedFeature) {
+						this.setFeatureState(
+							{ source: selectedFeature.source, id: selectedFeature.id },
+							{ select: false }
+						);
+						selectedFeature = null;
+					}
+					//if not selected yet, select it
 					if (!selectedObject) {
 						selectedObject = nearestObject;
 						selectedObject.selected = true;
@@ -151,22 +159,61 @@ Threebox.prototype = {
 						return;
 					}
 
-					// change the wireButton firing the Wireframed event
+					// fire the Wireframed event to notify UI status change
 					selectedObject.dispatchEvent(new CustomEvent('Wireframed', { detail: selectedObject, bubbles: true, cancelable: true }));
 					selectedObject.dispatchEvent(new CustomEvent('IsPlayingChanged', { detail: selectedObject, bubbles: true, cancelable: true }));
 
 					this.repaint = true;
+					e.preventDefault();
 
+				}
+				else {
+
+					var features = this.queryRenderedFeatures(e.point)
+
+					//now let's check the extrusion layer objects
+					if (features.length > 0) {
+
+						//if 3D object selected, unselect
+						if (selectedObject) {
+							//deselect, reset and return
+							selectedObject.selected = false;
+							selectedObject = null;
+						}
+
+						if (features.length > 0) {
+
+							if (selectedFeature) {
+								this.setFeatureState(
+									{ source: selectedFeature.source, id: selectedFeature.id },
+									{ select: false }
+								);
+							}
+							if (features[0].layer.type == "fill-extrusion") {
+								selectedFeature = features[0];
+								this.setFeatureState(
+									{ source: selectedFeature.source, id: selectedFeature.id },
+									{ select: true }
+								);
+								// Dispatch new event SelectedFeature
+								map.fire('SelectedFeature', { detail: selectedFeature });
+							}
+
+
+
+						}
+
+					}
 				}
 
 			}
 
-			function onMouseMove(e) {
+			map.onMouseMove = function (e) {
 				// Capture the ongoing xy coordinates
 				let current = mousePos(e);
 
 				this.getCanvasContainer().style.cursor = 'default';
-
+				//check if being rotated
 				if (e.originalEvent.altKey && draggedObject) {
 					draggedAction = 'rotate';
 					// Set a UI indicator for dragging.
@@ -180,8 +227,10 @@ Threebox.prototype = {
 					//now rotate the model depending the axis
 					draggedObject.setRotation(rotation);
 					//draggedObject.setRotationAxis(rotation);
+					return;
 				}
 
+				//check if being moved
 				if (e.originalEvent.shiftKey && draggedObject) {
 					draggedAction = 'translate';
 					// Set a UI indicator for dragging.
@@ -190,18 +239,16 @@ Threebox.prototype = {
 					let coords = e.lngLat;
 					let options = [Number((coords.lng + lngDiff).toFixed(gridStep)), Number((coords.lat + latDiff).toFixed(gridStep)), draggedObject.modelHeight];
 					draggedObject.setCoords(options);
-
-					//[jscastro] option with translate
-					//startCoords = draggedObject.coordinates;
-					//let options = [Number((coords.lng - startCoords[0]).toFixed(gridStep)), Number((coords.lat - startCoords[1]).toFixed(gridStep)), 0];
-					//draggedObject.setTranslate(options);
-
+					return;
 				}
 
+				let intersectionExists, intersects;
+
 				// calculate objects intersecting the picking ray
-				let intersects = this.tb.queryRenderedFeatures(e.point);
-				let intersectionExists = typeof intersects[0] == 'object';
-				// if intersect exists, highlight it
+				intersects = this.tb.queryRenderedFeatures(e.point);
+				intersectionExists = typeof intersects[0] == 'object';
+
+				// if intersect exists, highlight it, if not check the extrusion layer
 				if (intersectionExists) {
 					this.getCanvasContainer().style.cursor = 'pointer';
 
@@ -215,14 +262,36 @@ Threebox.prototype = {
 						overedObject = nearestObject;
 					}
 					this.repaint = true;
+					e.preventDefault();
+
 				} else {
 					//clean the object overed
 					if (overedObject) { overedObject.over = false; overedObject = null; }
+					//now let's check the extrusion layer objects
+					let features = this.queryRenderedFeatures(e.point);
+					if (features.length > 0) {
+						this.getCanvasContainer().style.cursor = 'pointer';
+						if (overedFeature) {
+							this.setFeatureState(
+								{ source: overedFeature.source, id: overedFeature.id },
+								{ hover: false }
+							);
+						}
+						if (!selectedFeature || selectedFeature.id != features[0].id) {
+							if (features[0].layer.type == "fill-extrusion") {
+								overedFeature = features[0];
+								this.setFeatureState(
+									{ source: overedFeature.source, id: overedFeature.id },
+									{ hover: true }
+								);
+							}
+						}
+					}
 				}
 
 			}
 
-			function onMouseDown(e) {
+			map.onMouseDown = function (e) {
 
 				// Continue the rest of the function shiftkey or altkey are pressed, and if object is selected
 				if (!((e.originalEvent.shiftKey || e.originalEvent.altKey) && e.originalEvent.button === 0 && selectedObject)) return;
@@ -235,8 +304,8 @@ Threebox.prototype = {
 				//map.dragPan.disable();
 
 				// Call functions for the following events
-				map.once('mouseup', onMouseUp);
-				map.once('mouseout', onMouseUp);
+				map.once('mouseup', map.onMouseUp);
+				map.once('mouseout', map.onMouseUp);
 
 				// move the selected object
 				draggedObject = selectedObject;
@@ -248,15 +317,15 @@ Threebox.prototype = {
 				latDiff = startCoords[1] - e.lngLat.lat;
 			}
 
-			function onMouseUp(e) {
+			map.onMouseUp = function (e) {
 
 				// Set a UI indicator for dragging.
 				this.getCanvasContainer().style.cursor = 'default';
 
 				// Remove these events now that finish has been called.
 				//map.off('mousemove', onMouseMove);
-				this.off('mouseup', onMouseUp);
-				this.off('mouseout', onMouseUp);
+				this.off('mouseup', map.onMouseUp);
+				this.off('mouseout', map.onMouseUp);
 				this.dragPan.enable();
 
 				if (draggedObject) {
@@ -266,6 +335,27 @@ Threebox.prototype = {
 					draggedAction = null;
 				};
 			}
+
+			map.onMouseOut = function (e) {
+
+				this.getCanvasContainer().style.cursor = 'default';
+				if (overedFeature) {
+
+					map.setFeatureState(
+						{ source: overedFeature.source, id: overedFeature.id },
+						{ hover: false }
+					);
+
+				}
+				overedFeature = null;
+			}
+
+			//listener to the events
+			//this.on('contextmenu', map.onContextMenu);
+			this.on('click', map.onClick);
+			this.on('mousemove', map.onMouseMove);
+			this.on('mouseout', map.onMouseOut)
+			this.on('mousedown', map.onMouseDown);
 
 		});
 	},
@@ -324,7 +414,7 @@ Threebox.prototype = {
 		return intersects
 	},
 
-	//[jscastro] find 3D object of a mesh
+	//[jscastro] find 3D object of a mesh. this method is needed to know the object of a raycasted mesh
 	findParent3DObject: function (mesh) {
 		//find the Parent Object3D of the mesh captured by Raytracer
 		var result;
@@ -335,6 +425,73 @@ Threebox.prototype = {
 				}
 		});
 		return result;
+	},
+
+	//[jscastro] method to replicate behaviour of map.setLayoutProperty when Threebox are affected
+	setLayoutProperty: function (layerId, name, value) {
+		//first set layout property at the map
+		tb.map.setLayoutProperty(layerId, name, value);
+		if (value !== null && value !== undefined) {
+			if (name === 'visibility') {
+				tb.world.children.forEach(function (obj) {
+					if (obj.userData.feature && obj.userData.feature.layer === layerId) {
+						switch (value) {
+							case 'visible':
+							case true:
+								obj.visible = true;
+								if (obj.label) obj.label.visible = true;
+								break;
+							case 'none':
+							case false:
+								obj.visible = false;
+								if (obj.label) obj.label.visible = false;
+								break;
+						}
+						obj.model.traverse(function (c) {
+							if (c.type == "Mesh" || c.type == "SkinnedMesh") {
+								if (value == 'visible' || value == true) {
+									c.layers.enable(0); //this makes the meshes visible for raycast
+								} else if (value == 'none' || value == false) {
+									c.layers.disable(0); //this makes the meshes invisible for raycast
+								}
+							}
+							if (c.type == "LineSegments") {
+								c.layers.disableAll();
+							}
+						});
+					}
+				});
+				return;
+			}
+		}
+	},
+
+	//[jscastro] method to set the height of all the objects in a level
+	setLayerHeigthProperty: function (layerId, level) {
+		tb.world.children.forEach(function (obj) {
+			let feature = obj.userData.feature;
+			if (feature && feature.layer === layerId) {
+				//this could be a multidimensional array
+				let location = feature.geometry.coordinates[0][0];
+				let floorHeightMin = (level * feature.properties.levelHeight);
+				//calculate height of the object in its current position minus the level height
+				let objectHeight = obj.modelHeight - (feature.properties.level * feature.properties.levelHeight);
+				let modelHeightFloor = objectHeight + floorHeightMin;
+				//if height is not yet included as 3rd coordinate, add it, if not just update it
+				(location.length < 3 ? location.push(modelHeightFloor) : location[2] = modelHeightFloor);
+				//position on location with height calculated
+				obj.setCoords(location);
+			}
+		});
+	},
+
+	//[jscastro] method to toggle Layer visibility
+	toggleLayer: function (layerId, visible) {
+		let layer = this.map.getLayer(layerId);
+		if (layer) {
+			//call
+			this.setLayoutProperty(layerId, 'visibility', (visible ? 'visible' : 'none'))
+		};
 	},
 
 	update: function () {

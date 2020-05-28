@@ -3,7 +3,6 @@
  */
 
 const THREE = require('../three.js');
-
 THREE.CSS2DObject = function (element) {
 
 	THREE.Object3D.call(this);

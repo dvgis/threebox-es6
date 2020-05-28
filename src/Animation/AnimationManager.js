@@ -53,7 +53,7 @@ AnimationManager.prototype = {
 		}
 
 		let _isPlaying = false;
-		//[jscastro] added property for wireframes state
+		//[jscastro] added property for isPlaying state
 		Object.defineProperty(obj, 'isPlaying', {
 			get() { return _isPlaying; },
 			set(value) {

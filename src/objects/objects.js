@@ -42,11 +42,11 @@ Objects.prototype = {
 
 	},
 
-	_addMethods: function (obj, static) {
+	_addMethods: function (obj, staticValues) {
 
 		var root = this;
 
-		if (static) {
+		if (staticValues) {
 
 		}
 
@@ -204,11 +204,13 @@ Objects.prototype = {
 				}
 			})
 
-			//[jscastro] add label method 
+			//[jscastro] add CSS2 label method 
 			obj.addLabel = function (HTMLElement, visible, bottomMargin) {
-				//we add it to the first children to get same boxing and position
-				//obj.children[0].add(obj.drawLabel(text, height));
-				obj.children[0].add(obj.drawLabelHTML(HTMLElement, obj.modelHeight, visible, bottomMargin));
+				if (HTMLElement) {
+					//we add it to the first children to get same boxing and position
+					//obj.children[0].add(obj.drawLabel(text, height));
+					obj.children[0].add(obj.drawLabelHTML(HTMLElement, obj.modelHeight, visible, bottomMargin));
+				}
 			}
 
 			//[jscastro] draw label method can be invoked separately
@@ -240,8 +242,8 @@ Objects.prototype = {
 				set(value) {
 					if (_wireframe != value) {
 
-						obj.loadedModel.traverse(function (c) {
-							if (c.type == "Mesh" || c.type == "SkinnedMesh" || c.type == "LineSegments") {
+						obj.model.traverse(function (c) {
+							if (c.type == "Mesh" || c.type == "SkinnedMesh") {
 								let arrMaterial = [];
 								if (!Array.isArray(c.material)) {
 									arrMaterial.push(c.material);
@@ -249,15 +251,14 @@ Objects.prototype = {
 									arrMaterial = c.material;
 								}
 								arrMaterial.forEach(function (m) {
-									m.opacity = (value ? 0.1 : 1);
+									m.opacity = (value ? 0.5 : 1);
 									//m.transparent = value;
 									m.wireframe = value;
 								});
-								if (c.type == "LineSegments") {
-									c.layers.disableAll();
-								} else {
-									if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
-								};
+								if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
+							}
+							if (c.type == "LineSegments") {
+								c.layers.disableAll();
 							}
 						});
 						_wireframe = value;
@@ -343,9 +344,9 @@ Objects.prototype = {
 				obj.updateMatrixWorld(true, true);
 
 				let dup = obj.clone();
-				dup.loadedModel = obj.loadedModel;
-				//get the size of the loadedModel
-				let bounds = new THREE.Box3().setFromObject(dup.loadedModel);
+				dup.model = obj.model;
+				//get the size of the model
+				let bounds = new THREE.Box3().setFromObject(dup.model);
 
 				//if the object has parent it's already in the added to world so it's scaled and it could be rotated
 				if (obj.parent) {
@@ -396,7 +397,7 @@ Objects.prototype = {
 
 		obj.add = function () {
 			tb.add(obj);
-			if (!static) obj.set({ position: obj.coordinates });
+			if (!staticValues) obj.set({ position: obj.coordinates });
 			return obj;
 		}
 
@@ -419,7 +420,9 @@ Objects.prototype = {
 		var geoGroup = new THREE.Group();
 		geoGroup.userData = options || {};
 		geoGroup.userData.isGeoGroup = true;
-		geoGroup.userData.feature.properties.uuid = geoGroup.uuid;
+		if (geoGroup.userData.feature) {
+			geoGroup.userData.feature.properties.uuid = geoGroup.uuid;
+		}
 		var isArrayOfObjects = obj.length;
 
 		if (isArrayOfObjects) for (o of obj) geoGroup.add(o)
