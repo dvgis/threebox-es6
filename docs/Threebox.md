@@ -97,16 +97,49 @@ Add a sphere to the map. Internally, calls `THREE.Mesh` with a `THREE.SphereGeom
 
 Loads an object via an external .obj and .mtl file. Note that unlike all the other object classes, this is asynchronous, and returns the object as an argument of the callback function. Internally, uses `THREE.OBJLoader` to fetch the .obj assets.
 
-
+[jscastro] setCoords now apply by default 
 | option | required | default | type   | description                                                                                  |
 |-----------|----------|---------|--------|------------|
+| `type`  | yes       | "mtl"       | string | ("mtl", "gltf", "fbx", "dae") no other values accepted yet |
 | `obj`  | yes       | NA       | string | URL path to asset's .obj file |
-| `mtl`  | yes       | NA       | string | URL path to asset's .mtl file |
-| `units`    | no       | scene      | string ("scene" or "meters") | Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
-| `rotation`     | no       | 0   | rotationTransform  | Rotation of the object along the three axes, to align it to desired orientation before future rotations. Note that future rotations apply atop this transformation, and do not overwrite it. |
-| `scale`     | no       | 1   | scaleTransform  | Scale of the object along the three axes, to size it appropriately before future transformations. Note that future scaling applies atop this transformation, rather than overwriting it.|
+| `bin`  | no       | NA       | string | URL path to asset's .bin or .mtl files |
+| `units`    | no       | scene      | string ("scene" or "meters") | "meters" is recommended for precision. Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
+| `rotation`     | no       | 0   |  {x, y, z}  | Rotation of the object along the three axes, to align it to desired orientation before future rotations. Note that future rotations apply atop this transformation, and do not overwrite it. |
+| `scale`     | no       | 1   |  {x, y, z}  | Scale of the object along the three axes, to size it appropriately before future transformations. Note that future scaling applies atop this transformation, rather than overwriting it.|
+| `adjustment`     | no       | 1   | {x, y, z}  | 3D models are often not centered in their axes so the object positions and rotates wrongly. adjustment param must provided in in units per axis, so the model will correct the center position of the object |
+| `normalize`     | no       | 1   | bool  | this param allow you to normalize specular values from some 3D models |
+| `feature`     | yes       | 1   | geojson feature  | geojson feature instance |
 | `callback`     | yes       | NA   | function  | A function to run after the object loads. The first argument will be the successfully loaded object.
-                                                   
+             
+[jscastro] After the callback is initiated, the object returned will have the following events already available to listen taht enable the UI to behave and react to those.
+`// Listening to the events
+model.addEventListener('SelectedChange', onSelectedChange, false);
+model.addEventListener('Wireframed', onWireframed, false);
+model.addEventListener('IsPlayingChanged', onIsPlayingChanged, false);
+model.addEventListener('ObjectDragged', onDraggedObject, false);
+model.addEventListener('ObjectMouseOver', onObjectMouseOver, false);
+model.addEventListener('ObjectMouseOut', onObjectMouseOut, false);
+`
+[jscastro] Then you can manage in you UI through a function method once these events are fired. See below an example for `onSelectedChange`:
+`//actions to execute onSelectedChange
+function onSelectedChange(e) {
+	let selected = e.detail.selected;
+	$('#deleteButton')[0].disabled = !selected;
+
+	if (selected) {
+		selectedObject = e.detail;
+		//we fly smoothly to the object selected
+		map.flyTo({
+			center: selectedObject.userData.feature.properties.camera,
+			zoom: selectedObject.userData.feature.properties.zoom,
+			pitch: selectedObject.userData.feature.properties.pitch,
+			bearing: selectedObject.userData.feature.properties.bearing
+		});
+	}
+	tb.update();
+	map.repaint = true;
+}`
+
 <br>
 ###Object3D
 
