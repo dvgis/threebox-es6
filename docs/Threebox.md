@@ -97,11 +97,11 @@ Add a sphere to the map. Internally, calls `THREE.Mesh` with a `THREE.SphereGeom
 
 Loads an object via an external .obj and .mtl file. Note that unlike all the other object classes, this is asynchronous, and returns the object as an argument of the callback function. Internally, uses `THREE.OBJLoader` to fetch the .obj assets.
 
-[jscastro] setCoords now apply by default 
+[jscastro] *IMPORTANT: There are breaking changes in this release regarding the attributes below 
 | option | required | default | type   | description                                                                                  |
 |-----------|----------|---------|--------|------------|
-| `type`  | yes       | "mtl"       | string | ("mtl", "gltf", "fbx", "dae") no other values accepted yet |
-| `obj`  | yes       | NA       | string | URL path to asset's .obj file |
+| `type`  | yes       | "mtl"       | string | BREAKING CHANGE: ("mtl", "gltf", "fbx", "dae") no other values accepted yet |
+| `obj`  | yes       | NA       | string | BREAKING CHANGE: URL path to asset's .obj, .glb, .gltf., .fbx, .dae file. Remember all these 3D extensions are not standard MIME TYPES, so you will need to configure your web server engine to accept this extensions, otherwise you'll receive different HTTP errors downloading them. |
 | `bin`  | no       | NA       | string | URL path to asset's .bin or .mtl files |
 | `units`    | no       | scene      | string ("scene" or "meters") | "meters" is recommended for precision. Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
 | `rotation`     | no       | 0   |  {x, y, z}  | Rotation of the object along the three axes, to align it to desired orientation before future rotations. Note that future rotations apply atop this transformation, and do not overwrite it. |
