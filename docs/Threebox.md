@@ -121,7 +121,8 @@ model.addEventListener('ObjectMouseOver', onObjectMouseOver, false);
 model.addEventListener('ObjectMouseOut', onObjectMouseOut, false);
 `
 [jscastro] Then you can manage in you UI through a function method once these events are fired. See below an example for `onSelectedChange`:
-`//actions to execute onSelectedChange
+`
+//actions to execute onSelectedChange
 function onSelectedChange(e) {
 	let selected = e.detail.selected;
 	$('#deleteButton')[0].disabled = !selected;
@@ -138,7 +139,8 @@ function onSelectedChange(e) {
 	}
 	tb.update();
 	map.repaint = true;
-}`
+}
+`
 
 <br>
 ###Object3D
