@@ -77,6 +77,8 @@ Objects.prototype = {
 
 				obj.coordinates = lnglat;
 				obj.set({ position: lnglat });
+				obj.modelHeight = obj.coordinates[2];
+				obj.setBoundingBoxShadowFloor();
 				return obj;
 
 			}
@@ -193,6 +195,12 @@ Objects.prototype = {
 
 				boxGrid.visible = false; // visibility is managed from the parent
 				return boxGrid;
+			}
+
+			//[jscastro] added method to position the shadow box on the floor depending the object height
+			obj.setBoundingBoxShadowFloor = function () {
+				obj.boundingBoxShadow.box.max.z = -obj.modelHeight;
+				obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
 			}
 
 			let _label;
