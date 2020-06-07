@@ -11,7 +11,7 @@ var loadObj = require("./objects/loadObj.js");
 var Object3D = require("./objects/Object3D.js");
 var line = require("./objects/line.js");
 var tube = require("./objects/tube.js");
-var CSS2D = require("./objects/CSS2DRenderer.js");
+var Label = require("./objects/LabelRenderer.js")
 
 function Threebox(map, glContext, options){
 
@@ -45,13 +45,8 @@ Threebox.prototype = {
 		this.renderer.autoClear = false;
 
 		// [jscastro] set labelRendered
-		this.labelRenderer = new CSS2D.CSS2DRenderer();
-		//this.labelRenderer.autoClear = false;
-		this.labelRenderer.setSize(map.getCanvas().clientWidth, map.getCanvas().clientHeight);
-		this.labelRenderer.domElement.style.position = 'absolute';
-		this.labelRenderer.domElement.id = 'labelCanvas'; //TODO: this value must come by parameter
-		this.labelRenderer.domElement.style.top = 0;
-		this.map.getCanvasContainer().appendChild(this.labelRenderer.domElement);
+		this.labelRenderer = new LabelRenderer(this.map);
+
 
 		this.scene = new THREE.Scene();
 		this.camera = new THREE.PerspectiveCamera(36.86989764584402, map.getCanvas().clientWidth / map.getCanvas().clientHeight, 1, 1e21);
@@ -430,52 +425,34 @@ Threebox.prototype = {
 	//[jscastro] method to replicate behaviour of map.setLayoutProperty when Threebox are affected
 	setLayoutProperty: function (layerId, name, value) {
 		//first set layout property at the map
-		tb.map.setLayoutProperty(layerId, name, value);
+		this.map.setLayoutProperty(layerId, name, value);
 		if (value !== null && value !== undefined) {
 			if (name === 'visibility') {
-				tb.world.children.forEach(function (obj) {
+				this.world.children.forEach(function (obj) {
 					if (obj.userData.feature && obj.userData.feature.layer === layerId) {
-						switch (value) {
-							case 'visible':
-							case true:
-								obj.visible = true;
-								if (obj.label) obj.label.visible = true;
-								break;
-							case 'none':
-							case false:
-								obj.visible = false;
-								if (obj.label) obj.label.visible = false;
-								break;
-						}
-						obj.model.traverse(function (c) {
-							if (c.type == "Mesh" || c.type == "SkinnedMesh") {
-								if (value == 'visible' || value == true) {
-									c.layers.enable(0); //this makes the meshes visible for raycast
-								} else if (value == 'none' || value == false) {
-									c.layers.disable(0); //this makes the meshes invisible for raycast
-								}
-							}
-							if (c.type == "LineSegments") {
-								c.layers.disableAll();
-							}
-						});
+						obj.visibility = value;
 					}
 				});
 				return;
 			}
 		}
 	},
+	//[jscastro] Custom Layers doesn't work on minzoom and maxzoom attributes, and if the layer is including labels they don't hide either on minzoom
+	setLayerZoomRange: function (layer3d, minZoomLayer, maxZoomLayer) {
+		this.map.setLayerZoomRange(layer3d, minZoomLayer, maxZoomLayer)
+		this.setLabelZoomRange(minZoomLayer, maxZoomLayer);
+	},
 
-	//[jscastro] method to set the height of all the objects in a level
+	//[jscastro] method to set the height of all the objects in a level. this only works if the objects have a geojson feature
 	setLayerHeigthProperty: function (layerId, level) {
-		tb.world.children.forEach(function (obj) {
+		this.world.children.forEach(function (obj) {
 			let feature = obj.userData.feature;
 			if (feature && feature.layer === layerId) {
-				//this could be a multidimensional array
+				//TODO: this could be a multidimensional array
 				let location = feature.geometry.coordinates[0][0];
 				let floorHeightMin = (level * feature.properties.levelHeight);
 				//calculate height of the object in its current position minus the level height
-				let objectHeight = obj.modelHeight - (feature.properties.level * feature.properties.levelHeight);
+				let objectHeight = feature.properties.height;
 				let modelHeightFloor = objectHeight + floorHeightMin;
 				//if height is not yet included as 3rd coordinate, add it, if not just update it
 				(location.length < 3 ? location.push(modelHeightFloor) : location[2] = modelHeightFloor);
@@ -494,6 +471,11 @@ Threebox.prototype = {
 		};
 	},
 
+	//[jscastro] method set the CSS2DObjects zoom range and hide them at the same time the layer is
+	setLabelZoomRange: function (minzoom, maxzoom) {
+		this.labelRenderer.setZoomRange(minzoom, maxzoom);
+	},
+
 	update: function () {
 
 		if (this.map.repaint) this.map.repaint = false
@@ -507,9 +489,6 @@ Threebox.prototype = {
 
 		// Render the scene and repaint the map
 		this.renderer.render(this.scene, this.camera);
-
-		// [jscastro] Reset state to keep the pattern TODO: is empty
-		this.labelRenderer.state.reset();
 
 		// [jscastro] Render any label
 		this.labelRenderer.render(this.scene, this.camera);
@@ -525,6 +504,33 @@ Threebox.prototype = {
 		//[jscastro] remove also the label if exists dispatching the event removed to fire CSS2DRenderer "removed" listener
 		if (obj.label) { obj.label.dispatchEvent({ type: "removed" }) };
 		this.world.remove(obj);
+	},
+
+	dispose: function () {
+		//geometry.dispose(); material.dispose(); texture.dispose(); renderer.dispose()
+		this.world.traverse(function (obj) {
+			if (obj.geometry) {
+				obj.geometry.dispose();
+			}
+			if (obj.material) {
+				if (obj.material instanceof THREE.MeshFaceMaterial) {
+					obj.material.materials.forEach(function (m) {
+						m.dispose();
+					});
+				} else {
+					obj.material.dispose();
+				}
+			}
+			if (obj.dispose) {
+				obj.dispose();
+			}
+
+		});
+		this.scene.remove(this.world);
+		this.scene.dispose();
+		this.world.children = [];
+		this.world = null;
+		this.renderer.dispose();
 	},
 
 	defaultLights: function () {

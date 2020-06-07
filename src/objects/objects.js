@@ -77,6 +77,7 @@ Objects.prototype = {
 
 				obj.coordinates = lnglat;
 				obj.set({ position: lnglat });
+				//Each time the object is positioned, set modelHeight property and project the floor
 				obj.modelHeight = obj.coordinates[2];
 				obj.setBoundingBoxShadowFloor();
 				return obj;
@@ -199,8 +200,10 @@ Objects.prototype = {
 
 			//[jscastro] added method to position the shadow box on the floor depending the object height
 			obj.setBoundingBoxShadowFloor = function () {
-				obj.boundingBoxShadow.box.max.z = -obj.modelHeight;
-				obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
+				if (obj.boundingBox) {
+					obj.boundingBoxShadow.box.max.z = -obj.modelHeight;
+					obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
+				}
 			}
 
 			let _label;
@@ -210,7 +213,50 @@ Objects.prototype = {
 				set(value) {
 					_label = value;
 				}
-			})
+			});
+
+			let _tooltip;
+			//[jscastro] added property for simulated tooltip
+			Object.defineProperty(obj, 'tooltip', {
+				get() { return _tooltip; },
+				set(value) {
+					_tooltip = value;
+				}
+			});
+
+			//[jscastro] added property to redefine visible, including the label and tooltip
+			Object.defineProperty(obj, 'visibility', {
+				get() { return obj.visible; },
+				set(value) {
+					let _value = value;
+					if (value == 'visible' || value == true) {
+						_value = true;
+						if (obj.label) obj.label.visible = _value;
+					}
+					else if (value == 'none' || value == false) {
+						_value = false;
+						if (obj.label && obj.label.alwaysVisible) obj.label.visible = _value;
+						if (obj.tooltip) obj.tooltip.visible = _value;
+					}
+					else return;
+					if (obj.visible != _value) {
+						obj.visible = _value;
+
+						obj.model.traverse(function (c) {
+							if (c.type == "Mesh" || c.type == "SkinnedMesh") {
+								if (_value) {
+									c.layers.enable(0); //this makes the meshes visible for raycast
+								} else {
+									c.layers.disable(0); //this makes the meshes invisible for raycast
+								}
+							}
+							if (c.type == "LineSegments") {
+								c.layers.disableAll();
+							}
+						});
+					}
+				}
+			});
 
 			//[jscastro] add CSS2 label method 
 			obj.addLabel = function (HTMLElement, visible, bottomMargin) {
@@ -223,6 +269,7 @@ Objects.prototype = {
 
 			//[jscastro] draw label method can be invoked separately
 			obj.drawLabelHTML = function (HTMLElement, height, visible, bottomMargin) {
+				let size = obj.getSize();
 				let div = document.createElement('div');
 				div.className += ' label3D';
 				// [jscastro] create a div [TODO] analize if must be moved
@@ -235,12 +282,27 @@ Objects.prototype = {
 				obj.label = new CSS2D.CSS2DObject(div);
 				let p = obj.userData.feature.properties;
 				let labelHeight = (p.label ? height / p.label : 0) + (height / 10); //if label correction adjust + 10%
-				let size = obj.getSize();
-				obj.label.position.set(-size.x / 2, -size.y / 2, size.z);//height + labelHeight);
+				obj.label.position.set(-size.x / 2, -size.y / 2, 0);//height + labelHeight);
 				obj.label.visible = visible;
 				obj.label.alwaysVisible = visible;
 
 				return obj.label;
+			}
+
+			//[jscastro] add label method 
+			obj.addTooltip = function (tooltipText) {
+				if (tooltipText) {
+					let span = document.createElement('span');
+					span.className = 'toolTip text-xs';
+					span.innerHTML = tooltipText;
+					let size = obj.getSize();
+
+					obj.tooltip = new CSS2D.CSS2DObject(span);
+					obj.tooltip.position.set(-size.x / 2, -size.y / 2, 0);
+					obj.tooltip.visible = false;
+					//we add it to the first children to get same boxing and position
+					obj.children[0].add(obj.tooltip);
+				}
 			}
 
 			let _wireframe = false;
@@ -299,6 +361,7 @@ Objects.prototype = {
 						}
 						if (obj.label && !obj.label.alwaysVisible) obj.label.visible = false;
 					}
+					if (obj.tooltip) obj.tooltip.visible = value;
 					//only fire the event if value is different
 					if (_selected != value) {
 						_selected = value;
@@ -340,36 +403,33 @@ Objects.prototype = {
 						// Dispatch new event ObjectOver
 						obj.dispatchEvent(new CustomEvent('ObjectMouseOut', { detail: obj, bubbles: true, cancelable: true }));
 					}
+					if (obj.tooltip) obj.tooltip.visible = value || obj.selected;
 					_over = value;
 				}
 			})
 
 			//[jscastro] get the object model Box3 in runtime
 			obj.box3 = function () {
-				//first box the object
-
+				//update Matrix and MatrixWorld to avoid issues with transformations not full applied
 				obj.updateMatrix();
 				obj.updateMatrixWorld(true, true);
-
-				let dup = obj.clone();
-				dup.model = obj.model;
-				//get the size of the model
+				//let's clone the object before manipulate it
+				let dup = obj.clone(true);
+				//clone also the model inside it's the one who keeps the real size
+				dup.model = obj.model.clone();
+				//get the size of the model because the object is translated and has boundingBoxShadow
 				let bounds = new THREE.Box3().setFromObject(dup.model);
-
 				//if the object has parent it's already in the added to world so it's scaled and it could be rotated
 				if (obj.parent) {
-					let m = new THREE.Matrix4();
+					//first, we return the object to it's original position of rotation, extract rotation and apply inversed
 					let rm = new THREE.Matrix4();
 					let rmi = new THREE.Matrix4();
-					obj.parent.matrixWorld.getInverse(m);
 					obj.matrix.extractRotation(rm);
 					rm.getInverse(rmi);
-					dup.matrix = m;
-					dup.updateMatrix();
 					dup.setRotationFromMatrix(rmi);
-					bounds = new THREE.Box3().setFromObject(dup);
+					//now the object inside will give us a NAABB Non-Axes Aligned Bounding Box 
+					bounds = new THREE.Box3().setFromObject(dup.model);
 				}
-
 				return bounds;
 			};
 

@@ -10,14 +10,20 @@ THREE.CSS2DObject = function (element) {
 	this.element = element;
 	this.element.style.position = 'absolute';
 
-	this.clone = function () {
+	this.alwaysVisible = false; //[jscastro] some labels must be always visible
 
-		return new CSS2DObject(this.element);
-
+	this.clone = function (recursive) {
+		if (this.element)
+			return new THREE.CSS2DObject(this.element);
+		else
+			return new THREE.CSS2DObject();
 	}
 
-	this.addEventListener('removed', function () {
+	this.dispose = function () {
+		this.remove();
+	}
 
+	this.remove = function () {
 		this.traverse(function (object) {
 
 			if (object.element instanceof Element && object.element.parentNode !== null) {
@@ -27,6 +33,10 @@ THREE.CSS2DObject = function (element) {
 			}
 
 		});
+	}
+	this.addEventListener('removed', function () {
+
+		this.remove();
 
 	});
 
@@ -34,8 +44,6 @@ THREE.CSS2DObject = function (element) {
 
 THREE.CSS2DObject.prototype = Object.create(THREE.Object3D.prototype);
 THREE.CSS2DObject.prototype.constructor = THREE.CSS2DObject;
-
-//
 
 THREE.CSS2DRenderer = function () {
 
@@ -49,20 +57,14 @@ THREE.CSS2DRenderer = function () {
 	var viewProjectionMatrix = new THREE.Matrix4();
 
 	var cache = {
-		objects: new WeakMap()
+		objects: new WeakMap(),
+		list: new Map()
 	};
-
+	this.cacheList = cache.list;
 	var domElement = document.createElement('div');
 	domElement.style.overflow = 'hidden';
 
 	this.domElement = domElement;
-
-	this.state = {
-		reset: function () {
-			//TODO: Implement a good state reset, check out what is made in WebGlRenderer
-			//domElement.innerHTML = '';
-		}
-	} 
 
 	this.getSize = function () {
 
@@ -86,7 +88,7 @@ THREE.CSS2DRenderer = function () {
 
 	};
 
-	var renderObject = function (object, scene, camera) {
+	this.renderObject = function (object, scene, camera) {
 
 		if (object instanceof THREE.CSS2DObject) {
 
@@ -110,6 +112,7 @@ THREE.CSS2DRenderer = function () {
 			};
 
 			cache.objects.set(object, objectData);
+			cache.list.set(object, object);
 
 			if (element.parentNode !== domElement) {
 
@@ -123,7 +126,7 @@ THREE.CSS2DRenderer = function () {
 
 		for (var i = 0, l = object.children.length; i < l; i++) {
 
-			renderObject(object.children[i], scene, camera);
+			this.renderObject(object.children[i], scene, camera);
 
 		}
 
@@ -188,10 +191,20 @@ THREE.CSS2DRenderer = function () {
 		viewMatrix.copy(camera.matrixWorldInverse);
 		viewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, viewMatrix);
 
-		renderObject(scene, scene, camera);
+		this.renderObject(scene, scene, camera);
 		zOrder(scene);
 
 	};
+
+	this.setVisibility = function (visible, scene, camera) {
+		var a = cache.objects;
+		cache.list.forEach(function (l) {
+			l.visible = visible;
+			this.renderObject(l, scene, camera);
+		});
+	};
+
+	//TODO: setZoomRange
 
 };
 

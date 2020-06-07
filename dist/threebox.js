@@ -2,7 +2,7 @@
 window.Threebox = require('./src/Threebox.js'),
 window.THREE = require('./src/three.js')
 
-},{"./src/Threebox.js":2,"./src/three.js":21}],2:[function(require,module,exports){
+},{"./src/Threebox.js":2,"./src/three.js":22}],2:[function(require,module,exports){
 var THREE = require("./three.js");
 var CameraSync = require("./camera/CameraSync.js");
 var utils = require("./utils/utils.js");
@@ -16,7 +16,7 @@ var loadObj = require("./objects/loadObj.js");
 var Object3D = require("./objects/Object3D.js");
 var line = require("./objects/line.js");
 var tube = require("./objects/tube.js");
-var CSS2D = require("./objects/CSS2DRenderer.js");
+var Label = require("./objects/LabelRenderer.js")
 
 function Threebox(map, glContext, options){
 
@@ -50,13 +50,8 @@ Threebox.prototype = {
 		this.renderer.autoClear = false;
 
 		// [jscastro] set labelRendered
-		this.labelRenderer = new CSS2D.CSS2DRenderer();
-		//this.labelRenderer.autoClear = false;
-		this.labelRenderer.setSize(map.getCanvas().clientWidth, map.getCanvas().clientHeight);
-		this.labelRenderer.domElement.style.position = 'absolute';
-		this.labelRenderer.domElement.id = 'labelCanvas'; //TODO: this value must come by parameter
-		this.labelRenderer.domElement.style.top = 0;
-		this.map.getCanvasContainer().appendChild(this.labelRenderer.domElement);
+		this.labelRenderer = new LabelRenderer(this.map);
+
 
 		this.scene = new THREE.Scene();
 		this.camera = new THREE.PerspectiveCamera(36.86989764584402, map.getCanvas().clientWidth / map.getCanvas().clientHeight, 1, 1e21);
@@ -91,6 +86,9 @@ Threebox.prototype = {
 			let draggedAction; //dragged action to notify frontend
 			let overedObject; //overed object through mouseover
 
+			let overedFeature;//overed state for extrusion layer features
+			let selectedFeature;//selected state id for extrusion layer features
+
 			let canvas = this.getCanvasContainer();
 			this.getCanvasContainer().style.cursor = 'default';
 			// Variable to hold the starting xy coordinates
@@ -121,24 +119,29 @@ Threebox.prototype = {
 				);
 			}
 
-			//listener to the events
-			this.on('contextmenu', onContextMenu);
-			this.on('click', onClick);
-			this.on('mousemove', onMouseMove);
-			this.on('mousedown', onMouseDown);
-
-			function onContextMenu(e) {
+			map.onContextMenu = function (e) {
 				alert('contextMenu');
 			}
 
 			// onclick function
-			function onClick(e) {
-				let intersects = this.tb.queryRenderedFeatures(e.point);
-				let intersectionExists = typeof intersects[0] == 'object';
+			map.onClick = function (e) {
+				let intersectionExists, intersects;
+				//raycast only if we are in a custom layer, for other layers go to the else, this avoids duplicated calls to raycaster
+				intersects = this.tb.queryRenderedFeatures(e.point);
+				intersectionExists = typeof intersects[0] == 'object';
 				// if intersect exists, highlight it
 				if (intersectionExists) {
 					let nearestObject = Threebox.prototype.findParent3DObject(intersects[0]);
 
+					//if selected extrusion, unselect
+					if (selectedFeature) {
+						this.setFeatureState(
+							{ source: selectedFeature.source, id: selectedFeature.id },
+							{ select: false }
+						);
+						selectedFeature = null;
+					}
+					//if not selected yet, select it
 					if (!selectedObject) {
 						selectedObject = nearestObject;
 						selectedObject.selected = true;
@@ -156,22 +159,61 @@ Threebox.prototype = {
 						return;
 					}
 
-					// change the wireButton firing the Wireframed event
+					// fire the Wireframed event to notify UI status change
 					selectedObject.dispatchEvent(new CustomEvent('Wireframed', { detail: selectedObject, bubbles: true, cancelable: true }));
 					selectedObject.dispatchEvent(new CustomEvent('IsPlayingChanged', { detail: selectedObject, bubbles: true, cancelable: true }));
 
 					this.repaint = true;
+					e.preventDefault();
 
+				}
+				else {
+
+					var features = this.queryRenderedFeatures(e.point)
+
+					//now let's check the extrusion layer objects
+					if (features.length > 0) {
+
+						//if 3D object selected, unselect
+						if (selectedObject) {
+							//deselect, reset and return
+							selectedObject.selected = false;
+							selectedObject = null;
+						}
+
+						if (features.length > 0) {
+
+							if (selectedFeature) {
+								this.setFeatureState(
+									{ source: selectedFeature.source, id: selectedFeature.id },
+									{ select: false }
+								);
+							}
+							if (features[0].layer.type == "fill-extrusion") {
+								selectedFeature = features[0];
+								this.setFeatureState(
+									{ source: selectedFeature.source, id: selectedFeature.id },
+									{ select: true }
+								);
+								// Dispatch new event SelectedFeature
+								map.fire('SelectedFeature', { detail: selectedFeature });
+							}
+
+
+
+						}
+
+					}
 				}
 
 			}
 
-			function onMouseMove(e) {
+			map.onMouseMove = function (e) {
 				// Capture the ongoing xy coordinates
 				let current = mousePos(e);
 
 				this.getCanvasContainer().style.cursor = 'default';
-
+				//check if being rotated
 				if (e.originalEvent.altKey && draggedObject) {
 					draggedAction = 'rotate';
 					// Set a UI indicator for dragging.
@@ -185,8 +227,10 @@ Threebox.prototype = {
 					//now rotate the model depending the axis
 					draggedObject.setRotation(rotation);
 					//draggedObject.setRotationAxis(rotation);
+					return;
 				}
 
+				//check if being moved
 				if (e.originalEvent.shiftKey && draggedObject) {
 					draggedAction = 'translate';
 					// Set a UI indicator for dragging.
@@ -195,18 +239,16 @@ Threebox.prototype = {
 					let coords = e.lngLat;
 					let options = [Number((coords.lng + lngDiff).toFixed(gridStep)), Number((coords.lat + latDiff).toFixed(gridStep)), draggedObject.modelHeight];
 					draggedObject.setCoords(options);
-
-					//[jscastro] option with translate
-					//startCoords = draggedObject.coordinates;
-					//let options = [Number((coords.lng - startCoords[0]).toFixed(gridStep)), Number((coords.lat - startCoords[1]).toFixed(gridStep)), 0];
-					//draggedObject.setTranslate(options);
-
+					return;
 				}
 
+				let intersectionExists, intersects;
+
 				// calculate objects intersecting the picking ray
-				let intersects = this.tb.queryRenderedFeatures(e.point);
-				let intersectionExists = typeof intersects[0] == 'object';
-				// if intersect exists, highlight it
+				intersects = this.tb.queryRenderedFeatures(e.point);
+				intersectionExists = typeof intersects[0] == 'object';
+
+				// if intersect exists, highlight it, if not check the extrusion layer
 				if (intersectionExists) {
 					this.getCanvasContainer().style.cursor = 'pointer';
 
@@ -220,14 +262,36 @@ Threebox.prototype = {
 						overedObject = nearestObject;
 					}
 					this.repaint = true;
+					e.preventDefault();
+
 				} else {
 					//clean the object overed
 					if (overedObject) { overedObject.over = false; overedObject = null; }
+					//now let's check the extrusion layer objects
+					let features = this.queryRenderedFeatures(e.point);
+					if (features.length > 0) {
+						this.getCanvasContainer().style.cursor = 'pointer';
+						if (overedFeature) {
+							this.setFeatureState(
+								{ source: overedFeature.source, id: overedFeature.id },
+								{ hover: false }
+							);
+						}
+						if (!selectedFeature || selectedFeature.id != features[0].id) {
+							if (features[0].layer.type == "fill-extrusion") {
+								overedFeature = features[0];
+								this.setFeatureState(
+									{ source: overedFeature.source, id: overedFeature.id },
+									{ hover: true }
+								);
+							}
+						}
+					}
 				}
 
 			}
 
-			function onMouseDown(e) {
+			map.onMouseDown = function (e) {
 
 				// Continue the rest of the function shiftkey or altkey are pressed, and if object is selected
 				if (!((e.originalEvent.shiftKey || e.originalEvent.altKey) && e.originalEvent.button === 0 && selectedObject)) return;
@@ -240,8 +304,8 @@ Threebox.prototype = {
 				//map.dragPan.disable();
 
 				// Call functions for the following events
-				map.once('mouseup', onMouseUp);
-				map.once('mouseout', onMouseUp);
+				map.once('mouseup', map.onMouseUp);
+				map.once('mouseout', map.onMouseUp);
 
 				// move the selected object
 				draggedObject = selectedObject;
@@ -253,15 +317,15 @@ Threebox.prototype = {
 				latDiff = startCoords[1] - e.lngLat.lat;
 			}
 
-			function onMouseUp(e) {
+			map.onMouseUp = function (e) {
 
 				// Set a UI indicator for dragging.
 				this.getCanvasContainer().style.cursor = 'default';
 
 				// Remove these events now that finish has been called.
 				//map.off('mousemove', onMouseMove);
-				this.off('mouseup', onMouseUp);
-				this.off('mouseout', onMouseUp);
+				this.off('mouseup', map.onMouseUp);
+				this.off('mouseout', map.onMouseUp);
 				this.dragPan.enable();
 
 				if (draggedObject) {
@@ -271,6 +335,27 @@ Threebox.prototype = {
 					draggedAction = null;
 				};
 			}
+
+			map.onMouseOut = function (e) {
+
+				this.getCanvasContainer().style.cursor = 'default';
+				if (overedFeature) {
+
+					map.setFeatureState(
+						{ source: overedFeature.source, id: overedFeature.id },
+						{ hover: false }
+					);
+
+				}
+				overedFeature = null;
+			}
+
+			//listener to the events
+			//this.on('contextmenu', map.onContextMenu);
+			this.on('click', map.onClick);
+			this.on('mousemove', map.onMouseMove);
+			this.on('mouseout', map.onMouseOut)
+			this.on('mousedown', map.onMouseDown);
 
 		});
 	},
@@ -329,7 +414,7 @@ Threebox.prototype = {
 		return intersects
 	},
 
-	//[jscastro] find 3D object of a mesh
+	//[jscastro] find 3D object of a mesh. this method is needed to know the object of a raycasted mesh
 	findParent3DObject: function (mesh) {
 		//find the Parent Object3D of the mesh captured by Raytracer
 		var result;
@@ -340,6 +425,60 @@ Threebox.prototype = {
 				}
 		});
 		return result;
+	},
+
+	//[jscastro] method to replicate behaviour of map.setLayoutProperty when Threebox are affected
+	setLayoutProperty: function (layerId, name, value) {
+		//first set layout property at the map
+		this.map.setLayoutProperty(layerId, name, value);
+		if (value !== null && value !== undefined) {
+			if (name === 'visibility') {
+				this.world.children.forEach(function (obj) {
+					if (obj.userData.feature && obj.userData.feature.layer === layerId) {
+						obj.visibility = value;
+					}
+				});
+				return;
+			}
+		}
+	},
+	//[jscastro] Custom Layers doesn't work on minzoom and maxzoom attributes, and if the layer is including labels they don't hide either on minzoom
+	setLayerZoomRange: function (layer3d, minZoomLayer, maxZoomLayer) {
+		this.map.setLayerZoomRange(layer3d, minZoomLayer, maxZoomLayer)
+		this.setLabelZoomRange(minZoomLayer, maxZoomLayer);
+	},
+
+	//[jscastro] method to set the height of all the objects in a level. this only works if the objects have a geojson feature
+	setLayerHeigthProperty: function (layerId, level) {
+		this.world.children.forEach(function (obj) {
+			let feature = obj.userData.feature;
+			if (feature && feature.layer === layerId) {
+				//TODO: this could be a multidimensional array
+				let location = feature.geometry.coordinates[0][0];
+				let floorHeightMin = (level * feature.properties.levelHeight);
+				//calculate height of the object in its current position minus the level height
+				let objectHeight = feature.properties.height;
+				let modelHeightFloor = objectHeight + floorHeightMin;
+				//if height is not yet included as 3rd coordinate, add it, if not just update it
+				(location.length < 3 ? location.push(modelHeightFloor) : location[2] = modelHeightFloor);
+				//position on location with height calculated
+				obj.setCoords(location);
+			}
+		});
+	},
+
+	//[jscastro] method to toggle Layer visibility
+	toggleLayer: function (layerId, visible) {
+		let layer = this.map.getLayer(layerId);
+		if (layer) {
+			//call
+			this.setLayoutProperty(layerId, 'visibility', (visible ? 'visible' : 'none'))
+		};
+	},
+
+	//[jscastro] method set the CSS2DObjects zoom range and hide them at the same time the layer is
+	setLabelZoomRange: function (minzoom, maxzoom) {
+		this.labelRenderer.setZoomRange(minzoom, maxzoom);
 	},
 
 	update: function () {
@@ -356,9 +495,6 @@ Threebox.prototype = {
 		// Render the scene and repaint the map
 		this.renderer.render(this.scene, this.camera);
 
-		// [jscastro] Reset state to keep the pattern TODO: is empty
-		this.labelRenderer.state.reset();
-
 		// [jscastro] Render any label
 		this.labelRenderer.render(this.scene, this.camera);
 
@@ -373,6 +509,33 @@ Threebox.prototype = {
 		//[jscastro] remove also the label if exists dispatching the event removed to fire CSS2DRenderer "removed" listener
 		if (obj.label) { obj.label.dispatchEvent({ type: "removed" }) };
 		this.world.remove(obj);
+	},
+
+	dispose: function () {
+		//geometry.dispose(); material.dispose(); texture.dispose(); renderer.dispose()
+		this.world.traverse(function (obj) {
+			if (obj.geometry) {
+				obj.geometry.dispose();
+			}
+			if (obj.material) {
+				if (obj.material instanceof THREE.MeshFaceMaterial) {
+					obj.material.materials.forEach(function (m) {
+						m.dispose();
+					});
+				} else {
+					obj.material.dispose();
+				}
+			}
+			if (obj.dispose) {
+				obj.dispose();
+			}
+
+		});
+		this.scene.remove(this.world);
+		this.scene.dispose();
+		this.world.children = [];
+		this.world = null;
+		this.renderer.dispose();
 	},
 
 	defaultLights: function () {
@@ -403,7 +566,7 @@ var defaultOptions = {
 module.exports = exports = Threebox;
 
 
-},{"./animation/AnimationManager.js":6,"./camera/CameraSync.js":7,"./objects/CSS2DRenderer.js":8,"./objects/Object3D.js":9,"./objects/line.js":11,"./objects/loadObj.js":12,"./objects/objects.js":18,"./objects/sphere.js":19,"./objects/tube.js":20,"./three.js":21,"./utils/constants.js":22,"./utils/material.js":23,"./utils/utils.js":24}],3:[function(require,module,exports){
+},{"./animation/AnimationManager.js":6,"./camera/CameraSync.js":7,"./objects/LabelRenderer.js":9,"./objects/Object3D.js":10,"./objects/line.js":12,"./objects/loadObj.js":13,"./objects/objects.js":19,"./objects/sphere.js":20,"./objects/tube.js":21,"./three.js":22,"./utils/constants.js":23,"./utils/material.js":24,"./utils/utils.js":25}],3:[function(require,module,exports){
 var THREE = require("../three.js");
 var Constants = require("./constants.js");
 var validate = require("./validate.js");
@@ -684,7 +847,7 @@ var utils = {
 }
 
 module.exports = exports = utils
-},{"../three.js":21,"./constants.js":4,"./validate.js":5}],4:[function(require,module,exports){
+},{"../three.js":22,"./constants.js":4,"./validate.js":5}],4:[function(require,module,exports){
 const WORLD_SIZE = 1024000;
 const MERCATOR_A = 6378137.0;
 
@@ -868,7 +1031,7 @@ AnimationManager.prototype = {
 		}
 
 		let _isPlaying = false;
-		//[jscastro] added property for wireframes state
+		//[jscastro] added property for isPlaying state
 		Object.defineProperty(obj, 'isPlaying', {
 			get() { return _isPlaying; },
 			set(value) {
@@ -1238,7 +1401,7 @@ const defaults = {
     }
 }
 module.exports = exports = AnimationManager;
-},{"../Threebox.js":2,"../three.js":21,"../utils/utils.js":24,"../utils/validate.js":25}],7:[function(require,module,exports){
+},{"../Threebox.js":2,"../three.js":22,"../utils/utils.js":25,"../utils/validate.js":26}],7:[function(require,module,exports){
 var THREE = require("../three.js");
 var utils = require("../utils/utils.js");
 var ThreeboxConstants = require("../utils/constants.js");
@@ -1367,13 +1530,12 @@ CameraSync.prototype = {
 
 module.exports = exports = CameraSync;
 
-},{"../three.js":21,"../utils/constants.js":22,"../utils/utils.js":24}],8:[function(require,module,exports){
+},{"../three.js":22,"../utils/constants.js":23,"../utils/utils.js":25}],8:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  */
 
 const THREE = require('../three.js');
-
 THREE.CSS2DObject = function (element) {
 
 	THREE.Object3D.call(this);
@@ -1381,14 +1543,20 @@ THREE.CSS2DObject = function (element) {
 	this.element = element;
 	this.element.style.position = 'absolute';
 
-	this.clone = function () {
+	this.alwaysVisible = false; //[jscastro] some labels must be always visible
 
-		return new CSS2DObject(this.element);
-
+	this.clone = function (recursive) {
+		if (this.element)
+			return new THREE.CSS2DObject(this.element);
+		else
+			return new THREE.CSS2DObject();
 	}
 
-	this.addEventListener('removed', function () {
+	this.dispose = function () {
+		this.remove();
+	}
 
+	this.remove = function () {
 		this.traverse(function (object) {
 
 			if (object.element instanceof Element && object.element.parentNode !== null) {
@@ -1398,6 +1566,10 @@ THREE.CSS2DObject = function (element) {
 			}
 
 		});
+	}
+	this.addEventListener('removed', function () {
+
+		this.remove();
 
 	});
 
@@ -1405,8 +1577,6 @@ THREE.CSS2DObject = function (element) {
 
 THREE.CSS2DObject.prototype = Object.create(THREE.Object3D.prototype);
 THREE.CSS2DObject.prototype.constructor = THREE.CSS2DObject;
-
-//
 
 THREE.CSS2DRenderer = function () {
 
@@ -1420,20 +1590,14 @@ THREE.CSS2DRenderer = function () {
 	var viewProjectionMatrix = new THREE.Matrix4();
 
 	var cache = {
-		objects: new WeakMap()
+		objects: new WeakMap(),
+		list: new Map()
 	};
-
+	this.cacheList = cache.list;
 	var domElement = document.createElement('div');
 	domElement.style.overflow = 'hidden';
 
 	this.domElement = domElement;
-
-	this.state = {
-		reset: function () {
-			//TODO: Implement a good state reset, check out what is made in WebGlRenderer
-			//domElement.innerHTML = '';
-		}
-	} 
 
 	this.getSize = function () {
 
@@ -1457,7 +1621,7 @@ THREE.CSS2DRenderer = function () {
 
 	};
 
-	var renderObject = function (object, scene, camera) {
+	this.renderObject = function (object, scene, camera) {
 
 		if (object instanceof THREE.CSS2DObject) {
 
@@ -1481,6 +1645,7 @@ THREE.CSS2DRenderer = function () {
 			};
 
 			cache.objects.set(object, objectData);
+			cache.list.set(object, object);
 
 			if (element.parentNode !== domElement) {
 
@@ -1494,7 +1659,7 @@ THREE.CSS2DRenderer = function () {
 
 		for (var i = 0, l = object.children.length; i < l; i++) {
 
-			renderObject(object.children[i], scene, camera);
+			this.renderObject(object.children[i], scene, camera);
 
 		}
 
@@ -1559,17 +1724,117 @@ THREE.CSS2DRenderer = function () {
 		viewMatrix.copy(camera.matrixWorldInverse);
 		viewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, viewMatrix);
 
-		renderObject(scene, scene, camera);
+		this.renderObject(scene, scene, camera);
 		zOrder(scene);
 
 	};
+
+	this.setVisibility = function (visible, scene, camera) {
+		var a = cache.objects;
+		cache.list.forEach(function (l) {
+			l.visible = visible;
+			this.renderObject(l, scene, camera);
+		});
+	};
+
+	//TODO: setZoomRange
 
 };
 
 module.exports = exports = { CSS2DRenderer: THREE.CSS2DRenderer, CSS2DObject: THREE.CSS2DObject };
 
 
-},{"../three.js":21}],9:[function(require,module,exports){
+},{"../three.js":22}],9:[function(require,module,exports){
+/**
+ * @author jscastro / https://github.com/jscastro76
+ */
+
+var THREE = require("./CSS2DRenderer.js");
+
+LabelRenderer = function (map) {
+
+	this.map = map;
+
+	this.minzoom = map.minzoom;
+
+	this.maxzoom = map.maxzoom;
+
+	var zoomEventHandler;
+	var onZoomRange = true;
+
+	this.renderer = new THREE.CSS2DRenderer();
+
+	this.renderer.setSize(this.map.getCanvas().clientWidth, this.map.getCanvas().clientHeight);
+	this.renderer.domElement.style.position = 'absolute';
+	this.renderer.domElement.id = 'labelCanvas'; //TODO: this value must come by parameter
+	this.renderer.domElement.style.top = 0;
+	this.map.getCanvasContainer().appendChild(this.renderer.domElement);
+
+	this.scene, this.camera;
+	this.setSize = function (width, height) {
+		this.renderer.setSize(width, height);
+	}
+
+	this.map.on('resize', function () {
+		this.renderer.setSize(this.map.getCanvas().clientWidth, this.map.getCanvas().clientHeight);
+	}.bind(this));
+
+	this.state = {
+		reset: function () {
+			//TODO: Implement a good state reset, check out what is made in WebGlRenderer
+		}
+	}
+
+	this.render = function (scene, camera) {
+		this.scene = scene;
+		this.camera = camera;
+		this.renderer.render(scene, camera);
+	}
+
+	this.setZoomRange = function (minzoom, maxzoom) {
+		//[jscastro] we only attach once if there are multiple custom layers
+		if (!zoomEventHandler) {
+			this.minzoom = minzoom;
+			this.maxzoom = maxzoom;
+			zoomEventHandler = this.mapZoom.bind(this);
+			this.map.on('zoom', zoomEventHandler);
+		}
+	};
+
+	this.mapZoom = function (e) {
+		if (this.map.getZoom() < this.minzoom || this.map.getZoom() > this.maxzoom) {
+			this.toggleLabels(false);
+		} else {
+			this.toggleLabels(true);
+		}
+	};
+
+	//[jscastro] method to toggle Layer visibility
+	this.toggleLabels = function (visible) {
+		if (onZoomRange != visible) {
+			// [jscastro] Render any label
+			this.setVisibility(visible, this.scene, this.camera, this.renderer);
+			onZoomRange = visible;
+		}
+	};
+
+	//[jscastro] method to set visibility
+	this.setVisibility = function (visible, scene, camera, renderer) {
+		var cache = this.renderer.cacheList;
+		cache.forEach(function (l) {
+			if (l.visible != visible) {
+				if ((visible && l.alwaysVisible) || !visible) {
+					l.visible = visible;
+					renderer.renderObject(l, scene, camera);
+				}
+			}
+		});
+	};
+
+}
+
+module.exports = exports = LabelRenderer;
+},{"./CSS2DRenderer.js":8}],10:[function(require,module,exports){
 var Objects = require('./objects.js');
 var utils = require("../utils/utils.js");
 
@@ -1586,7 +1851,7 @@ function Object3D(options) {
 
 
 module.exports = exports = Object3D;
-},{"../utils/utils.js":24,"./objects.js":18}],10:[function(require,module,exports){
+},{"../utils/utils.js":25,"./objects.js":19}],11:[function(require,module,exports){
 /** @license zlib.js 2012 - imaya [ https://github.com/imaya/zlib.js ] The MIT License */var mod = {}, l = void 0, aa = mod; function r(c, d) { var a = c.split("."), b = aa; !(a[0] in b) && b.execScript && b.execScript("var " + a[0]); for (var e; a.length && (e = a.shift());)!a.length && d !== l ? b[e] = d : b = b[e] ? b[e] : b[e] = {} }; var t = "undefined" !== typeof Uint8Array && "undefined" !== typeof Uint16Array && "undefined" !== typeof Uint32Array && "undefined" !== typeof DataView; function v(c) { var d = c.length, a = 0, b = Number.POSITIVE_INFINITY, e, f, g, h, k, m, n, p, s, x; for (p = 0; p < d; ++p)c[p] > a && (a = c[p]), c[p] < b && (b = c[p]); e = 1 << a; f = new (t ? Uint32Array : Array)(e); g = 1; h = 0; for (k = 2; g <= a;) { for (p = 0; p < d; ++p)if (c[p] === g) { m = 0; n = h; for (s = 0; s < g; ++s)m = m << 1 | n & 1, n >>= 1; x = g << 16 | p; for (s = m; s < e; s += k)f[s] = x; ++h } ++g; h <<= 1; k <<= 1 } return [f, a, b] }; function w(c, d) {
 this.g = []; this.h = 32768; this.d = this.f = this.a = this.l = 0; this.input = t ? new Uint8Array(c) : c; this.m = !1; this.i = y; this.r = !1; if (d || !(d = {})) d.index && (this.a = d.index), d.bufferSize && (this.h = d.bufferSize), d.bufferType && (this.i = d.bufferType), d.resize && (this.r = d.resize); switch (this.i) {
 	case A: this.b = 32768; this.c = new (t ? Uint8Array : Array)(32768 + this.h + 258); break; case y: this.b = 0; this.c = new (t ? Uint8Array : Array)(this.h); this.e = this.z; this.n = this.v; this.j = this.w; break; default: throw Error("invalid inflate mode");
@@ -1618,7 +1883,7 @@ var Zlib = mod.Zlib;
 
 module.exports = exports = Zlib;
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var THREE = require("../three.js");
 var utils = require("../utils/utils.js");
 var Objects = require('./objects.js');
@@ -2613,7 +2878,7 @@ THREE.Wireframe.prototype = Object.assign( Object.create( THREE.Mesh.prototype )
 
 } );
 
-},{"../three.js":21,"../utils/utils.js":24,"./objects.js":18}],12:[function(require,module,exports){
+},{"../three.js":22,"../utils/utils.js":25,"./objects.js":19}],13:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var Objects = require('./objects.js');
 const OBJLoader = require("./loaders/OBJLoader.js");
@@ -2699,7 +2964,7 @@ function loadObj(options, cb) {
 			var projScaleGroup = new THREE.Group();
 			projScaleGroup.add(obj)
 			var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, options);
-			userScaleGroup.loadedModel = obj;
+			userScaleGroup.model = obj;
 			//[jscastro] assign the animations to the userScaleGroup before enrolling it in AnimationsManager through _addMethods
 			userScaleGroup.animations = animations;
 
@@ -2784,7 +3049,7 @@ function loadObj(options, cb) {
 
 
 module.exports = exports = loadObj;
-},{"../utils/utils.js":24,"./loaders/ColladaLoader.js":13,"./loaders/FBXLoader.js":14,"./loaders/GLTFLoader.js":15,"./loaders/MTLLoader.js":16,"./loaders/OBJLoader.js":17,"./objects.js":18}],13:[function(require,module,exports){
+},{"../utils/utils.js":25,"./loaders/ColladaLoader.js":14,"./loaders/FBXLoader.js":15,"./loaders/GLTFLoader.js":16,"./loaders/MTLLoader.js":17,"./loaders/OBJLoader.js":18,"./objects.js":19}],14:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  * @author Mugen87 / https://github.com/Mugen87
@@ -6739,7 +7004,7 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 
 module.exports = exports = THREE.ColladaLoader;
 
-},{"../../three.js":21}],14:[function(require,module,exports){
+},{"../../three.js":22}],15:[function(require,module,exports){
 /**
  * @author Kyle-Larson https://github.com/Kyle-Larson
  * @author Takahiro https://github.com/takahirox
@@ -10857,7 +11122,7 @@ THREE.FBXLoader = (function () {
 
 module.exports = exports = THREE.FBXLoader;
 
-},{"../../three.js":21,"../Zlib.Inflate.js":10}],15:[function(require,module,exports){
+},{"../../three.js":22,"../Zlib.Inflate.js":11}],16:[function(require,module,exports){
 /**
  * @author Rich Tibbett / https://github.com/richtr
  * @author mrdoob / http://mrdoob.com/
@@ -14140,7 +14405,7 @@ THREE.GLTFLoader = (function () {
 })();
 
 module.exports = exports = THREE.GLTFLoader;
-},{"../../three.js":21}],16:[function(require,module,exports){
+},{"../../three.js":22}],17:[function(require,module,exports){
 /**
  * Loads a Wavefront .mtl file specifying materials
  *
@@ -14684,7 +14949,7 @@ MTLLoader.MaterialCreator.prototype = {
 };
 
 module.exports = exports = MTLLoader;
-},{"../../three.js":21}],17:[function(require,module,exports){
+},{"../../three.js":22}],18:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -15432,7 +15697,7 @@ OBJLoader.prototype = {
 };
 
 module.exports = exports = OBJLoader;
-},{"../../three.js":21}],18:[function(require,module,exports){
+},{"../../three.js":22}],19:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 const THREE = require('../three.js');
@@ -15477,11 +15742,11 @@ Objects.prototype = {
 
 	},
 
-	_addMethods: function (obj, static) {
+	_addMethods: function (obj, staticValues) {
 
 		var root = this;
 
-		if (static) {
+		if (staticValues) {
 
 		}
 
@@ -15512,6 +15777,9 @@ Objects.prototype = {
 
 				obj.coordinates = lnglat;
 				obj.set({ position: lnglat });
+				//Each time the object is positioned, set modelHeight property and project the floor
+				obj.modelHeight = obj.coordinates[2];
+				obj.setBoundingBoxShadowFloor();
 				return obj;
 
 			}
@@ -15630,6 +15898,14 @@ Objects.prototype = {
 				return boxGrid;
 			}
 
+			//[jscastro] added method to position the shadow box on the floor depending the object height
+			obj.setBoundingBoxShadowFloor = function () {
+				if (obj.boundingBox) {
+					obj.boundingBoxShadow.box.max.z = -obj.modelHeight;
+					obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
+				}
+			}
+
 			let _label;
 			//[jscastro] added property for wireframes state
 			Object.defineProperty(obj, 'label', {
@@ -15637,17 +15913,63 @@ Objects.prototype = {
 				set(value) {
 					_label = value;
 				}
-			})
+			});
 
-			//[jscastro] add label method 
+			let _tooltip;
+			//[jscastro] added property for simulated tooltip
+			Object.defineProperty(obj, 'tooltip', {
+				get() { return _tooltip; },
+				set(value) {
+					_tooltip = value;
+				}
+			});
+
+			//[jscastro] added property to redefine visible, including the label and tooltip
+			Object.defineProperty(obj, 'visibility', {
+				get() { return obj.visible; },
+				set(value) {
+					let _value = value;
+					if (value == 'visible' || value == true) {
+						_value = true;
+						if (obj.label) obj.label.visible = _value;
+					}
+					else if (value == 'none' || value == false) {
+						_value = false;
+						if (obj.label && obj.label.alwaysVisible) obj.label.visible = _value;
+						if (obj.tooltip) obj.tooltip.visible = _value;
+					}
+					else return;
+					if (obj.visible != _value) {
+						obj.visible = _value;
+
+						obj.model.traverse(function (c) {
+							if (c.type == "Mesh" || c.type == "SkinnedMesh") {
+								if (_value) {
+									c.layers.enable(0); //this makes the meshes visible for raycast
+								} else {
+									c.layers.disable(0); //this makes the meshes invisible for raycast
+								}
+							}
+							if (c.type == "LineSegments") {
+								c.layers.disableAll();
+							}
+						});
+					}
+				}
+			});
+
+			//[jscastro] add CSS2 label method 
 			obj.addLabel = function (HTMLElement, visible, bottomMargin) {
-				//we add it to the first children to get same boxing and position
-				//obj.children[0].add(obj.drawLabel(text, height));
-				obj.children[0].add(obj.drawLabelHTML(HTMLElement, obj.modelHeight, visible, bottomMargin));
+				if (HTMLElement) {
+					//we add it to the first children to get same boxing and position
+					//obj.children[0].add(obj.drawLabel(text, height));
+					obj.children[0].add(obj.drawLabelHTML(HTMLElement, obj.modelHeight, visible, bottomMargin));
+				}
 			}
 
 			//[jscastro] draw label method can be invoked separately
 			obj.drawLabelHTML = function (HTMLElement, height, visible, bottomMargin) {
+				let size = obj.getSize();
 				let div = document.createElement('div');
 				div.className += ' label3D';
 				// [jscastro] create a div [TODO] analize if must be moved
@@ -15660,12 +15982,27 @@ Objects.prototype = {
 				obj.label = new CSS2D.CSS2DObject(div);
 				let p = obj.userData.feature.properties;
 				let labelHeight = (p.label ? height / p.label : 0) + (height / 10); //if label correction adjust + 10%
-				let size = obj.getSize();
-				obj.label.position.set(-size.x / 2, -size.y / 2, size.z);//height + labelHeight);
+				obj.label.position.set(-size.x / 2, -size.y / 2, 0);//height + labelHeight);
 				obj.label.visible = visible;
 				obj.label.alwaysVisible = visible;
 
 				return obj.label;
+			}
+
+			//[jscastro] add label method 
+			obj.addTooltip = function (tooltipText) {
+				if (tooltipText) {
+					let span = document.createElement('span');
+					span.className = 'toolTip text-xs';
+					span.innerHTML = tooltipText;
+					let size = obj.getSize();
+
+					obj.tooltip = new CSS2D.CSS2DObject(span);
+					obj.tooltip.position.set(-size.x / 2, -size.y / 2, 0);
+					obj.tooltip.visible = false;
+					//we add it to the first children to get same boxing and position
+					obj.children[0].add(obj.tooltip);
+				}
 			}
 
 			let _wireframe = false;
@@ -15675,8 +16012,8 @@ Objects.prototype = {
 				set(value) {
 					if (_wireframe != value) {
 
-						obj.loadedModel.traverse(function (c) {
-							if (c.type == "Mesh" || c.type == "SkinnedMesh" || c.type == "LineSegments") {
+						obj.model.traverse(function (c) {
+							if (c.type == "Mesh" || c.type == "SkinnedMesh") {
 								let arrMaterial = [];
 								if (!Array.isArray(c.material)) {
 									arrMaterial.push(c.material);
@@ -15684,15 +16021,14 @@ Objects.prototype = {
 									arrMaterial = c.material;
 								}
 								arrMaterial.forEach(function (m) {
-									m.opacity = (value ? 0.1 : 1);
+									m.opacity = (value ? 0.5 : 1);
 									//m.transparent = value;
 									m.wireframe = value;
 								});
-								if (c.type == "LineSegments") {
-									c.layers.disableAll();
-								} else {
-									if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
-								};
+								if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
+							}
+							if (c.type == "LineSegments") {
+								c.layers.disableAll();
 							}
 						});
 						_wireframe = value;
@@ -15725,6 +16061,7 @@ Objects.prototype = {
 						}
 						if (obj.label && !obj.label.alwaysVisible) obj.label.visible = false;
 					}
+					if (obj.tooltip) obj.tooltip.visible = value;
 					//only fire the event if value is different
 					if (_selected != value) {
 						_selected = value;
@@ -15766,36 +16103,33 @@ Objects.prototype = {
 						// Dispatch new event ObjectOver
 						obj.dispatchEvent(new CustomEvent('ObjectMouseOut', { detail: obj, bubbles: true, cancelable: true }));
 					}
+					if (obj.tooltip) obj.tooltip.visible = value || obj.selected;
 					_over = value;
 				}
 			})
 
 			//[jscastro] get the object model Box3 in runtime
 			obj.box3 = function () {
-				//first box the object
-
+				//update Matrix and MatrixWorld to avoid issues with transformations not full applied
 				obj.updateMatrix();
 				obj.updateMatrixWorld(true, true);
-
-				let dup = obj.clone();
-				dup.loadedModel = obj.loadedModel;
-				//get the size of the loadedModel
-				let bounds = new THREE.Box3().setFromObject(dup.loadedModel);
-
+				//let's clone the object before manipulate it
+				let dup = obj.clone(true);
+				//clone also the model inside it's the one who keeps the real size
+				dup.model = obj.model.clone();
+				//get the size of the model because the object is translated and has boundingBoxShadow
+				let bounds = new THREE.Box3().setFromObject(dup.model);
 				//if the object has parent it's already in the added to world so it's scaled and it could be rotated
 				if (obj.parent) {
-					let m = new THREE.Matrix4();
+					//first, we return the object to it's original position of rotation, extract rotation and apply inversed
 					let rm = new THREE.Matrix4();
 					let rmi = new THREE.Matrix4();
-					obj.parent.matrixWorld.getInverse(m);
 					obj.matrix.extractRotation(rm);
 					rm.getInverse(rmi);
-					dup.matrix = m;
-					dup.updateMatrix();
 					dup.setRotationFromMatrix(rmi);
-					bounds = new THREE.Box3().setFromObject(dup);
+					//now the object inside will give us a NAABB Non-Axes Aligned Bounding Box 
+					bounds = new THREE.Box3().setFromObject(dup.model);
 				}
-
 				return bounds;
 			};
 
@@ -15831,7 +16165,7 @@ Objects.prototype = {
 
 		obj.add = function () {
 			tb.add(obj);
-			if (!static) obj.set({ position: obj.coordinates });
+			if (!staticValues) obj.set({ position: obj.coordinates });
 			return obj;
 		}
 
@@ -15854,7 +16188,9 @@ Objects.prototype = {
 		var geoGroup = new THREE.Group();
 		geoGroup.userData = options || {};
 		geoGroup.userData.isGeoGroup = true;
-		geoGroup.userData.feature.properties.uuid = geoGroup.uuid;
+		if (geoGroup.userData.feature) {
+			geoGroup.userData.feature.properties.uuid = geoGroup.uuid;
+		}
 		var isArrayOfObjects = obj.length;
 
 		if (isArrayOfObjects) for (o of obj) geoGroup.add(o)
@@ -15931,7 +16267,7 @@ Objects.prototype = {
 }
 
 module.exports = exports = Objects;
-},{"../animation/AnimationManager.js":6,"../three.js":21,"../utils/material.js":23,"../utils/utils.js":24,"./CSS2DRenderer.js":8}],19:[function(require,module,exports){
+},{"../animation/AnimationManager.js":6,"../three.js":22,"../utils/material.js":24,"../utils/utils.js":25,"./CSS2DRenderer.js":8}],20:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 var Objects = require('./objects.js');
@@ -15950,7 +16286,7 @@ function Sphere(obj){
 
 
 module.exports = exports = Sphere;
-},{"../utils/material.js":23,"../utils/utils.js":24,"./objects.js":18}],20:[function(require,module,exports){
+},{"../utils/material.js":24,"../utils/utils.js":25,"./objects.js":19}],21:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 var Objects = require('./objects.js');
@@ -16151,7 +16487,7 @@ tube.prototype = {
 module.exports = exports = tube;
 
 
-},{"../three.js":21,"../utils/material.js":23,"../utils/utils.js":24,"./objects.js":18}],21:[function(require,module,exports){
+},{"../three.js":22,"../utils/material.js":24,"../utils/utils.js":25,"./objects.js":19}],22:[function(require,module,exports){
 // threejs.org/license
 (function (k, ua) { "object" === typeof exports && "undefined" !== typeof module ? ua(exports) : "function" === typeof define && define.amd ? define(["exports"], ua) : (k = k || self, ua(k.THREE = {})) })(this, function (k) {
 	function ua() { } function u(a, b) { this.x = a || 0; this.y = b || 0 } function xa() { this.elements = [1, 0, 0, 0, 1, 0, 0, 0, 1]; 0 < arguments.length && console.error("THREE.Matrix3: the constructor no longer reads arguments. use .set() instead.") } function V(a, b, c, d, e, f, g, h, l, m) {
@@ -17232,209 +17568,186 @@ module.exports = exports = tube;
 				b, c) { if (a <= b) return 0; if (a >= c) return 1; a = (a - b) / (c - b); return a * a * (3 - 2 * a) }, smootherstep: function (a, b, c) { if (a <= b) return 0; if (a >= c) return 1; a = (a - b) / (c - b); return a * a * a * (a * (6 * a - 15) + 10) }, randInt: function (a, b) { return a + Math.floor(Math.random() * (b - a + 1)) }, randFloat: function (a, b) { return a + Math.random() * (b - a) }, randFloatSpread: function (a) { return a * (.5 - Math.random()) }, degToRad: function (a) { return a * L.DEG2RAD }, radToDeg: function (a) { return a * L.RAD2DEG }, isPowerOfTwo: function (a) { return 0 === (a & a - 1) && 0 !== a }, ceilPowerOfTwo: function (a) {
 					return Math.pow(2,
 						Math.ceil(Math.log(a) / Math.LN2))
-				}, floorPowerOfTwo: function (a) { return Math.pow(2, Math.floor(Math.log(a) / Math.LN2)) }, setQuaternionFromProperEuler: function (a, b, c, d, e) { var f = Math.cos, g = Math.sin, h = f(c / 2); c = g(c / 2); var l = f((b + d) / 2), m = g((b + d) / 2), k = f((b - d) / 2), p = g((b - d) / 2); f = f((d - b) / 2); b = g((d - b) / 2); "XYX" === e ? a.set(h * m, c * k, c * p, h * l) : "YZY" === e ? a.set(c * p, h * m, c * k, h * l) : "ZXZ" === e ? a.set(c * k, c * p, h * m, h * l) : "XZX" === e ? a.set(h * m, c * b, c * f, h * l) : "YXY" === e ? a.set(c * f, h * m, c * b, h * l) : "ZYZ" === e ? a.set(c * b, c * f, h * m, h * l) : console.warn("THREE.MathUtils: .setQuaternionFromProperEuler() encountered an unknown order.") }
-		};
-	Object.defineProperties(u.prototype, { width: { get: function () { return this.x }, set: function (a) { this.x = a } }, height: { get: function () { return this.y }, set: function (a) { this.y = a } } }); Object.assign(u.prototype, {
-		isVector2: !0, set: function (a, b) { this.x = a; this.y = b; return this }, setScalar: function (a) { this.y = this.x = a; return this }, setX: function (a) { this.x = a; return this }, setY: function (a) { this.y = a; return this }, setComponent: function (a, b) {
-			switch (a) {
-				case 0: this.x = b; break; case 1: this.y = b; break; default: throw Error("index is out of range: " +
-					a);
-			}return this
-		}, getComponent: function (a) { switch (a) { case 0: return this.x; case 1: return this.y; default: throw Error("index is out of range: " + a); } }, clone: function () { return new this.constructor(this.x, this.y) }, copy: function (a) { this.x = a.x; this.y = a.y; return this }, add: function (a, b) { if (void 0 !== b) return console.warn("THREE.Vector2: .add() now only accepts one argument. Use .addVectors( a, b ) instead."), this.addVectors(a, b); this.x += a.x; this.y += a.y; return this }, addScalar: function (a) { this.x += a; this.y += a; return this },
-		addVectors: function (a, b) { this.x = a.x + b.x; this.y = a.y + b.y; return this }, addScaledVector: function (a, b) { this.x += a.x * b; this.y += a.y * b; return this }, sub: function (a, b) { if (void 0 !== b) return console.warn("THREE.Vector2: .sub() now only accepts one argument. Use .subVectors( a, b ) instead."), this.subVectors(a, b); this.x -= a.x; this.y -= a.y; return this }, subScalar: function (a) { this.x -= a; this.y -= a; return this }, subVectors: function (a, b) { this.x = a.x - b.x; this.y = a.y - b.y; return this }, multiply: function (a) {
-		this.x *= a.x; this.y *=
-			a.y; return this
-		}, multiplyScalar: function (a) { this.x *= a; this.y *= a; return this }, divide: function (a) { this.x /= a.x; this.y /= a.y; return this }, divideScalar: function (a) { return this.multiplyScalar(1 / a) }, applyMatrix3: function (a) { var b = this.x, c = this.y; a = a.elements; this.x = a[0] * b + a[3] * c + a[6]; this.y = a[1] * b + a[4] * c + a[7]; return this }, min: function (a) { this.x = Math.min(this.x, a.x); this.y = Math.min(this.y, a.y); return this }, max: function (a) { this.x = Math.max(this.x, a.x); this.y = Math.max(this.y, a.y); return this }, clamp: function (a,
-			b) { this.x = Math.max(a.x, Math.min(b.x, this.x)); this.y = Math.max(a.y, Math.min(b.y, this.y)); return this }, clampScalar: function (a, b) { this.x = Math.max(a, Math.min(b, this.x)); this.y = Math.max(a, Math.min(b, this.y)); return this }, clampLength: function (a, b) { var c = this.length(); return this.divideScalar(c || 1).multiplyScalar(Math.max(a, Math.min(b, c))) }, floor: function () { this.x = Math.floor(this.x); this.y = Math.floor(this.y); return this }, ceil: function () { this.x = Math.ceil(this.x); this.y = Math.ceil(this.y); return this }, round: function () {
-			this.x =
-				Math.round(this.x); this.y = Math.round(this.y); return this
-			}, roundToZero: function () { this.x = 0 > this.x ? Math.ceil(this.x) : Math.floor(this.x); this.y = 0 > this.y ? Math.ceil(this.y) : Math.floor(this.y); return this }, negate: function () { this.x = -this.x; this.y = -this.y; return this }, dot: function (a) { return this.x * a.x + this.y * a.y }, cross: function (a) { return this.x * a.y - this.y * a.x }, lengthSq: function () { return this.x * this.x + this.y * this.y }, length: function () { return Math.sqrt(this.x * this.x + this.y * this.y) }, manhattanLength: function () {
-				return Math.abs(this.x) +
-					Math.abs(this.y)
-			}, normalize: function () { return this.divideScalar(this.length() || 1) }, angle: function () { return Math.atan2(-this.y, -this.x) + Math.PI }, distanceTo: function (a) { return Math.sqrt(this.distanceToSquared(a)) }, distanceToSquared: function (a) { var b = this.x - a.x; a = this.y - a.y; return b * b + a * a }, manhattanDistanceTo: function (a) { return Math.abs(this.x - a.x) + Math.abs(this.y - a.y) }, setLength: function (a) { return this.normalize().multiplyScalar(a) }, lerp: function (a, b) { this.x += (a.x - this.x) * b; this.y += (a.y - this.y) * b; return this },
-		lerpVectors: function (a, b, c) { return this.subVectors(b, a).multiplyScalar(c).add(a) }, equals: function (a) { return a.x === this.x && a.y === this.y }, fromArray: function (a, b) { void 0 === b && (b = 0); this.x = a[b]; this.y = a[b + 1]; return this }, toArray: function (a, b) { void 0 === a && (a = []); void 0 === b && (b = 0); a[b] = this.x; a[b + 1] = this.y; return a }, fromBufferAttribute: function (a, b, c) { void 0 !== c && console.warn("THREE.Vector2: offset has been removed from .fromBufferAttribute()."); this.x = a.getX(b); this.y = a.getY(b); return this }, rotateAround: function (a,
-			b) { var c = Math.cos(b); b = Math.sin(b); var d = this.x - a.x, e = this.y - a.y; this.x = d * c - e * b + a.x; this.y = d * b + e * c + a.y; return this }, random: function () { this.x = Math.random(); this.y = Math.random(); return this }
-	}); Object.assign(xa.prototype, {
-		isMatrix3: !0, set: function (a, b, c, d, e, f, g, h, l) { var m = this.elements; m[0] = a; m[1] = d; m[2] = g; m[3] = b; m[4] = e; m[5] = h; m[6] = c; m[7] = f; m[8] = l; return this }, identity: function () { this.set(1, 0, 0, 0, 1, 0, 0, 0, 1); return this }, clone: function () { return (new this.constructor).fromArray(this.elements) }, copy: function (a) {
-			var b =
-				this.elements; a = a.elements; b[0] = a[0]; b[1] = a[1]; b[2] = a[2]; b[3] = a[3]; b[4] = a[4]; b[5] = a[5]; b[6] = a[6]; b[7] = a[7]; b[8] = a[8]; return this
-		}, extractBasis: function (a, b, c) { a.setFromMatrix3Column(this, 0); b.setFromMatrix3Column(this, 1); c.setFromMatrix3Column(this, 2); return this }, setFromMatrix4: function (a) { a = a.elements; this.set(a[0], a[4], a[8], a[1], a[5], a[9], a[2], a[6], a[10]); return this }, multiply: function (a) { return this.multiplyMatrices(this, a) }, premultiply: function (a) { return this.multiplyMatrices(a, this) }, multiplyMatrices: function (a,
-			b) { var c = a.elements, d = b.elements; b = this.elements; a = c[0]; var e = c[3], f = c[6], g = c[1], h = c[4], l = c[7], m = c[2], k = c[5]; c = c[8]; var p = d[0], n = d[3], r = d[6], q = d[1], v = d[4], E = d[7], w = d[2], u = d[5]; d = d[8]; b[0] = a * p + e * q + f * w; b[3] = a * n + e * v + f * u; b[6] = a * r + e * E + f * d; b[1] = g * p + h * q + l * w; b[4] = g * n + h * v + l * u; b[7] = g * r + h * E + l * d; b[2] = m * p + k * q + c * w; b[5] = m * n + k * v + c * u; b[8] = m * r + k * E + c * d; return this }, multiplyScalar: function (a) { var b = this.elements; b[0] *= a; b[3] *= a; b[6] *= a; b[1] *= a; b[4] *= a; b[7] *= a; b[2] *= a; b[5] *= a; b[8] *= a; return this }, determinant: function () {
-				var a =
-					this.elements, b = a[0], c = a[1], d = a[2], e = a[3], f = a[4], g = a[5], h = a[6], l = a[7]; a = a[8]; return b * f * a - b * g * l - c * e * a + c * g * h + d * e * l - d * f * h
-			}, getInverse: function (a, b) {
-			void 0 !== b && console.warn("THREE.Matrix3: .getInverse() can no longer be configured to throw on degenerate."); var c = a.elements; a = this.elements; b = c[0]; var d = c[1], e = c[2], f = c[3], g = c[4], h = c[5], l = c[6], m = c[7]; c = c[8]; var k = c * g - h * m, p = h * l - c * f, n = m * f - g * l, r = b * k + d * p + e * n; if (0 === r) return this.set(0, 0, 0, 0, 0, 0, 0, 0, 0); r = 1 / r; a[0] = k * r; a[1] = (e * m - c * d) * r; a[2] = (h * d - e * g) * r; a[3] =
-				p * r; a[4] = (c * b - e * l) * r; a[5] = (e * f - h * b) * r; a[6] = n * r; a[7] = (d * l - m * b) * r; a[8] = (g * b - d * f) * r; return this
-			}, transpose: function () { var a = this.elements; var b = a[1]; a[1] = a[3]; a[3] = b; b = a[2]; a[2] = a[6]; a[6] = b; b = a[5]; a[5] = a[7]; a[7] = b; return this }, getNormalMatrix: function (a) { return this.setFromMatrix4(a).getInverse(this).transpose() }, transposeIntoArray: function (a) { var b = this.elements; a[0] = b[0]; a[1] = b[3]; a[2] = b[6]; a[3] = b[1]; a[4] = b[4]; a[5] = b[7]; a[6] = b[2]; a[7] = b[5]; a[8] = b[8]; return this }, setUvTransform: function (a, b, c, d, e, f,
-				g) { var h = Math.cos(e); e = Math.sin(e); this.set(c * h, c * e, -c * (h * f + e * g) + f + a, -d * e, d * h, -d * (-e * f + h * g) + g + b, 0, 0, 1) }, scale: function (a, b) { var c = this.elements; c[0] *= a; c[3] *= a; c[6] *= a; c[1] *= b; c[4] *= b; c[7] *= b; return this }, rotate: function (a) { var b = Math.cos(a); a = Math.sin(a); var c = this.elements, d = c[0], e = c[3], f = c[6], g = c[1], h = c[4], l = c[7]; c[0] = b * d + a * g; c[3] = b * e + a * h; c[6] = b * f + a * l; c[1] = -a * d + b * g; c[4] = -a * e + b * h; c[7] = -a * f + b * l; return this }, translate: function (a, b) {
-					var c = this.elements; c[0] += a * c[2]; c[3] += a * c[5]; c[6] += a * c[8]; c[1] +=
-						b * c[2]; c[4] += b * c[5]; c[7] += b * c[8]; return this
-				}, equals: function (a) { var b = this.elements; a = a.elements; for (var c = 0; 9 > c; c++)if (b[c] !== a[c]) return !1; return !0 }, fromArray: function (a, b) { void 0 === b && (b = 0); for (var c = 0; 9 > c; c++)this.elements[c] = a[c + b]; return this }, toArray: function (a, b) { void 0 === a && (a = []); void 0 === b && (b = 0); var c = this.elements; a[b] = c[0]; a[b + 1] = c[1]; a[b + 2] = c[2]; a[b + 3] = c[3]; a[b + 4] = c[4]; a[b + 5] = c[5]; a[b + 6] = c[6]; a[b + 7] = c[7]; a[b + 8] = c[8]; return a }
-	}); var kd, Lb = {
-		getDataURL: function (a) {
-			if ("undefined" == typeof HTMLCanvasElement) return a.src;
-			if (!(a instanceof HTMLCanvasElement)) { void 0 === kd && (kd = document.createElementNS("http://www.w3.org/1999/xhtml", "canvas")); kd.width = a.width; kd.height = a.height; var b = kd.getContext("2d"); a instanceof ImageData ? b.putImageData(a, 0, 0) : b.drawImage(a, 0, 0, a.width, a.height); a = kd } return 2048 < a.width || 2048 < a.height ? a.toDataURL("image/jpeg", .6) : a.toDataURL("image/png")
-		}
-	}, hj = 0; V.DEFAULT_IMAGE = void 0; V.DEFAULT_MAPPING = 300; V.prototype = Object.assign(Object.create(ua.prototype), {
-		constructor: V, isTexture: !0, updateMatrix: function () {
-			this.matrix.setUvTransform(this.offset.x,
-				this.offset.y, this.repeat.x, this.repeat.y, this.rotation, this.center.x, this.center.y)
-		}, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) {
-		this.name = a.name; this.image = a.image; this.mipmaps = a.mipmaps.slice(0); this.mapping = a.mapping; this.wrapS = a.wrapS; this.wrapT = a.wrapT; this.magFilter = a.magFilter; this.minFilter = a.minFilter; this.anisotropy = a.anisotropy; this.format = a.format; this.internalFormat = a.internalFormat; this.type = a.type; this.offset.copy(a.offset); this.repeat.copy(a.repeat);
-			this.center.copy(a.center); this.rotation = a.rotation; this.matrixAutoUpdate = a.matrixAutoUpdate; this.matrix.copy(a.matrix); this.generateMipmaps = a.generateMipmaps; this.premultiplyAlpha = a.premultiplyAlpha; this.flipY = a.flipY; this.unpackAlignment = a.unpackAlignment; this.encoding = a.encoding; return this
-		}, toJSON: function (a) {
-			var b = void 0 === a || "string" === typeof a; if (!b && void 0 !== a.textures[this.uuid]) return a.textures[this.uuid]; var c = {
-				metadata: { version: 4.5, type: "Texture", generator: "Texture.toJSON" }, uuid: this.uuid,
-				name: this.name, mapping: this.mapping, repeat: [this.repeat.x, this.repeat.y], offset: [this.offset.x, this.offset.y], center: [this.center.x, this.center.y], rotation: this.rotation, wrap: [this.wrapS, this.wrapT], format: this.format, type: this.type, encoding: this.encoding, minFilter: this.minFilter, magFilter: this.magFilter, anisotropy: this.anisotropy, flipY: this.flipY, premultiplyAlpha: this.premultiplyAlpha, unpackAlignment: this.unpackAlignment
-			}; if (void 0 !== this.image) {
-				var d = this.image; void 0 === d.uuid && (d.uuid = L.generateUUID());
-				if (!b && void 0 === a.images[d.uuid]) { if (Array.isArray(d)) { var e = []; for (var f = 0, g = d.length; f < g; f++)e.push(Lb.getDataURL(d[f])) } else e = Lb.getDataURL(d); a.images[d.uuid] = { uuid: d.uuid, url: e } } c.image = d.uuid
-			} b || (a.textures[this.uuid] = c); return c
-		}, dispose: function () { this.dispatchEvent({ type: "dispose" }) }, transformUv: function (a) {
-			if (300 !== this.mapping) return a; a.applyMatrix3(this.matrix); if (0 > a.x || 1 < a.x) switch (this.wrapS) {
-				case 1E3: a.x -= Math.floor(a.x); break; case 1001: a.x = 0 > a.x ? 0 : 1; break; case 1002: a.x = 1 === Math.abs(Math.floor(a.x) %
-					2) ? Math.ceil(a.x) - a.x : a.x - Math.floor(a.x)
-			}if (0 > a.y || 1 < a.y) switch (this.wrapT) { case 1E3: a.y -= Math.floor(a.y); break; case 1001: a.y = 0 > a.y ? 0 : 1; break; case 1002: a.y = 1 === Math.abs(Math.floor(a.y) % 2) ? Math.ceil(a.y) - a.y : a.y - Math.floor(a.y) }this.flipY && (a.y = 1 - a.y); return a
-		}
-	}); Object.defineProperty(V.prototype, "needsUpdate", { set: function (a) { !0 === a && this.version++ } }); Object.defineProperties(ja.prototype, {
-		width: { get: function () { return this.z }, set: function (a) { this.z = a } }, height: {
-			get: function () { return this.w }, set: function (a) {
-			this.w =
-				a
-			}
-		}
-	}); Object.assign(ja.prototype, {
-		isVector4: !0, set: function (a, b, c, d) { this.x = a; this.y = b; this.z = c; this.w = d; return this }, setScalar: function (a) { this.w = this.z = this.y = this.x = a; return this }, setX: function (a) { this.x = a; return this }, setY: function (a) { this.y = a; return this }, setZ: function (a) { this.z = a; return this }, setW: function (a) { this.w = a; return this }, setComponent: function (a, b) {
-			switch (a) {
-				case 0: this.x = b; break; case 1: this.y = b; break; case 2: this.z = b; break; case 3: this.w = b; break; default: throw Error("index is out of range: " +
-					a);
-			}return this
-		}, getComponent: function (a) { switch (a) { case 0: return this.x; case 1: return this.y; case 2: return this.z; case 3: return this.w; default: throw Error("index is out of range: " + a); } }, clone: function () { return new this.constructor(this.x, this.y, this.z, this.w) }, copy: function (a) { this.x = a.x; this.y = a.y; this.z = a.z; this.w = void 0 !== a.w ? a.w : 1; return this }, add: function (a, b) {
-			if (void 0 !== b) return console.warn("THREE.Vector4: .add() now only accepts one argument. Use .addVectors( a, b ) instead."), this.addVectors(a,
-				b); this.x += a.x; this.y += a.y; this.z += a.z; this.w += a.w; return this
-		}, addScalar: function (a) { this.x += a; this.y += a; this.z += a; this.w += a; return this }, addVectors: function (a, b) { this.x = a.x + b.x; this.y = a.y + b.y; this.z = a.z + b.z; this.w = a.w + b.w; return this }, addScaledVector: function (a, b) { this.x += a.x * b; this.y += a.y * b; this.z += a.z * b; this.w += a.w * b; return this }, sub: function (a, b) {
-			if (void 0 !== b) return console.warn("THREE.Vector4: .sub() now only accepts one argument. Use .subVectors( a, b ) instead."), this.subVectors(a, b); this.x -=
-				a.x; this.y -= a.y; this.z -= a.z; this.w -= a.w; return this
-		}, subScalar: function (a) { this.x -= a; this.y -= a; this.z -= a; this.w -= a; return this }, subVectors: function (a, b) { this.x = a.x - b.x; this.y = a.y - b.y; this.z = a.z - b.z; this.w = a.w - b.w; return this }, multiplyScalar: function (a) { this.x *= a; this.y *= a; this.z *= a; this.w *= a; return this }, applyMatrix4: function (a) {
-			var b = this.x, c = this.y, d = this.z, e = this.w; a = a.elements; this.x = a[0] * b + a[4] * c + a[8] * d + a[12] * e; this.y = a[1] * b + a[5] * c + a[9] * d + a[13] * e; this.z = a[2] * b + a[6] * c + a[10] * d + a[14] * e; this.w = a[3] *
-				b + a[7] * c + a[11] * d + a[15] * e; return this
-		}, divideScalar: function (a) { return this.multiplyScalar(1 / a) }, setAxisAngleFromQuaternion: function (a) { this.w = 2 * Math.acos(a.w); var b = Math.sqrt(1 - a.w * a.w); 1E-4 > b ? (this.x = 1, this.z = this.y = 0) : (this.x = a.x / b, this.y = a.y / b, this.z = a.z / b); return this }, setAxisAngleFromRotationMatrix: function (a) {
-			a = a.elements; var b = a[0]; var c = a[4]; var d = a[8], e = a[1], f = a[5], g = a[9]; var h = a[2]; var l = a[6]; var m = a[10]; if (.01 > Math.abs(c - e) && .01 > Math.abs(d - h) && .01 > Math.abs(g - l)) {
-				if (.1 > Math.abs(c + e) && .1 >
-					Math.abs(d + h) && .1 > Math.abs(g + l) && .1 > Math.abs(b + f + m - 3)) return this.set(1, 0, 0, 0), this; a = Math.PI; b = (b + 1) / 2; f = (f + 1) / 2; m = (m + 1) / 2; c = (c + e) / 4; d = (d + h) / 4; g = (g + l) / 4; b > f && b > m ? .01 > b ? (l = 0, c = h = .707106781) : (l = Math.sqrt(b), h = c / l, c = d / l) : f > m ? .01 > f ? (l = .707106781, h = 0, c = .707106781) : (h = Math.sqrt(f), l = c / h, c = g / h) : .01 > m ? (h = l = .707106781, c = 0) : (c = Math.sqrt(m), l = d / c, h = g / c); this.set(l, h, c, a); return this
-			} a = Math.sqrt((l - g) * (l - g) + (d - h) * (d - h) + (e - c) * (e - c)); .001 > Math.abs(a) && (a = 1); this.x = (l - g) / a; this.y = (d - h) / a; this.z = (e - c) / a; this.w =
-				Math.acos((b + f + m - 1) / 2); return this
-		}, min: function (a) { this.x = Math.min(this.x, a.x); this.y = Math.min(this.y, a.y); this.z = Math.min(this.z, a.z); this.w = Math.min(this.w, a.w); return this }, max: function (a) { this.x = Math.max(this.x, a.x); this.y = Math.max(this.y, a.y); this.z = Math.max(this.z, a.z); this.w = Math.max(this.w, a.w); return this }, clamp: function (a, b) {
-		this.x = Math.max(a.x, Math.min(b.x, this.x)); this.y = Math.max(a.y, Math.min(b.y, this.y)); this.z = Math.max(a.z, Math.min(b.z, this.z)); this.w = Math.max(a.w, Math.min(b.w, this.w));
-			return this
-		}, clampScalar: function (a, b) { this.x = Math.max(a, Math.min(b, this.x)); this.y = Math.max(a, Math.min(b, this.y)); this.z = Math.max(a, Math.min(b, this.z)); this.w = Math.max(a, Math.min(b, this.w)); return this }, clampLength: function (a, b) { var c = this.length(); return this.divideScalar(c || 1).multiplyScalar(Math.max(a, Math.min(b, c))) }, floor: function () { this.x = Math.floor(this.x); this.y = Math.floor(this.y); this.z = Math.floor(this.z); this.w = Math.floor(this.w); return this }, ceil: function () {
-		this.x = Math.ceil(this.x); this.y =
-			Math.ceil(this.y); this.z = Math.ceil(this.z); this.w = Math.ceil(this.w); return this
-		}, round: function () { this.x = Math.round(this.x); this.y = Math.round(this.y); this.z = Math.round(this.z); this.w = Math.round(this.w); return this }, roundToZero: function () { this.x = 0 > this.x ? Math.ceil(this.x) : Math.floor(this.x); this.y = 0 > this.y ? Math.ceil(this.y) : Math.floor(this.y); this.z = 0 > this.z ? Math.ceil(this.z) : Math.floor(this.z); this.w = 0 > this.w ? Math.ceil(this.w) : Math.floor(this.w); return this }, negate: function () {
-		this.x = -this.x; this.y =
-			-this.y; this.z = -this.z; this.w = -this.w; return this
-		}, dot: function (a) { return this.x * a.x + this.y * a.y + this.z * a.z + this.w * a.w }, lengthSq: function () { return this.x * this.x + this.y * this.y + this.z * this.z + this.w * this.w }, length: function () { return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z + this.w * this.w) }, manhattanLength: function () { return Math.abs(this.x) + Math.abs(this.y) + Math.abs(this.z) + Math.abs(this.w) }, normalize: function () { return this.divideScalar(this.length() || 1) }, setLength: function (a) { return this.normalize().multiplyScalar(a) },
-		lerp: function (a, b) { this.x += (a.x - this.x) * b; this.y += (a.y - this.y) * b; this.z += (a.z - this.z) * b; this.w += (a.w - this.w) * b; return this }, lerpVectors: function (a, b, c) { return this.subVectors(b, a).multiplyScalar(c).add(a) }, equals: function (a) { return a.x === this.x && a.y === this.y && a.z === this.z && a.w === this.w }, fromArray: function (a, b) { void 0 === b && (b = 0); this.x = a[b]; this.y = a[b + 1]; this.z = a[b + 2]; this.w = a[b + 3]; return this }, toArray: function (a, b) {
-		void 0 === a && (a = []); void 0 === b && (b = 0); a[b] = this.x; a[b + 1] = this.y; a[b + 2] = this.z; a[b + 3] =
-			this.w; return a
-		}, fromBufferAttribute: function (a, b, c) { void 0 !== c && console.warn("THREE.Vector4: offset has been removed from .fromBufferAttribute()."); this.x = a.getX(b); this.y = a.getY(b); this.z = a.getZ(b); this.w = a.getW(b); return this }, random: function () { this.x = Math.random(); this.y = Math.random(); this.z = Math.random(); this.w = Math.random(); return this }
-	}); za.prototype = Object.assign(Object.create(ua.prototype), {
-		constructor: za, isWebGLRenderTarget: !0, setSize: function (a, b) {
-			if (this.width !== a || this.height !== b) this.width =
-				a, this.height = b, this.texture.image.width = a, this.texture.image.height = b, this.dispose(); this.viewport.set(0, 0, a, b); this.scissor.set(0, 0, a, b)
-		}, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) { this.width = a.width; this.height = a.height; this.viewport.copy(a.viewport); this.texture = a.texture.clone(); this.depthBuffer = a.depthBuffer; this.stencilBuffer = a.stencilBuffer; this.depthTexture = a.depthTexture; return this }, dispose: function () { this.dispatchEvent({ type: "dispose" }) }
-	}); Xf.prototype =
-		Object.assign(Object.create(za.prototype), { constructor: Xf, isWebGLMultisampleRenderTarget: !0, copy: function (a) { za.prototype.copy.call(this, a); this.samples = a.samples; return this } }); Object.assign(ma, {
-			slerp: function (a, b, c, d) { return c.copy(a).slerp(b, d) }, slerpFlat: function (a, b, c, d, e, f, g) {
-				var h = c[d + 0], l = c[d + 1], m = c[d + 2]; c = c[d + 3]; d = e[f + 0]; var k = e[f + 1], p = e[f + 2]; e = e[f + 3]; if (c !== e || h !== d || l !== k || m !== p) {
-					f = 1 - g; var n = h * d + l * k + m * p + c * e, r = 0 <= n ? 1 : -1, q = 1 - n * n; q > Number.EPSILON && (q = Math.sqrt(q), n = Math.atan2(q, n * r), f = Math.sin(f *
-						n) / q, g = Math.sin(g * n) / q); r *= g; h = h * f + d * r; l = l * f + k * r; m = m * f + p * r; c = c * f + e * r; f === 1 - g && (g = 1 / Math.sqrt(h * h + l * l + m * m + c * c), h *= g, l *= g, m *= g, c *= g)
-				} a[b] = h; a[b + 1] = l; a[b + 2] = m; a[b + 3] = c
-			}, multiplyQuaternionsFlat: function (a, b, c, d, e, f) { var g = c[d], h = c[d + 1], l = c[d + 2]; c = c[d + 3]; d = e[f]; var m = e[f + 1], k = e[f + 2]; e = e[f + 3]; a[b] = g * e + c * d + h * k - l * m; a[b + 1] = h * e + c * m + l * d - g * k; a[b + 2] = l * e + c * k + g * m - h * d; a[b + 3] = c * e - g * d - h * m - l * k; return a }
-		}); Object.defineProperties(ma.prototype, {
-			x: { get: function () { return this._x }, set: function (a) { this._x = a; this._onChangeCallback() } },
-			y: { get: function () { return this._y }, set: function (a) { this._y = a; this._onChangeCallback() } }, z: { get: function () { return this._z }, set: function (a) { this._z = a; this._onChangeCallback() } }, w: { get: function () { return this._w }, set: function (a) { this._w = a; this._onChangeCallback() } }
-		}); Object.assign(ma.prototype, {
-			isQuaternion: !0, set: function (a, b, c, d) { this._x = a; this._y = b; this._z = c; this._w = d; this._onChangeCallback(); return this }, clone: function () { return new this.constructor(this._x, this._y, this._z, this._w) }, copy: function (a) {
-			this._x =
-				a.x; this._y = a.y; this._z = a.z; this._w = a.w; this._onChangeCallback(); return this
-			}, setFromEuler: function (a, b) {
-				if (!a || !a.isEuler) throw Error("THREE.Quaternion: .setFromEuler() now expects an Euler rotation rather than a Vector3 and order."); var c = a._x, d = a._y, e = a._z; a = a.order; var f = Math.cos, g = Math.sin, h = f(c / 2), l = f(d / 2); f = f(e / 2); c = g(c / 2); d = g(d / 2); e = g(e / 2); "XYZ" === a ? (this._x = c * l * f + h * d * e, this._y = h * d * f - c * l * e, this._z = h * l * e + c * d * f, this._w = h * l * f - c * d * e) : "YXZ" === a ? (this._x = c * l * f + h * d * e, this._y = h * d * f - c * l * e, this._z =
-					h * l * e - c * d * f, this._w = h * l * f + c * d * e) : "ZXY" === a ? (this._x = c * l * f - h * d * e, this._y = h * d * f + c * l * e, this._z = h * l * e + c * d * f, this._w = h * l * f - c * d * e) : "ZYX" === a ? (this._x = c * l * f - h * d * e, this._y = h * d * f + c * l * e, this._z = h * l * e - c * d * f, this._w = h * l * f + c * d * e) : "YZX" === a ? (this._x = c * l * f + h * d * e, this._y = h * d * f + c * l * e, this._z = h * l * e - c * d * f, this._w = h * l * f - c * d * e) : "XZY" === a && (this._x = c * l * f - h * d * e, this._y = h * d * f - c * l * e, this._z = h * l * e + c * d * f, this._w = h * l * f + c * d * e); !1 !== b && this._onChangeCallback(); return this
-			}, setFromAxisAngle: function (a, b) {
-				b /= 2; var c = Math.sin(b);
-				this._x = a.x * c; this._y = a.y * c; this._z = a.z * c; this._w = Math.cos(b); this._onChangeCallback(); return this
-			}, setFromRotationMatrix: function (a) {
-				var b = a.elements, c = b[0]; a = b[4]; var d = b[8], e = b[1], f = b[5], g = b[9], h = b[2], l = b[6]; b = b[10]; var m = c + f + b; 0 < m ? (c = .5 / Math.sqrt(m + 1), this._w = .25 / c, this._x = (l - g) * c, this._y = (d - h) * c, this._z = (e - a) * c) : c > f && c > b ? (c = 2 * Math.sqrt(1 + c - f - b), this._w = (l - g) / c, this._x = .25 * c, this._y = (a + e) / c, this._z = (d + h) / c) : f > b ? (c = 2 * Math.sqrt(1 + f - c - b), this._w = (d - h) / c, this._x = (a + e) / c, this._y = .25 * c, this._z = (g + l) /
-					c) : (c = 2 * Math.sqrt(1 + b - c - f), this._w = (e - a) / c, this._x = (d + h) / c, this._y = (g + l) / c, this._z = .25 * c); this._onChangeCallback(); return this
-			}, setFromUnitVectors: function (a, b) { var c = a.dot(b) + 1; 1E-6 > c ? (c = 0, Math.abs(a.x) > Math.abs(a.z) ? (this._x = -a.y, this._y = a.x, this._z = 0) : (this._x = 0, this._y = -a.z, this._z = a.y)) : (this._x = a.y * b.z - a.z * b.y, this._y = a.z * b.x - a.x * b.z, this._z = a.x * b.y - a.y * b.x); this._w = c; return this.normalize() }, angleTo: function (a) { return 2 * Math.acos(Math.abs(L.clamp(this.dot(a), -1, 1))) }, rotateTowards: function (a,
-				b) { var c = this.angleTo(a); if (0 === c) return this; this.slerp(a, Math.min(1, b / c)); return this }, inverse: function () { return this.conjugate() }, conjugate: function () { this._x *= -1; this._y *= -1; this._z *= -1; this._onChangeCallback(); return this }, dot: function (a) { return this._x * a._x + this._y * a._y + this._z * a._z + this._w * a._w }, lengthSq: function () { return this._x * this._x + this._y * this._y + this._z * this._z + this._w * this._w }, length: function () { return Math.sqrt(this._x * this._x + this._y * this._y + this._z * this._z + this._w * this._w) }, normalize: function () {
-					var a =
-						this.length(); 0 === a ? (this._z = this._y = this._x = 0, this._w = 1) : (a = 1 / a, this._x *= a, this._y *= a, this._z *= a, this._w *= a); this._onChangeCallback(); return this
-				}, multiply: function (a, b) { return void 0 !== b ? (console.warn("THREE.Quaternion: .multiply() now only accepts one argument. Use .multiplyQuaternions( a, b ) instead."), this.multiplyQuaternions(a, b)) : this.multiplyQuaternions(this, a) }, premultiply: function (a) { return this.multiplyQuaternions(a, this) }, multiplyQuaternions: function (a, b) {
-					var c = a._x, d = a._y, e = a._z; a = a._w;
-					var f = b._x, g = b._y, h = b._z; b = b._w; this._x = c * b + a * f + d * h - e * g; this._y = d * b + a * g + e * f - c * h; this._z = e * b + a * h + c * g - d * f; this._w = a * b - c * f - d * g - e * h; this._onChangeCallback(); return this
-				}, slerp: function (a, b) {
-					if (0 === b) return this; if (1 === b) return this.copy(a); var c = this._x, d = this._y, e = this._z, f = this._w, g = f * a._w + c * a._x + d * a._y + e * a._z; 0 > g ? (this._w = -a._w, this._x = -a._x, this._y = -a._y, this._z = -a._z, g = -g) : this.copy(a); if (1 <= g) return this._w = f, this._x = c, this._y = d, this._z = e, this; a = 1 - g * g; if (a <= Number.EPSILON) return g = 1 - b, this._w = g *
-						f + b * this._w, this._x = g * c + b * this._x, this._y = g * d + b * this._y, this._z = g * e + b * this._z, this.normalize(), this._onChangeCallback(), this; a = Math.sqrt(a); var h = Math.atan2(a, g); g = Math.sin((1 - b) * h) / a; b = Math.sin(b * h) / a; this._w = f * g + this._w * b; this._x = c * g + this._x * b; this._y = d * g + this._y * b; this._z = e * g + this._z * b; this._onChangeCallback(); return this
-				}, equals: function (a) { return a._x === this._x && a._y === this._y && a._z === this._z && a._w === this._w }, fromArray: function (a, b) {
-				void 0 === b && (b = 0); this._x = a[b]; this._y = a[b + 1]; this._z = a[b + 2];
-					this._w = a[b + 3]; this._onChangeCallback(); return this
-				}, toArray: function (a, b) { void 0 === a && (a = []); void 0 === b && (b = 0); a[b] = this._x; a[b + 1] = this._y; a[b + 2] = this._z; a[b + 3] = this._w; return a }, fromBufferAttribute: function (a, b) { this._x = a.getX(b); this._y = a.getY(b); this._z = a.getZ(b); this._w = a.getW(b); return this }, _onChange: function (a) { this._onChangeCallback = a; return this }, _onChangeCallback: function () { }
-		}); var Wg = new n, wi = new ma; Object.assign(n.prototype, {
-			isVector3: !0, set: function (a, b, c) {
-			this.x = a; this.y = b; this.z = c;
-				return this
-			}, setScalar: function (a) { this.z = this.y = this.x = a; return this }, setX: function (a) { this.x = a; return this }, setY: function (a) { this.y = a; return this }, setZ: function (a) { this.z = a; return this }, setComponent: function (a, b) { switch (a) { case 0: this.x = b; break; case 1: this.y = b; break; case 2: this.z = b; break; default: throw Error("index is out of range: " + a); }return this }, getComponent: function (a) {
-				switch (a) {
-					case 0: return this.x; case 1: return this.y; case 2: return this.z; default: throw Error("index is out of range: " + a);
+				}, floorPowerOfTwo: function (a) { return Math.pow(2, Math.floor(Math.log(a) / Math.LN2)) }, setQuaternionFromProperEuler: function (a, b, c, d, e) {
+					var f = Math.cos, g = Math.sin, h = f(c / 2); c = g(c / 2); var l = f((b + d) / 2), m = g((b + d) / 2), k = f((b - d) / 2), p = g((b - d) / 2); f = f((d - b) / 2); b = g((d - b) / 2); switch (e) {
+						case "XYX": a.set(h * m, c * k, c * p, h * l); break; case "YZY": a.set(c * p, h * m, c * k, h * l); break; case "ZXZ": a.set(c * k, c * p, h * m, h * l); break; case "XZX": a.set(h * m, c * b, c * f, h * l); break; case "YXY": a.set(c * f, h * m, c * b, h * l); break; case "ZYZ": a.set(c *
+							b, c * f, h * m, h * l); break; default: console.warn("THREE.MathUtils: .setQuaternionFromProperEuler() encountered an unknown order: " + e)
+					}
 				}
-			}, clone: function () { return new this.constructor(this.x, this.y, this.z) }, copy: function (a) { this.x = a.x; this.y = a.y; this.z = a.z; return this }, add: function (a, b) { if (void 0 !== b) return console.warn("THREE.Vector3: .add() now only accepts one argument. Use .addVectors( a, b ) instead."), this.addVectors(a, b); this.x += a.x; this.y += a.y; this.z += a.z; return this }, addScalar: function (a) { this.x += a; this.y += a; this.z += a; return this }, addVectors: function (a, b) { this.x = a.x + b.x; this.y = a.y + b.y; this.z = a.z + b.z; return this }, addScaledVector: function (a,
-				b) { this.x += a.x * b; this.y += a.y * b; this.z += a.z * b; return this }, sub: function (a, b) { if (void 0 !== b) return console.warn("THREE.Vector3: .sub() now only accepts one argument. Use .subVectors( a, b ) instead."), this.subVectors(a, b); this.x -= a.x; this.y -= a.y; this.z -= a.z; return this }, subScalar: function (a) { this.x -= a; this.y -= a; this.z -= a; return this }, subVectors: function (a, b) { this.x = a.x - b.x; this.y = a.y - b.y; this.z = a.z - b.z; return this }, multiply: function (a, b) {
-					if (void 0 !== b) return console.warn("THREE.Vector3: .multiply() now only accepts one argument. Use .multiplyVectors( a, b ) instead."),
-						this.multiplyVectors(a, b); this.x *= a.x; this.y *= a.y; this.z *= a.z; return this
-				}, multiplyScalar: function (a) { this.x *= a; this.y *= a; this.z *= a; return this }, multiplyVectors: function (a, b) { this.x = a.x * b.x; this.y = a.y * b.y; this.z = a.z * b.z; return this }, applyEuler: function (a) { a && a.isEuler || console.error("THREE.Vector3: .applyEuler() now expects an Euler rotation rather than a Vector3 and order."); return this.applyQuaternion(wi.setFromEuler(a)) }, applyAxisAngle: function (a, b) {
-					return this.applyQuaternion(wi.setFromAxisAngle(a,
-						b))
-				}, applyMatrix3: function (a) { var b = this.x, c = this.y, d = this.z; a = a.elements; this.x = a[0] * b + a[3] * c + a[6] * d; this.y = a[1] * b + a[4] * c + a[7] * d; this.z = a[2] * b + a[5] * c + a[8] * d; return this }, applyNormalMatrix: function (a) { return this.applyMatrix3(a).normalize() }, applyMatrix4: function (a) { var b = this.x, c = this.y, d = this.z; a = a.elements; var e = 1 / (a[3] * b + a[7] * c + a[11] * d + a[15]); this.x = (a[0] * b + a[4] * c + a[8] * d + a[12]) * e; this.y = (a[1] * b + a[5] * c + a[9] * d + a[13]) * e; this.z = (a[2] * b + a[6] * c + a[10] * d + a[14]) * e; return this }, applyQuaternion: function (a) {
-					var b =
-						this.x, c = this.y, d = this.z, e = a.x, f = a.y, g = a.z; a = a.w; var h = a * b + f * d - g * c, l = a * c + g * b - e * d, m = a * d + e * c - f * b; b = -e * b - f * c - g * d; this.x = h * a + b * -e + l * -g - m * -f; this.y = l * a + b * -f + m * -e - h * -g; this.z = m * a + b * -g + h * -f - l * -e; return this
-				}, project: function (a) { return this.applyMatrix4(a.matrixWorldInverse).applyMatrix4(a.projectionMatrix) }, unproject: function (a) { return this.applyMatrix4(a.projectionMatrixInverse).applyMatrix4(a.matrixWorld) }, transformDirection: function (a) {
-					var b = this.x, c = this.y, d = this.z; a = a.elements; this.x = a[0] * b + a[4] * c +
-						a[8] * d; this.y = a[1] * b + a[5] * c + a[9] * d; this.z = a[2] * b + a[6] * c + a[10] * d; return this.normalize()
-				}, divide: function (a) { this.x /= a.x; this.y /= a.y; this.z /= a.z; return this }, divideScalar: function (a) { return this.multiplyScalar(1 / a) }, min: function (a) { this.x = Math.min(this.x, a.x); this.y = Math.min(this.y, a.y); this.z = Math.min(this.z, a.z); return this }, max: function (a) { this.x = Math.max(this.x, a.x); this.y = Math.max(this.y, a.y); this.z = Math.max(this.z, a.z); return this }, clamp: function (a, b) {
-				this.x = Math.max(a.x, Math.min(b.x, this.x));
-					this.y = Math.max(a.y, Math.min(b.y, this.y)); this.z = Math.max(a.z, Math.min(b.z, this.z)); return this
-				}, clampScalar: function (a, b) { this.x = Math.max(a, Math.min(b, this.x)); this.y = Math.max(a, Math.min(b, this.y)); this.z = Math.max(a, Math.min(b, this.z)); return this }, clampLength: function (a, b) { var c = this.length(); return this.divideScalar(c || 1).multiplyScalar(Math.max(a, Math.min(b, c))) }, floor: function () { this.x = Math.floor(this.x); this.y = Math.floor(this.y); this.z = Math.floor(this.z); return this }, ceil: function () {
+		}; Object.defineProperties(u.prototype, { width: { get: function () { return this.x }, set: function (a) { this.x = a } }, height: { get: function () { return this.y }, set: function (a) { this.y = a } } }); Object.assign(u.prototype, {
+			isVector2: !0, set: function (a, b) { this.x = a; this.y = b; return this }, setScalar: function (a) { this.y = this.x = a; return this }, setX: function (a) { this.x = a; return this }, setY: function (a) {
+			this.y =
+				a; return this
+			}, setComponent: function (a, b) { switch (a) { case 0: this.x = b; break; case 1: this.y = b; break; default: throw Error("index is out of range: " + a); }return this }, getComponent: function (a) { switch (a) { case 0: return this.x; case 1: return this.y; default: throw Error("index is out of range: " + a); } }, clone: function () { return new this.constructor(this.x, this.y) }, copy: function (a) { this.x = a.x; this.y = a.y; return this }, add: function (a, b) {
+				if (void 0 !== b) return console.warn("THREE.Vector2: .add() now only accepts one argument. Use .addVectors( a, b ) instead."),
+					this.addVectors(a, b); this.x += a.x; this.y += a.y; return this
+			}, addScalar: function (a) { this.x += a; this.y += a; return this }, addVectors: function (a, b) { this.x = a.x + b.x; this.y = a.y + b.y; return this }, addScaledVector: function (a, b) { this.x += a.x * b; this.y += a.y * b; return this }, sub: function (a, b) { if (void 0 !== b) return console.warn("THREE.Vector2: .sub() now only accepts one argument. Use .subVectors( a, b ) instead."), this.subVectors(a, b); this.x -= a.x; this.y -= a.y; return this }, subScalar: function (a) { this.x -= a; this.y -= a; return this },
+			subVectors: function (a, b) { this.x = a.x - b.x; this.y = a.y - b.y; return this }, multiply: function (a) { this.x *= a.x; this.y *= a.y; return this }, multiplyScalar: function (a) { this.x *= a; this.y *= a; return this }, divide: function (a) { this.x /= a.x; this.y /= a.y; return this }, divideScalar: function (a) { return this.multiplyScalar(1 / a) }, applyMatrix3: function (a) { var b = this.x, c = this.y; a = a.elements; this.x = a[0] * b + a[3] * c + a[6]; this.y = a[1] * b + a[4] * c + a[7]; return this }, min: function (a) { this.x = Math.min(this.x, a.x); this.y = Math.min(this.y, a.y); return this },
+			max: function (a) { this.x = Math.max(this.x, a.x); this.y = Math.max(this.y, a.y); return this }, clamp: function (a, b) { this.x = Math.max(a.x, Math.min(b.x, this.x)); this.y = Math.max(a.y, Math.min(b.y, this.y)); return this }, clampScalar: function (a, b) { this.x = Math.max(a, Math.min(b, this.x)); this.y = Math.max(a, Math.min(b, this.y)); return this }, clampLength: function (a, b) { var c = this.length(); return this.divideScalar(c || 1).multiplyScalar(Math.max(a, Math.min(b, c))) }, floor: function () {
+			this.x = Math.floor(this.x); this.y = Math.floor(this.y);
+				return this
+			}, ceil: function () { this.x = Math.ceil(this.x); this.y = Math.ceil(this.y); return this }, round: function () { this.x = Math.round(this.x); this.y = Math.round(this.y); return this }, roundToZero: function () { this.x = 0 > this.x ? Math.ceil(this.x) : Math.floor(this.x); this.y = 0 > this.y ? Math.ceil(this.y) : Math.floor(this.y); return this }, negate: function () { this.x = -this.x; this.y = -this.y; return this }, dot: function (a) { return this.x * a.x + this.y * a.y }, cross: function (a) { return this.x * a.y - this.y * a.x }, lengthSq: function () {
+				return this.x *
+					this.x + this.y * this.y
+			}, length: function () { return Math.sqrt(this.x * this.x + this.y * this.y) }, manhattanLength: function () { return Math.abs(this.x) + Math.abs(this.y) }, normalize: function () { return this.divideScalar(this.length() || 1) }, angle: function () { return Math.atan2(-this.y, -this.x) + Math.PI }, distanceTo: function (a) { return Math.sqrt(this.distanceToSquared(a)) }, distanceToSquared: function (a) { var b = this.x - a.x; a = this.y - a.y; return b * b + a * a }, manhattanDistanceTo: function (a) {
+				return Math.abs(this.x - a.x) + Math.abs(this.y -
+					a.y)
+			}, setLength: function (a) { return this.normalize().multiplyScalar(a) }, lerp: function (a, b) { this.x += (a.x - this.x) * b; this.y += (a.y - this.y) * b; return this }, lerpVectors: function (a, b, c) { return this.subVectors(b, a).multiplyScalar(c).add(a) }, equals: function (a) { return a.x === this.x && a.y === this.y }, fromArray: function (a, b) { void 0 === b && (b = 0); this.x = a[b]; this.y = a[b + 1]; return this }, toArray: function (a, b) { void 0 === a && (a = []); void 0 === b && (b = 0); a[b] = this.x; a[b + 1] = this.y; return a }, fromBufferAttribute: function (a, b, c) {
+			void 0 !==
+				c && console.warn("THREE.Vector2: offset has been removed from .fromBufferAttribute()."); this.x = a.getX(b); this.y = a.getY(b); return this
+			}, rotateAround: function (a, b) { var c = Math.cos(b); b = Math.sin(b); var d = this.x - a.x, e = this.y - a.y; this.x = d * c - e * b + a.x; this.y = d * b + e * c + a.y; return this }, random: function () { this.x = Math.random(); this.y = Math.random(); return this }
+		}); Object.assign(xa.prototype, {
+			isMatrix3: !0, set: function (a, b, c, d, e, f, g, h, l) {
+				var m = this.elements; m[0] = a; m[1] = d; m[2] = g; m[3] = b; m[4] = e; m[5] = h; m[6] = c; m[7] = f; m[8] =
+					l; return this
+			}, identity: function () { this.set(1, 0, 0, 0, 1, 0, 0, 0, 1); return this }, clone: function () { return (new this.constructor).fromArray(this.elements) }, copy: function (a) { var b = this.elements; a = a.elements; b[0] = a[0]; b[1] = a[1]; b[2] = a[2]; b[3] = a[3]; b[4] = a[4]; b[5] = a[5]; b[6] = a[6]; b[7] = a[7]; b[8] = a[8]; return this }, extractBasis: function (a, b, c) { a.setFromMatrix3Column(this, 0); b.setFromMatrix3Column(this, 1); c.setFromMatrix3Column(this, 2); return this }, setFromMatrix4: function (a) {
+				a = a.elements; this.set(a[0], a[4], a[8], a[1],
+					a[5], a[9], a[2], a[6], a[10]); return this
+			}, multiply: function (a) { return this.multiplyMatrices(this, a) }, premultiply: function (a) { return this.multiplyMatrices(a, this) }, multiplyMatrices: function (a, b) {
+				var c = a.elements, d = b.elements; b = this.elements; a = c[0]; var e = c[3], f = c[6], g = c[1], h = c[4], l = c[7], m = c[2], k = c[5]; c = c[8]; var p = d[0], n = d[3], r = d[6], q = d[1], v = d[4], E = d[7], w = d[2], u = d[5]; d = d[8]; b[0] = a * p + e * q + f * w; b[3] = a * n + e * v + f * u; b[6] = a * r + e * E + f * d; b[1] = g * p + h * q + l * w; b[4] = g * n + h * v + l * u; b[7] = g * r + h * E + l * d; b[2] = m * p + k * q + c * w; b[5] = m * n + k *
+					v + c * u; b[8] = m * r + k * E + c * d; return this
+			}, multiplyScalar: function (a) { var b = this.elements; b[0] *= a; b[3] *= a; b[6] *= a; b[1] *= a; b[4] *= a; b[7] *= a; b[2] *= a; b[5] *= a; b[8] *= a; return this }, determinant: function () { var a = this.elements, b = a[0], c = a[1], d = a[2], e = a[3], f = a[4], g = a[5], h = a[6], l = a[7]; a = a[8]; return b * f * a - b * g * l - c * e * a + c * g * h + d * e * l - d * f * h }, getInverse: function (a, b) {
+			void 0 !== b && console.warn("THREE.Matrix3: .getInverse() can no longer be configured to throw on degenerate."); var c = a.elements; a = this.elements; b = c[0]; var d = c[1],
+				e = c[2], f = c[3], g = c[4], h = c[5], l = c[6], m = c[7]; c = c[8]; var k = c * g - h * m, p = h * l - c * f, n = m * f - g * l, r = b * k + d * p + e * n; if (0 === r) return this.set(0, 0, 0, 0, 0, 0, 0, 0, 0); r = 1 / r; a[0] = k * r; a[1] = (e * m - c * d) * r; a[2] = (h * d - e * g) * r; a[3] = p * r; a[4] = (c * b - e * l) * r; a[5] = (e * f - h * b) * r; a[6] = n * r; a[7] = (d * l - m * b) * r; a[8] = (g * b - d * f) * r; return this
+			}, transpose: function () { var a = this.elements; var b = a[1]; a[1] = a[3]; a[3] = b; b = a[2]; a[2] = a[6]; a[6] = b; b = a[5]; a[5] = a[7]; a[7] = b; return this }, getNormalMatrix: function (a) { return this.setFromMatrix4(a).getInverse(this).transpose() },
+			transposeIntoArray: function (a) { var b = this.elements; a[0] = b[0]; a[1] = b[3]; a[2] = b[6]; a[3] = b[1]; a[4] = b[4]; a[5] = b[7]; a[6] = b[2]; a[7] = b[5]; a[8] = b[8]; return this }, setUvTransform: function (a, b, c, d, e, f, g) { var h = Math.cos(e); e = Math.sin(e); this.set(c * h, c * e, -c * (h * f + e * g) + f + a, -d * e, d * h, -d * (-e * f + h * g) + g + b, 0, 0, 1) }, scale: function (a, b) { var c = this.elements; c[0] *= a; c[3] *= a; c[6] *= a; c[1] *= b; c[4] *= b; c[7] *= b; return this }, rotate: function (a) {
+				var b = Math.cos(a); a = Math.sin(a); var c = this.elements, d = c[0], e = c[3], f = c[6], g = c[1], h = c[4],
+					l = c[7]; c[0] = b * d + a * g; c[3] = b * e + a * h; c[6] = b * f + a * l; c[1] = -a * d + b * g; c[4] = -a * e + b * h; c[7] = -a * f + b * l; return this
+			}, translate: function (a, b) { var c = this.elements; c[0] += a * c[2]; c[3] += a * c[5]; c[6] += a * c[8]; c[1] += b * c[2]; c[4] += b * c[5]; c[7] += b * c[8]; return this }, equals: function (a) { var b = this.elements; a = a.elements; for (var c = 0; 9 > c; c++)if (b[c] !== a[c]) return !1; return !0 }, fromArray: function (a, b) { void 0 === b && (b = 0); for (var c = 0; 9 > c; c++)this.elements[c] = a[c + b]; return this }, toArray: function (a, b) {
+			void 0 === a && (a = []); void 0 === b && (b = 0); var c =
+				this.elements; a[b] = c[0]; a[b + 1] = c[1]; a[b + 2] = c[2]; a[b + 3] = c[3]; a[b + 4] = c[4]; a[b + 5] = c[5]; a[b + 6] = c[6]; a[b + 7] = c[7]; a[b + 8] = c[8]; return a
+			}
+		}); var kd, Lb = {
+			getDataURL: function (a) {
+				if ("undefined" == typeof HTMLCanvasElement) return a.src; if (!(a instanceof HTMLCanvasElement)) { void 0 === kd && (kd = document.createElementNS("http://www.w3.org/1999/xhtml", "canvas")); kd.width = a.width; kd.height = a.height; var b = kd.getContext("2d"); a instanceof ImageData ? b.putImageData(a, 0, 0) : b.drawImage(a, 0, 0, a.width, a.height); a = kd } return 2048 <
+					a.width || 2048 < a.height ? a.toDataURL("image/jpeg", .6) : a.toDataURL("image/png")
+			}
+		}, hj = 0; V.DEFAULT_IMAGE = void 0; V.DEFAULT_MAPPING = 300; V.prototype = Object.assign(Object.create(ua.prototype), {
+			constructor: V, isTexture: !0, updateMatrix: function () { this.matrix.setUvTransform(this.offset.x, this.offset.y, this.repeat.x, this.repeat.y, this.rotation, this.center.x, this.center.y) }, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) {
+			this.name = a.name; this.image = a.image; this.mipmaps = a.mipmaps.slice(0);
+				this.mapping = a.mapping; this.wrapS = a.wrapS; this.wrapT = a.wrapT; this.magFilter = a.magFilter; this.minFilter = a.minFilter; this.anisotropy = a.anisotropy; this.format = a.format; this.internalFormat = a.internalFormat; this.type = a.type; this.offset.copy(a.offset); this.repeat.copy(a.repeat); this.center.copy(a.center); this.rotation = a.rotation; this.matrixAutoUpdate = a.matrixAutoUpdate; this.matrix.copy(a.matrix); this.generateMipmaps = a.generateMipmaps; this.premultiplyAlpha = a.premultiplyAlpha; this.flipY = a.flipY; this.unpackAlignment =
+					a.unpackAlignment; this.encoding = a.encoding; return this
+			}, toJSON: function (a) {
+				var b = void 0 === a || "string" === typeof a; if (!b && void 0 !== a.textures[this.uuid]) return a.textures[this.uuid]; var c = {
+					metadata: { version: 4.5, type: "Texture", generator: "Texture.toJSON" }, uuid: this.uuid, name: this.name, mapping: this.mapping, repeat: [this.repeat.x, this.repeat.y], offset: [this.offset.x, this.offset.y], center: [this.center.x, this.center.y], rotation: this.rotation, wrap: [this.wrapS, this.wrapT], format: this.format, type: this.type, encoding: this.encoding,
+					minFilter: this.minFilter, magFilter: this.magFilter, anisotropy: this.anisotropy, flipY: this.flipY, premultiplyAlpha: this.premultiplyAlpha, unpackAlignment: this.unpackAlignment
+				}; if (void 0 !== this.image) { var d = this.image; void 0 === d.uuid && (d.uuid = L.generateUUID()); if (!b && void 0 === a.images[d.uuid]) { if (Array.isArray(d)) { var e = []; for (var f = 0, g = d.length; f < g; f++)e.push(Lb.getDataURL(d[f])) } else e = Lb.getDataURL(d); a.images[d.uuid] = { uuid: d.uuid, url: e } } c.image = d.uuid } b || (a.textures[this.uuid] = c); return c
+			}, dispose: function () { this.dispatchEvent({ type: "dispose" }) },
+			transformUv: function (a) { if (300 !== this.mapping) return a; a.applyMatrix3(this.matrix); if (0 > a.x || 1 < a.x) switch (this.wrapS) { case 1E3: a.x -= Math.floor(a.x); break; case 1001: a.x = 0 > a.x ? 0 : 1; break; case 1002: a.x = 1 === Math.abs(Math.floor(a.x) % 2) ? Math.ceil(a.x) - a.x : a.x - Math.floor(a.x) }if (0 > a.y || 1 < a.y) switch (this.wrapT) { case 1E3: a.y -= Math.floor(a.y); break; case 1001: a.y = 0 > a.y ? 0 : 1; break; case 1002: a.y = 1 === Math.abs(Math.floor(a.y) % 2) ? Math.ceil(a.y) - a.y : a.y - Math.floor(a.y) }this.flipY && (a.y = 1 - a.y); return a }
+		}); Object.defineProperty(V.prototype,
+			"needsUpdate", { set: function (a) { !0 === a && this.version++ } }); Object.defineProperties(ja.prototype, { width: { get: function () { return this.z }, set: function (a) { this.z = a } }, height: { get: function () { return this.w }, set: function (a) { this.w = a } } }); Object.assign(ja.prototype, {
+				isVector4: !0, set: function (a, b, c, d) { this.x = a; this.y = b; this.z = c; this.w = d; return this }, setScalar: function (a) { this.w = this.z = this.y = this.x = a; return this }, setX: function (a) { this.x = a; return this }, setY: function (a) { this.y = a; return this }, setZ: function (a) {
+				this.z =
+					a; return this
+				}, setW: function (a) { this.w = a; return this }, setComponent: function (a, b) { switch (a) { case 0: this.x = b; break; case 1: this.y = b; break; case 2: this.z = b; break; case 3: this.w = b; break; default: throw Error("index is out of range: " + a); }return this }, getComponent: function (a) { switch (a) { case 0: return this.x; case 1: return this.y; case 2: return this.z; case 3: return this.w; default: throw Error("index is out of range: " + a); } }, clone: function () { return new this.constructor(this.x, this.y, this.z, this.w) }, copy: function (a) {
 				this.x =
-					Math.ceil(this.x); this.y = Math.ceil(this.y); this.z = Math.ceil(this.z); return this
-				}, round: function () { this.x = Math.round(this.x); this.y = Math.round(this.y); this.z = Math.round(this.z); return this }, roundToZero: function () { this.x = 0 > this.x ? Math.ceil(this.x) : Math.floor(this.x); this.y = 0 > this.y ? Math.ceil(this.y) : Math.floor(this.y); this.z = 0 > this.z ? Math.ceil(this.z) : Math.floor(this.z); return this }, negate: function () { this.x = -this.x; this.y = -this.y; this.z = -this.z; return this }, dot: function (a) {
-					return this.x * a.x + this.y *
-						a.y + this.z * a.z
-				}, lengthSq: function () { return this.x * this.x + this.y * this.y + this.z * this.z }, length: function () { return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z) }, manhattanLength: function () { return Math.abs(this.x) + Math.abs(this.y) + Math.abs(this.z) }, normalize: function () { return this.divideScalar(this.length() || 1) }, setLength: function (a) { return this.normalize().multiplyScalar(a) }, lerp: function (a, b) { this.x += (a.x - this.x) * b; this.y += (a.y - this.y) * b; this.z += (a.z - this.z) * b; return this }, lerpVectors: function (a,
-					b, c) { return this.subVectors(b, a).multiplyScalar(c).add(a) }, cross: function (a, b) { return void 0 !== b ? (console.warn("THREE.Vector3: .cross() now only accepts one argument. Use .crossVectors( a, b ) instead."), this.crossVectors(a, b)) : this.crossVectors(this, a) }, crossVectors: function (a, b) { var c = a.x, d = a.y; a = a.z; var e = b.x, f = b.y; b = b.z; this.x = d * b - a * f; this.y = a * e - c * b; this.z = c * f - d * e; return this }, projectOnVector: function (a) { var b = a.lengthSq(); if (0 === b) return this.set(0, 0, 0); b = a.dot(this) / b; return this.copy(a).multiplyScalar(b) },
-			projectOnPlane: function (a) { Wg.copy(this).projectOnVector(a); return this.sub(Wg) }, reflect: function (a) { return this.sub(Wg.copy(a).multiplyScalar(2 * this.dot(a))) }, angleTo: function (a) { var b = Math.sqrt(this.lengthSq() * a.lengthSq()); if (0 === b) return Math.PI / 2; a = this.dot(a) / b; return Math.acos(L.clamp(a, -1, 1)) }, distanceTo: function (a) { return Math.sqrt(this.distanceToSquared(a)) }, distanceToSquared: function (a) { var b = this.x - a.x, c = this.y - a.y; a = this.z - a.z; return b * b + c * c + a * a }, manhattanDistanceTo: function (a) {
-				return Math.abs(this.x -
-					a.x) + Math.abs(this.y - a.y) + Math.abs(this.z - a.z)
-			}, setFromSpherical: function (a) { return this.setFromSphericalCoords(a.radius, a.phi, a.theta) }, setFromSphericalCoords: function (a, b, c) { var d = Math.sin(b) * a; this.x = d * Math.sin(c); this.y = Math.cos(b) * a; this.z = d * Math.cos(c); return this }, setFromCylindrical: function (a) { return this.setFromCylindricalCoords(a.radius, a.theta, a.y) }, setFromCylindricalCoords: function (a, b, c) { this.x = a * Math.sin(b); this.y = c; this.z = a * Math.cos(b); return this }, setFromMatrixPosition: function (a) {
-				a =
-				a.elements; this.x = a[12]; this.y = a[13]; this.z = a[14]; return this
-			}, setFromMatrixScale: function (a) { var b = this.setFromMatrixColumn(a, 0).length(), c = this.setFromMatrixColumn(a, 1).length(); a = this.setFromMatrixColumn(a, 2).length(); this.x = b; this.y = c; this.z = a; return this }, setFromMatrixColumn: function (a, b) { return this.fromArray(a.elements, 4 * b) }, setFromMatrix3Column: function (a, b) { return this.fromArray(a.elements, 3 * b) }, equals: function (a) { return a.x === this.x && a.y === this.y && a.z === this.z }, fromArray: function (a, b) {
-			void 0 ===
-				b && (b = 0); this.x = a[b]; this.y = a[b + 1]; this.z = a[b + 2]; return this
-			}, toArray: function (a, b) { void 0 === a && (a = []); void 0 === b && (b = 0); a[b] = this.x; a[b + 1] = this.y; a[b + 2] = this.z; return a }, fromBufferAttribute: function (a, b, c) { void 0 !== c && console.warn("THREE.Vector3: offset has been removed from .fromBufferAttribute()."); this.x = a.getX(b); this.y = a.getY(b); this.z = a.getZ(b); return this }, random: function () { this.x = Math.random(); this.y = Math.random(); this.z = Math.random(); return this }
-		}); var ld = new n, Z = new P, Jk = new n(0, 0, 0), Kk =
-			new n(1, 1, 1), Mb = new n, Af = new n, Ca = new n; Object.assign(P.prototype, {
-				isMatrix4: !0, set: function (a, b, c, d, e, f, g, h, l, m, k, p, n, r, q, v) { var t = this.elements; t[0] = a; t[4] = b; t[8] = c; t[12] = d; t[1] = e; t[5] = f; t[9] = g; t[13] = h; t[2] = l; t[6] = m; t[10] = k; t[14] = p; t[3] = n; t[7] = r; t[11] = q; t[15] = v; return this }, identity: function () { this.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1); return this }, clone: function () { return (new P).fromArray(this.elements) }, copy: function (a) {
-					var b = this.elements; a = a.elements; b[0] = a[0]; b[1] = a[1]; b[2] = a[2]; b[3] = a[3]; b[4] =
-						a[4]; b[5] = a[5]; b[6] = a[6]; b[7] = a[7]; b[8] = a[8]; b[9] = a[9]; b[10] = a[10]; b[11] = a[11]; b[12] = a[12]; b[13] = a[13]; b[14] = a[14]; b[15] = a[15]; return this
-				}, copyPosition: function (a) { var b = this.elements; a = a.elements; b[12] = a[12]; b[13] = a[13]; b[14] = a[14]; return this }, extractBasis: function (a, b, c) { a.setFromMatrixColumn(this, 0); b.setFromMatrixColumn(this, 1); c.setFromMatrixColumn(this, 2); return this }, makeBasis: function (a, b, c) { this.set(a.x, b.x, c.x, 0, a.y, b.y, c.y, 0, a.z, b.z, c.z, 0, 0, 0, 0, 1); return this }, extractRotation: function (a) {
-					var b =
-						this.elements, c = a.elements, d = 1 / ld.setFromMatrixColumn(a, 0).length(), e = 1 / ld.setFromMatrixColumn(a, 1).length(); a = 1 / ld.setFromMatrixColumn(a, 2).length(); b[0] = c[0] * d; b[1] = c[1] * d; b[2] = c[2] * d; b[3] = 0; b[4] = c[4] * e; b[5] = c[5] * e; b[6] = c[6] * e; b[7] = 0; b[8] = c[8] * a; b[9] = c[9] * a; b[10] = c[10] * a; b[11] = 0; b[12] = 0; b[13] = 0; b[14] = 0; b[15] = 1; return this
-				}, makeRotationFromEuler: function (a) {
-				a && a.isEuler || console.error("THREE.Matrix4: .makeRotationFromEuler() now expects a Euler rotation rather than a Vector3 and order."); var b = this.elements,
-					c = a.x, d = a.y, e = a.z, f = Math.cos(c); c = Math.sin(c); var g = Math.cos(d); d = Math.sin(d); var h = Math.cos(e); e = Math.sin(e); if ("XYZ" === a.order) { a = f * h; var l = f * e, m = c * h, k = c * e; b[0] = g * h; b[4] = -g * e; b[8] = d; b[1] = l + m * d; b[5] = a - k * d; b[9] = -c * g; b[2] = k - a * d; b[6] = m + l * d; b[10] = f * g } else "YXZ" === a.order ? (a = g * h, l = g * e, m = d * h, k = d * e, b[0] = a + k * c, b[4] = m * c - l, b[8] = f * d, b[1] = f * e, b[5] = f * h, b[9] = -c, b[2] = l * c - m, b[6] = k + a * c, b[10] = f * g) : "ZXY" === a.order ? (a = g * h, l = g * e, m = d * h, k = d * e, b[0] = a - k * c, b[4] = -f * e, b[8] = m + l * c, b[1] = l + m * c, b[5] = f * h, b[9] = k - a * c, b[2] = -f * d, b[6] =
-						c, b[10] = f * g) : "ZYX" === a.order ? (a = f * h, l = f * e, m = c * h, k = c * e, b[0] = g * h, b[4] = m * d - l, b[8] = a * d + k, b[1] = g * e, b[5] = k * d + a, b[9] = l * d - m, b[2] = -d, b[6] = c * g, b[10] = f * g) : "YZX" === a.order ? (a = f * g, l = f * d, m = c * g, k = c * d, b[0] = g * h, b[4] = k - a * e, b[8] = m * e + l, b[1] = e, b[5] = f * h, b[9] = -c * h, b[2] = -d * h, b[6] = l * e + m, b[10] = a - k * e) : "XZY" === a.order && (a = f * g, l = f * d, m = c * g, k = c * d, b[0] = g * h, b[4] = -e, b[8] = d * h, b[1] = a * e + k, b[5] = f * h, b[9] = l * e - m, b[2] = m * e - l, b[6] = c * h, b[10] = k * e + a); b[3] = 0; b[7] = 0; b[11] = 0; b[12] = 0; b[13] = 0; b[14] = 0; b[15] = 1; return this
+					a.x; this.y = a.y; this.z = a.z; this.w = void 0 !== a.w ? a.w : 1; return this
+				}, add: function (a, b) { if (void 0 !== b) return console.warn("THREE.Vector4: .add() now only accepts one argument. Use .addVectors( a, b ) instead."), this.addVectors(a, b); this.x += a.x; this.y += a.y; this.z += a.z; this.w += a.w; return this }, addScalar: function (a) { this.x += a; this.y += a; this.z += a; this.w += a; return this }, addVectors: function (a, b) { this.x = a.x + b.x; this.y = a.y + b.y; this.z = a.z + b.z; this.w = a.w + b.w; return this }, addScaledVector: function (a, b) {
+				this.x += a.x *
+					b; this.y += a.y * b; this.z += a.z * b; this.w += a.w * b; return this
+				}, sub: function (a, b) { if (void 0 !== b) return console.warn("THREE.Vector4: .sub() now only accepts one argument. Use .subVectors( a, b ) instead."), this.subVectors(a, b); this.x -= a.x; this.y -= a.y; this.z -= a.z; this.w -= a.w; return this }, subScalar: function (a) { this.x -= a; this.y -= a; this.z -= a; this.w -= a; return this }, subVectors: function (a, b) { this.x = a.x - b.x; this.y = a.y - b.y; this.z = a.z - b.z; this.w = a.w - b.w; return this }, multiplyScalar: function (a) {
+				this.x *= a; this.y *= a; this.z *=
+					a; this.w *= a; return this
+				}, applyMatrix4: function (a) { var b = this.x, c = this.y, d = this.z, e = this.w; a = a.elements; this.x = a[0] * b + a[4] * c + a[8] * d + a[12] * e; this.y = a[1] * b + a[5] * c + a[9] * d + a[13] * e; this.z = a[2] * b + a[6] * c + a[10] * d + a[14] * e; this.w = a[3] * b + a[7] * c + a[11] * d + a[15] * e; return this }, divideScalar: function (a) { return this.multiplyScalar(1 / a) }, setAxisAngleFromQuaternion: function (a) { this.w = 2 * Math.acos(a.w); var b = Math.sqrt(1 - a.w * a.w); 1E-4 > b ? (this.x = 1, this.z = this.y = 0) : (this.x = a.x / b, this.y = a.y / b, this.z = a.z / b); return this }, setAxisAngleFromRotationMatrix: function (a) {
+					a =
+					a.elements; var b = a[0]; var c = a[4]; var d = a[8], e = a[1], f = a[5], g = a[9]; var h = a[2]; var l = a[6]; var m = a[10]; if (.01 > Math.abs(c - e) && .01 > Math.abs(d - h) && .01 > Math.abs(g - l)) {
+						if (.1 > Math.abs(c + e) && .1 > Math.abs(d + h) && .1 > Math.abs(g + l) && .1 > Math.abs(b + f + m - 3)) return this.set(1, 0, 0, 0), this; a = Math.PI; b = (b + 1) / 2; f = (f + 1) / 2; m = (m + 1) / 2; c = (c + e) / 4; d = (d + h) / 4; g = (g + l) / 4; b > f && b > m ? .01 > b ? (l = 0, c = h = .707106781) : (l = Math.sqrt(b), h = c / l, c = d / l) : f > m ? .01 > f ? (l = .707106781, h = 0, c = .707106781) : (h = Math.sqrt(f), l = c / h, c = g / h) : .01 > m ? (h = l = .707106781, c = 0) : (c =
+							Math.sqrt(m), l = d / c, h = g / c); this.set(l, h, c, a); return this
+					} a = Math.sqrt((l - g) * (l - g) + (d - h) * (d - h) + (e - c) * (e - c)); .001 > Math.abs(a) && (a = 1); this.x = (l - g) / a; this.y = (d - h) / a; this.z = (e - c) / a; this.w = Math.acos((b + f + m - 1) / 2); return this
+				}, min: function (a) { this.x = Math.min(this.x, a.x); this.y = Math.min(this.y, a.y); this.z = Math.min(this.z, a.z); this.w = Math.min(this.w, a.w); return this }, max: function (a) { this.x = Math.max(this.x, a.x); this.y = Math.max(this.y, a.y); this.z = Math.max(this.z, a.z); this.w = Math.max(this.w, a.w); return this }, clamp: function (a,
+					b) { this.x = Math.max(a.x, Math.min(b.x, this.x)); this.y = Math.max(a.y, Math.min(b.y, this.y)); this.z = Math.max(a.z, Math.min(b.z, this.z)); this.w = Math.max(a.w, Math.min(b.w, this.w)); return this }, clampScalar: function (a, b) { this.x = Math.max(a, Math.min(b, this.x)); this.y = Math.max(a, Math.min(b, this.y)); this.z = Math.max(a, Math.min(b, this.z)); this.w = Math.max(a, Math.min(b, this.w)); return this }, clampLength: function (a, b) { var c = this.length(); return this.divideScalar(c || 1).multiplyScalar(Math.max(a, Math.min(b, c))) }, floor: function () {
+					this.x =
+						Math.floor(this.x); this.y = Math.floor(this.y); this.z = Math.floor(this.z); this.w = Math.floor(this.w); return this
+					}, ceil: function () { this.x = Math.ceil(this.x); this.y = Math.ceil(this.y); this.z = Math.ceil(this.z); this.w = Math.ceil(this.w); return this }, round: function () { this.x = Math.round(this.x); this.y = Math.round(this.y); this.z = Math.round(this.z); this.w = Math.round(this.w); return this }, roundToZero: function () {
+					this.x = 0 > this.x ? Math.ceil(this.x) : Math.floor(this.x); this.y = 0 > this.y ? Math.ceil(this.y) : Math.floor(this.y);
+						this.z = 0 > this.z ? Math.ceil(this.z) : Math.floor(this.z); this.w = 0 > this.w ? Math.ceil(this.w) : Math.floor(this.w); return this
+					}, negate: function () { this.x = -this.x; this.y = -this.y; this.z = -this.z; this.w = -this.w; return this }, dot: function (a) { return this.x * a.x + this.y * a.y + this.z * a.z + this.w * a.w }, lengthSq: function () { return this.x * this.x + this.y * this.y + this.z * this.z + this.w * this.w }, length: function () { return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z + this.w * this.w) }, manhattanLength: function () {
+						return Math.abs(this.x) +
+							Math.abs(this.y) + Math.abs(this.z) + Math.abs(this.w)
+					}, normalize: function () { return this.divideScalar(this.length() || 1) }, setLength: function (a) { return this.normalize().multiplyScalar(a) }, lerp: function (a, b) { this.x += (a.x - this.x) * b; this.y += (a.y - this.y) * b; this.z += (a.z - this.z) * b; this.w += (a.w - this.w) * b; return this }, lerpVectors: function (a, b, c) { return this.subVectors(b, a).multiplyScalar(c).add(a) }, equals: function (a) { return a.x === this.x && a.y === this.y && a.z === this.z && a.w === this.w }, fromArray: function (a, b) {
+					void 0 ===
+						b && (b = 0); this.x = a[b]; this.y = a[b + 1]; this.z = a[b + 2]; this.w = a[b + 3]; return this
+					}, toArray: function (a, b) { void 0 === a && (a = []); void 0 === b && (b = 0); a[b] = this.x; a[b + 1] = this.y; a[b + 2] = this.z; a[b + 3] = this.w; return a }, fromBufferAttribute: function (a, b, c) { void 0 !== c && console.warn("THREE.Vector4: offset has been removed from .fromBufferAttribute()."); this.x = a.getX(b); this.y = a.getY(b); this.z = a.getZ(b); this.w = a.getW(b); return this }, random: function () {
+					this.x = Math.random(); this.y = Math.random(); this.z = Math.random(); this.w = Math.random();
+						return this
+					}
+			}); za.prototype = Object.assign(Object.create(ua.prototype), {
+				constructor: za, isWebGLRenderTarget: !0, setSize: function (a, b) { if (this.width !== a || this.height !== b) this.width = a, this.height = b, this.texture.image.width = a, this.texture.image.height = b, this.dispose(); this.viewport.set(0, 0, a, b); this.scissor.set(0, 0, a, b) }, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) {
+				this.width = a.width; this.height = a.height; this.viewport.copy(a.viewport); this.texture = a.texture.clone(); this.depthBuffer =
+					a.depthBuffer; this.stencilBuffer = a.stencilBuffer; this.depthTexture = a.depthTexture; return this
+				}, dispose: function () { this.dispatchEvent({ type: "dispose" }) }
+			}); Xf.prototype = Object.assign(Object.create(za.prototype), { constructor: Xf, isWebGLMultisampleRenderTarget: !0, copy: function (a) { za.prototype.copy.call(this, a); this.samples = a.samples; return this } }); Object.assign(ma, {
+				slerp: function (a, b, c, d) { return c.copy(a).slerp(b, d) }, slerpFlat: function (a, b, c, d, e, f, g) {
+					var h = c[d + 0], l = c[d + 1], m = c[d + 2]; c = c[d + 3]; d = e[f + 0]; var k =
+						e[f + 1], p = e[f + 2]; e = e[f + 3]; if (c !== e || h !== d || l !== k || m !== p) { f = 1 - g; var n = h * d + l * k + m * p + c * e, r = 0 <= n ? 1 : -1, q = 1 - n * n; q > Number.EPSILON && (q = Math.sqrt(q), n = Math.atan2(q, n * r), f = Math.sin(f * n) / q, g = Math.sin(g * n) / q); r *= g; h = h * f + d * r; l = l * f + k * r; m = m * f + p * r; c = c * f + e * r; f === 1 - g && (g = 1 / Math.sqrt(h * h + l * l + m * m + c * c), h *= g, l *= g, m *= g, c *= g) } a[b] = h; a[b + 1] = l; a[b + 2] = m; a[b + 3] = c
+				}, multiplyQuaternionsFlat: function (a, b, c, d, e, f) {
+					var g = c[d], h = c[d + 1], l = c[d + 2]; c = c[d + 3]; d = e[f]; var m = e[f + 1], k = e[f + 2]; e = e[f + 3]; a[b] = g * e + c * d + h * k - l * m; a[b + 1] = h * e + c * m + l * d - g *
+						k; a[b + 2] = l * e + c * k + g * m - h * d; a[b + 3] = c * e - g * d - h * m - l * k; return a
+				}
+			}); Object.defineProperties(ma.prototype, { x: { get: function () { return this._x }, set: function (a) { this._x = a; this._onChangeCallback() } }, y: { get: function () { return this._y }, set: function (a) { this._y = a; this._onChangeCallback() } }, z: { get: function () { return this._z }, set: function (a) { this._z = a; this._onChangeCallback() } }, w: { get: function () { return this._w }, set: function (a) { this._w = a; this._onChangeCallback() } } }); Object.assign(ma.prototype, {
+				isQuaternion: !0, set: function (a,
+					b, c, d) { this._x = a; this._y = b; this._z = c; this._w = d; this._onChangeCallback(); return this }, clone: function () { return new this.constructor(this._x, this._y, this._z, this._w) }, copy: function (a) { this._x = a.x; this._y = a.y; this._z = a.z; this._w = a.w; this._onChangeCallback(); return this }, setFromEuler: function (a, b) {
+						if (!a || !a.isEuler) throw Error("THREE.Quaternion: .setFromEuler() now expects an Euler rotation rather than a Vector3 and order."); var c = a._x, d = a._y, e = a._z; a = a.order; var f = Math.cos, g = Math.sin, h = f(c / 2), l = f(d / 2);
+						f = f(e / 2); c = g(c / 2); d = g(d / 2); e = g(e / 2); switch (a) {
+							case "XYZ": this._x = c * l * f + h * d * e; this._y = h * d * f - c * l * e; this._z = h * l * e + c * d * f; this._w = h * l * f - c * d * e; break; case "YXZ": this._x = c * l * f + h * d * e; this._y = h * d * f - c * l * e; this._z = h * l * e - c * d * f; this._w = h * l * f + c * d * e; break; case "ZXY": this._x = c * l * f - h * d * e; this._y = h * d * f + c * l * e; this._z = h * l * e + c * d * f; this._w = h * l * f - c * d * e; break; case "ZYX": this._x = c * l * f - h * d * e; this._y = h * d * f + c * l * e; this._z = h * l * e - c * d * f; this._w = h * l * f + c * d * e; break; case "YZX": this._x = c * l * f + h * d * e; this._y = h * d * f + c * l * e; this._z = h * l * e - c *
+								d * f; this._w = h * l * f - c * d * e; break; case "XZY": this._x = c * l * f - h * d * e; this._y = h * d * f - c * l * e; this._z = h * l * e + c * d * f; this._w = h * l * f + c * d * e; break; default: console.warn("THREE.Quaternion: .setFromEuler() encountered an unknown order: " + a)
+						}!1 !== b && this._onChangeCallback(); return this
+					}, setFromAxisAngle: function (a, b) { b /= 2; var c = Math.sin(b); this._x = a.x * c; this._y = a.y * c; this._z = a.z * c; this._w = Math.cos(b); this._onChangeCallback(); return this }, setFromRotationMatrix: function (a) {
+						var b = a.elements, c = b[0]; a = b[4]; var d = b[8], e = b[1],
+							f = b[5], g = b[9], h = b[2], l = b[6]; b = b[10]; var m = c + f + b; 0 < m ? (c = .5 / Math.sqrt(m + 1), this._w = .25 / c, this._x = (l - g) * c, this._y = (d - h) * c, this._z = (e - a) * c) : c > f && c > b ? (c = 2 * Math.sqrt(1 + c - f - b), this._w = (l - g) / c, this._x = .25 * c, this._y = (a + e) / c, this._z = (d + h) / c) : f > b ? (c = 2 * Math.sqrt(1 + f - c - b), this._w = (d - h) / c, this._x = (a + e) / c, this._y = .25 * c, this._z = (g + l) / c) : (c = 2 * Math.sqrt(1 + b - c - f), this._w = (e - a) / c, this._x = (d + h) / c, this._y = (g + l) / c, this._z = .25 * c); this._onChangeCallback(); return this
+					}, setFromUnitVectors: function (a, b) {
+						var c = a.dot(b) + 1; 1E-6 >
+							c ? (c = 0, Math.abs(a.x) > Math.abs(a.z) ? (this._x = -a.y, this._y = a.x, this._z = 0) : (this._x = 0, this._y = -a.z, this._z = a.y)) : (this._x = a.y * b.z - a.z * b.y, this._y = a.z * b.x - a.x * b.z, this._z = a.x * b.y - a.y * b.x); this._w = c; return this.normalize()
+					}, angleTo: function (a) { return 2 * Math.acos(Math.abs(L.clamp(this.dot(a), -1, 1))) }, rotateTowards: function (a, b) { var c = this.angleTo(a); if (0 === c) return this; this.slerp(a, Math.min(1, b / c)); return this }, inverse: function () { return this.conjugate() }, conjugate: function () {
+					this._x *= -1; this._y *= -1; this._z *=
+						-1; this._onChangeCallback(); return this
+					}, dot: function (a) { return this._x * a._x + this._y * a._y + this._z * a._z + this._w * a._w }, lengthSq: function () { return this._x * this._x + this._y * this._y + this._z * this._z + this._w * this._w }, length: function () { return Math.sqrt(this._x * this._x + this._y * this._y + this._z * this._z + this._w * this._w) }, normalize: function () { var a = this.length(); 0 === a ? (this._z = this._y = this._x = 0, this._w = 1) : (a = 1 / a, this._x *= a, this._y *= a, this._z *= a, this._w *= a); this._onChangeCallback(); return this }, multiply: function (a,
+						b) { return void 0 !== b ? (console.warn("THREE.Quaternion: .multiply() now only accepts one argument. Use .multiplyQuaternions( a, b ) instead."), this.multiplyQuaternions(a, b)) : this.multiplyQuaternions(this, a) }, premultiply: function (a) { return this.multiplyQuaternions(a, this) }, multiplyQuaternions: function (a, b) { var c = a._x, d = a._y, e = a._z; a = a._w; var f = b._x, g = b._y, h = b._z; b = b._w; this._x = c * b + a * f + d * h - e * g; this._y = d * b + a * g + e * f - c * h; this._z = e * b + a * h + c * g - d * f; this._w = a * b - c * f - d * g - e * h; this._onChangeCallback(); return this },
+				slerp: function (a, b) {
+					if (0 === b) return this; if (1 === b) return this.copy(a); var c = this._x, d = this._y, e = this._z, f = this._w, g = f * a._w + c * a._x + d * a._y + e * a._z; 0 > g ? (this._w = -a._w, this._x = -a._x, this._y = -a._y, this._z = -a._z, g = -g) : this.copy(a); if (1 <= g) return this._w = f, this._x = c, this._y = d, this._z = e, this; a = 1 - g * g; if (a <= Number.EPSILON) return g = 1 - b, this._w = g * f + b * this._w, this._x = g * c + b * this._x, this._y = g * d + b * this._y, this._z = g * e + b * this._z, this.normalize(), this._onChangeCallback(), this; a = Math.sqrt(a); var h = Math.atan2(a, g); g = Math.sin((1 -
+						b) * h) / a; b = Math.sin(b * h) / a; this._w = f * g + this._w * b; this._x = c * g + this._x * b; this._y = d * g + this._y * b; this._z = e * g + this._z * b; this._onChangeCallback(); return this
+				}, equals: function (a) { return a._x === this._x && a._y === this._y && a._z === this._z && a._w === this._w }, fromArray: function (a, b) { void 0 === b && (b = 0); this._x = a[b]; this._y = a[b + 1]; this._z = a[b + 2]; this._w = a[b + 3]; this._onChangeCallback(); return this }, toArray: function (a, b) { void 0 === a && (a = []); void 0 === b && (b = 0); a[b] = this._x; a[b + 1] = this._y; a[b + 2] = this._z; a[b + 3] = this._w; return a },
+				fromBufferAttribute: function (a, b) { this._x = a.getX(b); this._y = a.getY(b); this._z = a.getZ(b); this._w = a.getW(b); return this }, _onChange: function (a) { this._onChangeCallback = a; return this }, _onChangeCallback: function () { }
+			}); var Wg = new n, wi = new ma; Object.assign(n.prototype, {
+				isVector3: !0, set: function (a, b, c) { this.x = a; this.y = b; this.z = c; return this }, setScalar: function (a) { this.z = this.y = this.x = a; return this }, setX: function (a) { this.x = a; return this }, setY: function (a) { this.y = a; return this }, setZ: function (a) { this.z = a; return this },
+				setComponent: function (a, b) { switch (a) { case 0: this.x = b; break; case 1: this.y = b; break; case 2: this.z = b; break; default: throw Error("index is out of range: " + a); }return this }, getComponent: function (a) { switch (a) { case 0: return this.x; case 1: return this.y; case 2: return this.z; default: throw Error("index is out of range: " + a); } }, clone: function () { return new this.constructor(this.x, this.y, this.z) }, copy: function (a) { this.x = a.x; this.y = a.y; this.z = a.z; return this }, add: function (a, b) {
+					if (void 0 !== b) return console.warn("THREE.Vector3: .add() now only accepts one argument. Use .addVectors( a, b ) instead."),
+						this.addVectors(a, b); this.x += a.x; this.y += a.y; this.z += a.z; return this
+				}, addScalar: function (a) { this.x += a; this.y += a; this.z += a; return this }, addVectors: function (a, b) { this.x = a.x + b.x; this.y = a.y + b.y; this.z = a.z + b.z; return this }, addScaledVector: function (a, b) { this.x += a.x * b; this.y += a.y * b; this.z += a.z * b; return this }, sub: function (a, b) {
+					if (void 0 !== b) return console.warn("THREE.Vector3: .sub() now only accepts one argument. Use .subVectors( a, b ) instead."), this.subVectors(a, b); this.x -= a.x; this.y -= a.y; this.z -= a.z;
+					return this
+				}, subScalar: function (a) { this.x -= a; this.y -= a; this.z -= a; return this }, subVectors: function (a, b) { this.x = a.x - b.x; this.y = a.y - b.y; this.z = a.z - b.z; return this }, multiply: function (a, b) { if (void 0 !== b) return console.warn("THREE.Vector3: .multiply() now only accepts one argument. Use .multiplyVectors( a, b ) instead."), this.multiplyVectors(a, b); this.x *= a.x; this.y *= a.y; this.z *= a.z; return this }, multiplyScalar: function (a) { this.x *= a; this.y *= a; this.z *= a; return this }, multiplyVectors: function (a, b) {
+				this.x = a.x *
+					b.x; this.y = a.y * b.y; this.z = a.z * b.z; return this
+				}, applyEuler: function (a) { a && a.isEuler || console.error("THREE.Vector3: .applyEuler() now expects an Euler rotation rather than a Vector3 and order."); return this.applyQuaternion(wi.setFromEuler(a)) }, applyAxisAngle: function (a, b) { return this.applyQuaternion(wi.setFromAxisAngle(a, b)) }, applyMatrix3: function (a) { var b = this.x, c = this.y, d = this.z; a = a.elements; this.x = a[0] * b + a[3] * c + a[6] * d; this.y = a[1] * b + a[4] * c + a[7] * d; this.z = a[2] * b + a[5] * c + a[8] * d; return this }, applyNormalMatrix: function (a) { return this.applyMatrix3(a).normalize() },
+				applyMatrix4: function (a) { var b = this.x, c = this.y, d = this.z; a = a.elements; var e = 1 / (a[3] * b + a[7] * c + a[11] * d + a[15]); this.x = (a[0] * b + a[4] * c + a[8] * d + a[12]) * e; this.y = (a[1] * b + a[5] * c + a[9] * d + a[13]) * e; this.z = (a[2] * b + a[6] * c + a[10] * d + a[14]) * e; return this }, applyQuaternion: function (a) { var b = this.x, c = this.y, d = this.z, e = a.x, f = a.y, g = a.z; a = a.w; var h = a * b + f * d - g * c, l = a * c + g * b - e * d, m = a * d + e * c - f * b; b = -e * b - f * c - g * d; this.x = h * a + b * -e + l * -g - m * -f; this.y = l * a + b * -f + m * -e - h * -g; this.z = m * a + b * -g + h * -f - l * -e; return this }, project: function (a) { return this.applyMatrix4(a.matrixWorldInverse).applyMatrix4(a.projectionMatrix) },
+				unproject: function (a) { return this.applyMatrix4(a.projectionMatrixInverse).applyMatrix4(a.matrixWorld) }, transformDirection: function (a) { var b = this.x, c = this.y, d = this.z; a = a.elements; this.x = a[0] * b + a[4] * c + a[8] * d; this.y = a[1] * b + a[5] * c + a[9] * d; this.z = a[2] * b + a[6] * c + a[10] * d; return this.normalize() }, divide: function (a) { this.x /= a.x; this.y /= a.y; this.z /= a.z; return this }, divideScalar: function (a) { return this.multiplyScalar(1 / a) }, min: function (a) {
+				this.x = Math.min(this.x, a.x); this.y = Math.min(this.y, a.y); this.z = Math.min(this.z,
+					a.z); return this
+				}, max: function (a) { this.x = Math.max(this.x, a.x); this.y = Math.max(this.y, a.y); this.z = Math.max(this.z, a.z); return this }, clamp: function (a, b) { this.x = Math.max(a.x, Math.min(b.x, this.x)); this.y = Math.max(a.y, Math.min(b.y, this.y)); this.z = Math.max(a.z, Math.min(b.z, this.z)); return this }, clampScalar: function (a, b) { this.x = Math.max(a, Math.min(b, this.x)); this.y = Math.max(a, Math.min(b, this.y)); this.z = Math.max(a, Math.min(b, this.z)); return this }, clampLength: function (a, b) {
+					var c = this.length(); return this.divideScalar(c ||
+						1).multiplyScalar(Math.max(a, Math.min(b, c)))
+				}, floor: function () { this.x = Math.floor(this.x); this.y = Math.floor(this.y); this.z = Math.floor(this.z); return this }, ceil: function () { this.x = Math.ceil(this.x); this.y = Math.ceil(this.y); this.z = Math.ceil(this.z); return this }, round: function () { this.x = Math.round(this.x); this.y = Math.round(this.y); this.z = Math.round(this.z); return this }, roundToZero: function () {
+				this.x = 0 > this.x ? Math.ceil(this.x) : Math.floor(this.x); this.y = 0 > this.y ? Math.ceil(this.y) : Math.floor(this.y); this.z =
+					0 > this.z ? Math.ceil(this.z) : Math.floor(this.z); return this
+				}, negate: function () { this.x = -this.x; this.y = -this.y; this.z = -this.z; return this }, dot: function (a) { return this.x * a.x + this.y * a.y + this.z * a.z }, lengthSq: function () { return this.x * this.x + this.y * this.y + this.z * this.z }, length: function () { return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z) }, manhattanLength: function () { return Math.abs(this.x) + Math.abs(this.y) + Math.abs(this.z) }, normalize: function () { return this.divideScalar(this.length() || 1) }, setLength: function (a) { return this.normalize().multiplyScalar(a) },
+				lerp: function (a, b) { this.x += (a.x - this.x) * b; this.y += (a.y - this.y) * b; this.z += (a.z - this.z) * b; return this }, lerpVectors: function (a, b, c) { return this.subVectors(b, a).multiplyScalar(c).add(a) }, cross: function (a, b) { return void 0 !== b ? (console.warn("THREE.Vector3: .cross() now only accepts one argument. Use .crossVectors( a, b ) instead."), this.crossVectors(a, b)) : this.crossVectors(this, a) }, crossVectors: function (a, b) { var c = a.x, d = a.y; a = a.z; var e = b.x, f = b.y; b = b.z; this.x = d * b - a * f; this.y = a * e - c * b; this.z = c * f - d * e; return this },
+				projectOnVector: function (a) { var b = a.lengthSq(); if (0 === b) return this.set(0, 0, 0); b = a.dot(this) / b; return this.copy(a).multiplyScalar(b) }, projectOnPlane: function (a) { Wg.copy(this).projectOnVector(a); return this.sub(Wg) }, reflect: function (a) { return this.sub(Wg.copy(a).multiplyScalar(2 * this.dot(a))) }, angleTo: function (a) { var b = Math.sqrt(this.lengthSq() * a.lengthSq()); if (0 === b) return Math.PI / 2; a = this.dot(a) / b; return Math.acos(L.clamp(a, -1, 1)) }, distanceTo: function (a) { return Math.sqrt(this.distanceToSquared(a)) },
+				distanceToSquared: function (a) { var b = this.x - a.x, c = this.y - a.y; a = this.z - a.z; return b * b + c * c + a * a }, manhattanDistanceTo: function (a) { return Math.abs(this.x - a.x) + Math.abs(this.y - a.y) + Math.abs(this.z - a.z) }, setFromSpherical: function (a) { return this.setFromSphericalCoords(a.radius, a.phi, a.theta) }, setFromSphericalCoords: function (a, b, c) { var d = Math.sin(b) * a; this.x = d * Math.sin(c); this.y = Math.cos(b) * a; this.z = d * Math.cos(c); return this }, setFromCylindrical: function (a) {
+					return this.setFromCylindricalCoords(a.radius, a.theta,
+						a.y)
+				}, setFromCylindricalCoords: function (a, b, c) { this.x = a * Math.sin(b); this.y = c; this.z = a * Math.cos(b); return this }, setFromMatrixPosition: function (a) { a = a.elements; this.x = a[12]; this.y = a[13]; this.z = a[14]; return this }, setFromMatrixScale: function (a) { var b = this.setFromMatrixColumn(a, 0).length(), c = this.setFromMatrixColumn(a, 1).length(); a = this.setFromMatrixColumn(a, 2).length(); this.x = b; this.y = c; this.z = a; return this }, setFromMatrixColumn: function (a, b) { return this.fromArray(a.elements, 4 * b) }, setFromMatrix3Column: function (a,
+					b) { return this.fromArray(a.elements, 3 * b) }, equals: function (a) { return a.x === this.x && a.y === this.y && a.z === this.z }, fromArray: function (a, b) { void 0 === b && (b = 0); this.x = a[b]; this.y = a[b + 1]; this.z = a[b + 2]; return this }, toArray: function (a, b) { void 0 === a && (a = []); void 0 === b && (b = 0); a[b] = this.x; a[b + 1] = this.y; a[b + 2] = this.z; return a }, fromBufferAttribute: function (a, b, c) { void 0 !== c && console.warn("THREE.Vector3: offset has been removed from .fromBufferAttribute()."); this.x = a.getX(b); this.y = a.getY(b); this.z = a.getZ(b); return this },
+				random: function () { this.x = Math.random(); this.y = Math.random(); this.z = Math.random(); return this }
+			}); var ld = new n, Z = new P, Jk = new n(0, 0, 0), Kk = new n(1, 1, 1), Mb = new n, Af = new n, Ca = new n; Object.assign(P.prototype, {
+				isMatrix4: !0, set: function (a, b, c, d, e, f, g, h, l, m, k, p, n, r, q, v) { var t = this.elements; t[0] = a; t[4] = b; t[8] = c; t[12] = d; t[1] = e; t[5] = f; t[9] = g; t[13] = h; t[2] = l; t[6] = m; t[10] = k; t[14] = p; t[3] = n; t[7] = r; t[11] = q; t[15] = v; return this }, identity: function () { this.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1); return this }, clone: function () { return (new P).fromArray(this.elements) },
+				copy: function (a) { var b = this.elements; a = a.elements; b[0] = a[0]; b[1] = a[1]; b[2] = a[2]; b[3] = a[3]; b[4] = a[4]; b[5] = a[5]; b[6] = a[6]; b[7] = a[7]; b[8] = a[8]; b[9] = a[9]; b[10] = a[10]; b[11] = a[11]; b[12] = a[12]; b[13] = a[13]; b[14] = a[14]; b[15] = a[15]; return this }, copyPosition: function (a) { var b = this.elements; a = a.elements; b[12] = a[12]; b[13] = a[13]; b[14] = a[14]; return this }, extractBasis: function (a, b, c) { a.setFromMatrixColumn(this, 0); b.setFromMatrixColumn(this, 1); c.setFromMatrixColumn(this, 2); return this }, makeBasis: function (a, b, c) {
+					this.set(a.x,
+						b.x, c.x, 0, a.y, b.y, c.y, 0, a.z, b.z, c.z, 0, 0, 0, 0, 1); return this
+				}, extractRotation: function (a) { var b = this.elements, c = a.elements, d = 1 / ld.setFromMatrixColumn(a, 0).length(), e = 1 / ld.setFromMatrixColumn(a, 1).length(); a = 1 / ld.setFromMatrixColumn(a, 2).length(); b[0] = c[0] * d; b[1] = c[1] * d; b[2] = c[2] * d; b[3] = 0; b[4] = c[4] * e; b[5] = c[5] * e; b[6] = c[6] * e; b[7] = 0; b[8] = c[8] * a; b[9] = c[9] * a; b[10] = c[10] * a; b[11] = 0; b[12] = 0; b[13] = 0; b[14] = 0; b[15] = 1; return this }, makeRotationFromEuler: function (a) {
+				a && a.isEuler || console.error("THREE.Matrix4: .makeRotationFromEuler() now expects a Euler rotation rather than a Vector3 and order.");
+					var b = this.elements, c = a.x, d = a.y, e = a.z, f = Math.cos(c); c = Math.sin(c); var g = Math.cos(d); d = Math.sin(d); var h = Math.cos(e); e = Math.sin(e); if ("XYZ" === a.order) { a = f * h; var l = f * e, m = c * h, k = c * e; b[0] = g * h; b[4] = -g * e; b[8] = d; b[1] = l + m * d; b[5] = a - k * d; b[9] = -c * g; b[2] = k - a * d; b[6] = m + l * d; b[10] = f * g } else "YXZ" === a.order ? (a = g * h, l = g * e, m = d * h, k = d * e, b[0] = a + k * c, b[4] = m * c - l, b[8] = f * d, b[1] = f * e, b[5] = f * h, b[9] = -c, b[2] = l * c - m, b[6] = k + a * c, b[10] = f * g) : "ZXY" === a.order ? (a = g * h, l = g * e, m = d * h, k = d * e, b[0] = a - k * c, b[4] = -f * e, b[8] = m + l * c, b[1] = l + m * c, b[5] = f * h, b[9] =
+						k - a * c, b[2] = -f * d, b[6] = c, b[10] = f * g) : "ZYX" === a.order ? (a = f * h, l = f * e, m = c * h, k = c * e, b[0] = g * h, b[4] = m * d - l, b[8] = a * d + k, b[1] = g * e, b[5] = k * d + a, b[9] = l * d - m, b[2] = -d, b[6] = c * g, b[10] = f * g) : "YZX" === a.order ? (a = f * g, l = f * d, m = c * g, k = c * d, b[0] = g * h, b[4] = k - a * e, b[8] = m * e + l, b[1] = e, b[5] = f * h, b[9] = -c * h, b[2] = -d * h, b[6] = l * e + m, b[10] = a - k * e) : "XZY" === a.order && (a = f * g, l = f * d, m = c * g, k = c * d, b[0] = g * h, b[4] = -e, b[8] = d * h, b[1] = a * e + k, b[5] = f * h, b[9] = l * e - m, b[2] = m * e - l, b[6] = c * h, b[10] = k * e + a); b[3] = 0; b[7] = 0; b[11] = 0; b[12] = 0; b[13] = 0; b[14] = 0; b[15] = 1; return this
 				}, makeRotationFromQuaternion: function (a) {
 					return this.compose(Jk,
 						a, Kk)
@@ -17477,231 +17790,233 @@ module.exports = exports = tube;
 				this._x =
 					a._x; this._y = a._y; this._z = a._z; this._order = a._order; this._onChangeCallback(); return this
 				}, setFromRotationMatrix: function (a, b, c) {
-					var d = L.clamp, e = a.elements; a = e[0]; var f = e[4], g = e[8], h = e[1], l = e[5], m = e[9], k = e[2], p = e[6]; e = e[10]; b = b || this._order; "XYZ" === b ? (this._y = Math.asin(d(g, -1, 1)), .9999999 > Math.abs(g) ? (this._x = Math.atan2(-m, e), this._z = Math.atan2(-f, a)) : (this._x = Math.atan2(p, l), this._z = 0)) : "YXZ" === b ? (this._x = Math.asin(-d(m, -1, 1)), .9999999 > Math.abs(m) ? (this._y = Math.atan2(g, e), this._z = Math.atan2(h, l)) :
-						(this._y = Math.atan2(-k, a), this._z = 0)) : "ZXY" === b ? (this._x = Math.asin(d(p, -1, 1)), .9999999 > Math.abs(p) ? (this._y = Math.atan2(-k, e), this._z = Math.atan2(-f, l)) : (this._y = 0, this._z = Math.atan2(h, a))) : "ZYX" === b ? (this._y = Math.asin(-d(k, -1, 1)), .9999999 > Math.abs(k) ? (this._x = Math.atan2(p, e), this._z = Math.atan2(h, a)) : (this._x = 0, this._z = Math.atan2(-f, l))) : "YZX" === b ? (this._z = Math.asin(d(h, -1, 1)), .9999999 > Math.abs(h) ? (this._x = Math.atan2(-m, l), this._y = Math.atan2(-k, a)) : (this._x = 0, this._y = Math.atan2(g, e))) : "XZY" === b ? (this._z =
-							Math.asin(-d(f, -1, 1)), .9999999 > Math.abs(f) ? (this._x = Math.atan2(p, l), this._y = Math.atan2(g, a)) : (this._x = Math.atan2(-m, e), this._y = 0)) : console.warn("THREE.Euler: .setFromRotationMatrix() given unsupported order: " + b); this._order = b; !1 !== c && this._onChangeCallback(); return this
-				}, setFromQuaternion: function (a, b, c) { xi.makeRotationFromQuaternion(a); return this.setFromRotationMatrix(xi, b, c) }, setFromVector3: function (a, b) { return this.set(a.x, a.y, a.z, b || this._order) }, reorder: function (a) {
-					yi.setFromEuler(this); return this.setFromQuaternion(yi,
-						a)
-				}, equals: function (a) { return a._x === this._x && a._y === this._y && a._z === this._z && a._order === this._order }, fromArray: function (a) { this._x = a[0]; this._y = a[1]; this._z = a[2]; void 0 !== a[3] && (this._order = a[3]); this._onChangeCallback(); return this }, toArray: function (a, b) { void 0 === a && (a = []); void 0 === b && (b = 0); a[b] = this._x; a[b + 1] = this._y; a[b + 2] = this._z; a[b + 3] = this._order; return a }, toVector3: function (a) { return a ? a.set(this._x, this._y, this._z) : new n(this._x, this._y, this._z) }, _onChange: function (a) {
-				this._onChangeCallback =
-					a; return this
-				}, _onChangeCallback: function () { }
-			}); Object.assign(De.prototype, { set: function (a) { this.mask = 1 << a | 0 }, enable: function (a) { this.mask = this.mask | 1 << a | 0 }, enableAll: function () { this.mask = -1 }, toggle: function (a) { this.mask ^= 1 << a | 0 }, disable: function (a) { this.mask &= ~(1 << a | 0) }, disableAll: function () { this.mask = 0 }, test: function (a) { return 0 !== (this.mask & a.mask) } }); var ij = 0, zi = new n, md = new ma, xb = new P, Bf = new n, te = new n, Lk = new n, Mk = new ma, Ai = new n(1, 0, 0), Bi = new n(0, 1, 0), Ci = new n(0, 0, 1), Nk = { type: "added" }, Ok = { type: "removed" };
-	F.DefaultUp = new n(0, 1, 0); F.DefaultMatrixAutoUpdate = !0; F.prototype = Object.assign(Object.create(ua.prototype), {
-		constructor: F, isObject3D: !0, onBeforeRender: function () { }, onAfterRender: function () { }, applyMatrix4: function (a) { this.matrixAutoUpdate && this.updateMatrix(); this.matrix.premultiply(a); this.matrix.decompose(this.position, this.quaternion, this.scale) }, applyQuaternion: function (a) { this.quaternion.premultiply(a); return this }, setRotationFromAxisAngle: function (a, b) { this.quaternion.setFromAxisAngle(a, b) },
-		setRotationFromEuler: function (a) { this.quaternion.setFromEuler(a, !0) }, setRotationFromMatrix: function (a) { this.quaternion.setFromRotationMatrix(a) }, setRotationFromQuaternion: function (a) { this.quaternion.copy(a) }, rotateOnAxis: function (a, b) { md.setFromAxisAngle(a, b); this.quaternion.multiply(md); return this }, rotateOnWorldAxis: function (a, b) { md.setFromAxisAngle(a, b); this.quaternion.premultiply(md); return this }, rotateX: function (a) { return this.rotateOnAxis(Ai, a) }, rotateY: function (a) {
-			return this.rotateOnAxis(Bi,
-				a)
-		}, rotateZ: function (a) { return this.rotateOnAxis(Ci, a) }, translateOnAxis: function (a, b) { zi.copy(a).applyQuaternion(this.quaternion); this.position.add(zi.multiplyScalar(b)); return this }, translateX: function (a) { return this.translateOnAxis(Ai, a) }, translateY: function (a) { return this.translateOnAxis(Bi, a) }, translateZ: function (a) { return this.translateOnAxis(Ci, a) }, localToWorld: function (a) { return a.applyMatrix4(this.matrixWorld) }, worldToLocal: function (a) { return a.applyMatrix4(xb.getInverse(this.matrixWorld)) },
-		lookAt: function (a, b, c) { a.isVector3 ? Bf.copy(a) : Bf.set(a, b, c); a = this.parent; this.updateWorldMatrix(!0, !1); te.setFromMatrixPosition(this.matrixWorld); this.isCamera || this.isLight ? xb.lookAt(te, Bf, this.up) : xb.lookAt(Bf, te, this.up); this.quaternion.setFromRotationMatrix(xb); a && (xb.extractRotation(a.matrixWorld), md.setFromRotationMatrix(xb), this.quaternion.premultiply(md.inverse())) }, add: function (a) {
-			if (1 < arguments.length) { for (var b = 0; b < arguments.length; b++)this.add(arguments[b]); return this } if (a === this) return console.error("THREE.Object3D.add: object can't be added as a child of itself.",
-				a), this; a && a.isObject3D ? (null !== a.parent && a.parent.remove(a), a.parent = this, this.children.push(a), a.dispatchEvent(Nk)) : console.error("THREE.Object3D.add: object not an instance of THREE.Object3D.", a); return this
-		}, remove: function (a) { if (1 < arguments.length) { for (var b = 0; b < arguments.length; b++)this.remove(arguments[b]); return this } b = this.children.indexOf(a); -1 !== b && (a.parent = null, this.children.splice(b, 1), a.dispatchEvent(Ok)); return this }, attach: function (a) {
-			this.updateWorldMatrix(!0, !1); xb.getInverse(this.matrixWorld);
-			null !== a.parent && (a.parent.updateWorldMatrix(!0, !1), xb.multiply(a.parent.matrixWorld)); a.applyMatrix4(xb); a.updateWorldMatrix(!1, !1); this.add(a); return this
-		}, getObjectById: function (a) { return this.getObjectByProperty("id", a) }, getObjectByName: function (a) { return this.getObjectByProperty("name", a) }, getObjectByProperty: function (a, b) { if (this[a] === b) return this; for (var c = 0, d = this.children.length; c < d; c++) { var e = this.children[c].getObjectByProperty(a, b); if (void 0 !== e) return e } }, getWorldPosition: function (a) {
-		void 0 ===
-			a && (console.warn("THREE.Object3D: .getWorldPosition() target is now required"), a = new n); this.updateMatrixWorld(!0); return a.setFromMatrixPosition(this.matrixWorld)
-		}, getWorldQuaternion: function (a) { void 0 === a && (console.warn("THREE.Object3D: .getWorldQuaternion() target is now required"), a = new ma); this.updateMatrixWorld(!0); this.matrixWorld.decompose(te, a, Lk); return a }, getWorldScale: function (a) {
-		void 0 === a && (console.warn("THREE.Object3D: .getWorldScale() target is now required"), a = new n); this.updateMatrixWorld(!0);
-			this.matrixWorld.decompose(te, Mk, a); return a
-		}, getWorldDirection: function (a) { void 0 === a && (console.warn("THREE.Object3D: .getWorldDirection() target is now required"), a = new n); this.updateMatrixWorld(!0); var b = this.matrixWorld.elements; return a.set(b[8], b[9], b[10]).normalize() }, raycast: function () { }, traverse: function (a) { a(this); for (var b = this.children, c = 0, d = b.length; c < d; c++)b[c].traverse(a) }, traverseVisible: function (a) { if (!1 !== this.visible) { a(this); for (var b = this.children, c = 0, d = b.length; c < d; c++)b[c].traverseVisible(a) } },
-		traverseAncestors: function (a) { var b = this.parent; null !== b && (a(b), b.traverseAncestors(a)) }, updateMatrix: function () { this.matrix.compose(this.position, this.quaternion, this.scale); this.matrixWorldNeedsUpdate = !0 }, updateMatrixWorld: function (a) {
-		this.matrixAutoUpdate && this.updateMatrix(); if (this.matrixWorldNeedsUpdate || a) null === this.parent ? this.matrixWorld.copy(this.matrix) : this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix), this.matrixWorldNeedsUpdate = !1, a = !0; for (var b = this.children, c =
-			0, d = b.length; c < d; c++)b[c].updateMatrixWorld(a)
-		}, updateWorldMatrix: function (a, b) { var c = this.parent; !0 === a && null !== c && c.updateWorldMatrix(!0, !1); this.matrixAutoUpdate && this.updateMatrix(); null === this.parent ? this.matrixWorld.copy(this.matrix) : this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix); if (!0 === b) for (a = this.children, b = 0, c = a.length; b < c; b++)a[b].updateWorldMatrix(!1, !0) }, toJSON: function (a) {
-			function b(b, c) { void 0 === b[c.uuid] && (b[c.uuid] = c.toJSON(a)); return c.uuid } function c(a) {
-				var b =
-					[], c; for (c in a) { var d = a[c]; delete d.metadata; b.push(d) } return b
-			} var d = void 0 === a || "string" === typeof a, e = {}; d && (a = { geometries: {}, materials: {}, textures: {}, images: {}, shapes: {} }, e.metadata = { version: 4.5, type: "Object", generator: "Object3D.toJSON" }); var f = {}; f.uuid = this.uuid; f.type = this.type; "" !== this.name && (f.name = this.name); !0 === this.castShadow && (f.castShadow = !0); !0 === this.receiveShadow && (f.receiveShadow = !0); !1 === this.visible && (f.visible = !1); !1 === this.frustumCulled && (f.frustumCulled = !1); 0 !== this.renderOrder &&
-				(f.renderOrder = this.renderOrder); "{}" !== JSON.stringify(this.userData) && (f.userData = this.userData); f.layers = this.layers.mask; f.matrix = this.matrix.toArray(); !1 === this.matrixAutoUpdate && (f.matrixAutoUpdate = !1); this.isInstancedMesh && (f.type = "InstancedMesh", f.count = this.count, f.instanceMatrix = this.instanceMatrix.toJSON()); if (this.isMesh || this.isLine || this.isPoints) {
-				f.geometry = b(a.geometries, this.geometry); var g = this.geometry.parameters; if (void 0 !== g && void 0 !== g.shapes) if (g = g.shapes, Array.isArray(g)) for (var h =
-					0, l = g.length; h < l; h++)b(a.shapes, g[h]); else b(a.shapes, g)
-				} if (void 0 !== this.material) if (Array.isArray(this.material)) { g = []; h = 0; for (l = this.material.length; h < l; h++)g.push(b(a.materials, this.material[h])); f.material = g } else f.material = b(a.materials, this.material); if (0 < this.children.length) for (f.children = [], h = 0; h < this.children.length; h++)f.children.push(this.children[h].toJSON(a).object); if (d) {
-					d = c(a.geometries); h = c(a.materials); l = c(a.textures); var m = c(a.images); g = c(a.shapes); 0 < d.length && (e.geometries = d);
-					0 < h.length && (e.materials = h); 0 < l.length && (e.textures = l); 0 < m.length && (e.images = m); 0 < g.length && (e.shapes = g)
-				} e.object = f; return e
-		}, clone: function (a) { return (new this.constructor).copy(this, a) }, copy: function (a, b) {
-		void 0 === b && (b = !0); this.name = a.name; this.up.copy(a.up); this.position.copy(a.position); this.quaternion.copy(a.quaternion); this.scale.copy(a.scale); this.matrix.copy(a.matrix); this.matrixWorld.copy(a.matrixWorld); this.matrixAutoUpdate = a.matrixAutoUpdate; this.matrixWorldNeedsUpdate = a.matrixWorldNeedsUpdate;
-			this.layers.mask = a.layers.mask; this.visible = a.visible; this.castShadow = a.castShadow; this.receiveShadow = a.receiveShadow; this.frustumCulled = a.frustumCulled; this.renderOrder = a.renderOrder; this.userData = JSON.parse(JSON.stringify(a.userData)); if (!0 === b) for (b = 0; b < a.children.length; b++)this.add(a.children[b].clone()); return this
-		}
-	}); ob.prototype = Object.assign(Object.create(F.prototype), {
-		constructor: ob, isScene: !0, copy: function (a, b) {
-			F.prototype.copy.call(this, a, b); null !== a.background && (this.background = a.background.clone());
-			null !== a.environment && (this.environment = a.environment.clone()); null !== a.fog && (this.fog = a.fog.clone()); null !== a.overrideMaterial && (this.overrideMaterial = a.overrideMaterial.clone()); this.autoUpdate = a.autoUpdate; this.matrixAutoUpdate = a.matrixAutoUpdate; return this
-		}, toJSON: function (a) {
-			var b = F.prototype.toJSON.call(this, a); null !== this.background && (b.object.background = this.background.toJSON(a)); null !== this.environment && (b.object.environment = this.environment.toJSON(a)); null !== this.fog && (b.object.fog = this.fog.toJSON());
-			return b
-		}, dispose: function () { this.dispatchEvent({ type: "dispose" }) }
-	}); var yb = [new n, new n, new n, new n, new n, new n, new n, new n], ue = new n, Xg = new Sa, nd = new n, od = new n, pd = new n, Nb = new n, Ob = new n, pc = new n, ve = new n, Cf = new n, Df = new n, Sb = new n; Object.assign(Sa.prototype, {
-		isBox3: !0, set: function (a, b) { this.min.copy(a); this.max.copy(b); return this }, setFromArray: function (a) {
-			for (var b = Infinity, c = Infinity, d = Infinity, e = -Infinity, f = -Infinity, g = -Infinity, h = 0, l = a.length; h < l; h += 3) {
-				var m = a[h], k = a[h + 1], p = a[h + 2]; m < b && (b =
-					m); k < c && (c = k); p < d && (d = p); m > e && (e = m); k > f && (f = k); p > g && (g = p)
-			} this.min.set(b, c, d); this.max.set(e, f, g); return this
-		}, setFromBufferAttribute: function (a) { for (var b = Infinity, c = Infinity, d = Infinity, e = -Infinity, f = -Infinity, g = -Infinity, h = 0, l = a.count; h < l; h++) { var m = a.getX(h), k = a.getY(h), p = a.getZ(h); m < b && (b = m); k < c && (c = k); p < d && (d = p); m > e && (e = m); k > f && (f = k); p > g && (g = p) } this.min.set(b, c, d); this.max.set(e, f, g); return this }, setFromPoints: function (a) {
-			this.makeEmpty(); for (var b = 0, c = a.length; b < c; b++)this.expandByPoint(a[b]);
-			return this
-		}, setFromCenterAndSize: function (a, b) { b = ue.copy(b).multiplyScalar(.5); this.min.copy(a).sub(b); this.max.copy(a).add(b); return this }, setFromObject: function (a) { this.makeEmpty(); return this.expandByObject(a) }, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) { this.min.copy(a.min); this.max.copy(a.max); return this }, makeEmpty: function () { this.min.x = this.min.y = this.min.z = Infinity; this.max.x = this.max.y = this.max.z = -Infinity; return this }, isEmpty: function () {
-			return this.max.x <
-				this.min.x || this.max.y < this.min.y || this.max.z < this.min.z
-		}, getCenter: function (a) { void 0 === a && (console.warn("THREE.Box3: .getCenter() target is now required"), a = new n); return this.isEmpty() ? a.set(0, 0, 0) : a.addVectors(this.min, this.max).multiplyScalar(.5) }, getSize: function (a) { void 0 === a && (console.warn("THREE.Box3: .getSize() target is now required"), a = new n); return this.isEmpty() ? a.set(0, 0, 0) : a.subVectors(this.max, this.min) }, expandByPoint: function (a) { this.min.min(a); this.max.max(a); return this }, expandByVector: function (a) {
-			this.min.sub(a);
-			this.max.add(a); return this
-		}, expandByScalar: function (a) { this.min.addScalar(-a); this.max.addScalar(a); return this }, expandByObject: function (a) { a.updateWorldMatrix(!1, !1); var b = a.geometry; void 0 !== b && (null === b.boundingBox && b.computeBoundingBox(), Xg.copy(b.boundingBox), Xg.applyMatrix4(a.matrixWorld), this.union(Xg)); a = a.children; b = 0; for (var c = a.length; b < c; b++)this.expandByObject(a[b]); return this }, containsPoint: function (a) {
-			return a.x < this.min.x || a.x > this.max.x || a.y < this.min.y || a.y > this.max.y || a.z < this.min.z ||
-				a.z > this.max.z ? !1 : !0
-		}, containsBox: function (a) { return this.min.x <= a.min.x && a.max.x <= this.max.x && this.min.y <= a.min.y && a.max.y <= this.max.y && this.min.z <= a.min.z && a.max.z <= this.max.z }, getParameter: function (a, b) { void 0 === b && (console.warn("THREE.Box3: .getParameter() target is now required"), b = new n); return b.set((a.x - this.min.x) / (this.max.x - this.min.x), (a.y - this.min.y) / (this.max.y - this.min.y), (a.z - this.min.z) / (this.max.z - this.min.z)) }, intersectsBox: function (a) {
-			return a.max.x < this.min.x || a.min.x > this.max.x ||
-				a.max.y < this.min.y || a.min.y > this.max.y || a.max.z < this.min.z || a.min.z > this.max.z ? !1 : !0
-		}, intersectsSphere: function (a) { this.clampPoint(a.center, ue); return ue.distanceToSquared(a.center) <= a.radius * a.radius }, intersectsPlane: function (a) {
-			if (0 < a.normal.x) { var b = a.normal.x * this.min.x; var c = a.normal.x * this.max.x } else b = a.normal.x * this.max.x, c = a.normal.x * this.min.x; 0 < a.normal.y ? (b += a.normal.y * this.min.y, c += a.normal.y * this.max.y) : (b += a.normal.y * this.max.y, c += a.normal.y * this.min.y); 0 < a.normal.z ? (b += a.normal.z *
-				this.min.z, c += a.normal.z * this.max.z) : (b += a.normal.z * this.max.z, c += a.normal.z * this.min.z); return b <= -a.constant && c >= -a.constant
-		}, intersectsTriangle: function (a) {
-			if (this.isEmpty()) return !1; this.getCenter(ve); Cf.subVectors(this.max, ve); nd.subVectors(a.a, ve); od.subVectors(a.b, ve); pd.subVectors(a.c, ve); Nb.subVectors(od, nd); Ob.subVectors(pd, od); pc.subVectors(nd, pd); a = [0, -Nb.z, Nb.y, 0, -Ob.z, Ob.y, 0, -pc.z, pc.y, Nb.z, 0, -Nb.x, Ob.z, 0, -Ob.x, pc.z, 0, -pc.x, -Nb.y, Nb.x, 0, -Ob.y, Ob.x, 0, -pc.y, pc.x, 0]; if (!Yf(a, nd, od, pd, Cf)) return !1;
-			a = [1, 0, 0, 0, 1, 0, 0, 0, 1]; if (!Yf(a, nd, od, pd, Cf)) return !1; Df.crossVectors(Nb, Ob); a = [Df.x, Df.y, Df.z]; return Yf(a, nd, od, pd, Cf)
-		}, clampPoint: function (a, b) { void 0 === b && (console.warn("THREE.Box3: .clampPoint() target is now required"), b = new n); return b.copy(a).clamp(this.min, this.max) }, distanceToPoint: function (a) { return ue.copy(a).clamp(this.min, this.max).sub(a).length() }, getBoundingSphere: function (a) {
-		void 0 === a && console.error("THREE.Box3: .getBoundingSphere() target is now required"); this.getCenter(a.center);
-			a.radius = .5 * this.getSize(ue).length(); return a
-		}, intersect: function (a) { this.min.max(a.min); this.max.min(a.max); this.isEmpty() && this.makeEmpty(); return this }, union: function (a) { this.min.min(a.min); this.max.max(a.max); return this }, applyMatrix4: function (a) {
-			if (this.isEmpty()) return this; yb[0].set(this.min.x, this.min.y, this.min.z).applyMatrix4(a); yb[1].set(this.min.x, this.min.y, this.max.z).applyMatrix4(a); yb[2].set(this.min.x, this.max.y, this.min.z).applyMatrix4(a); yb[3].set(this.min.x, this.max.y, this.max.z).applyMatrix4(a);
-			yb[4].set(this.max.x, this.min.y, this.min.z).applyMatrix4(a); yb[5].set(this.max.x, this.min.y, this.max.z).applyMatrix4(a); yb[6].set(this.max.x, this.max.y, this.min.z).applyMatrix4(a); yb[7].set(this.max.x, this.max.y, this.max.z).applyMatrix4(a); this.setFromPoints(yb); return this
-		}, translate: function (a) { this.min.add(a); this.max.add(a); return this }, equals: function (a) { return a.min.equals(this.min) && a.max.equals(this.max) }
-	}); var Pk = new Sa; Object.assign(cb.prototype, {
-		set: function (a, b) {
-			this.center.copy(a); this.radius =
-				b; return this
-		}, setFromPoints: function (a, b) { var c = this.center; void 0 !== b ? c.copy(b) : Pk.setFromPoints(a).getCenter(c); for (var d = b = 0, e = a.length; d < e; d++)b = Math.max(b, c.distanceToSquared(a[d])); this.radius = Math.sqrt(b); return this }, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) { this.center.copy(a.center); this.radius = a.radius; return this }, isEmpty: function () { return 0 > this.radius }, makeEmpty: function () { this.center.set(0, 0, 0); this.radius = -1; return this }, containsPoint: function (a) {
-			return a.distanceToSquared(this.center) <=
-				this.radius * this.radius
-		}, distanceToPoint: function (a) { return a.distanceTo(this.center) - this.radius }, intersectsSphere: function (a) { var b = this.radius + a.radius; return a.center.distanceToSquared(this.center) <= b * b }, intersectsBox: function (a) { return a.intersectsSphere(this) }, intersectsPlane: function (a) { return Math.abs(a.distanceToPoint(this.center)) <= this.radius }, clampPoint: function (a, b) {
-			var c = this.center.distanceToSquared(a); void 0 === b && (console.warn("THREE.Sphere: .clampPoint() target is now required"),
-				b = new n); b.copy(a); c > this.radius * this.radius && (b.sub(this.center).normalize(), b.multiplyScalar(this.radius).add(this.center)); return b
-		}, getBoundingBox: function (a) { void 0 === a && (console.warn("THREE.Sphere: .getBoundingBox() target is now required"), a = new Sa); if (this.isEmpty()) return a.makeEmpty(), a; a.set(this.center, this.center); a.expandByScalar(this.radius); return a }, applyMatrix4: function (a) { this.center.applyMatrix4(a); this.radius *= a.getMaxScaleOnAxis(); return this }, translate: function (a) {
-			this.center.add(a);
-			return this
-		}, equals: function (a) { return a.center.equals(this.center) && a.radius === this.radius }
-	}); var zb = new n, Yg = new n, Ef = new n, Pb = new n, Zg = new n, Ff = new n, $g = new n; Object.assign(Tb.prototype, {
-		set: function (a, b) { this.origin.copy(a); this.direction.copy(b); return this }, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) { this.origin.copy(a.origin); this.direction.copy(a.direction); return this }, at: function (a, b) {
-		void 0 === b && (console.warn("THREE.Ray: .at() target is now required"), b = new n);
-			return b.copy(this.direction).multiplyScalar(a).add(this.origin)
-		}, lookAt: function (a) { this.direction.copy(a).sub(this.origin).normalize(); return this }, recast: function (a) { this.origin.copy(this.at(a, zb)); return this }, closestPointToPoint: function (a, b) { void 0 === b && (console.warn("THREE.Ray: .closestPointToPoint() target is now required"), b = new n); b.subVectors(a, this.origin); a = b.dot(this.direction); return 0 > a ? b.copy(this.origin) : b.copy(this.direction).multiplyScalar(a).add(this.origin) }, distanceToPoint: function (a) { return Math.sqrt(this.distanceSqToPoint(a)) },
-		distanceSqToPoint: function (a) { var b = zb.subVectors(a, this.origin).dot(this.direction); if (0 > b) return this.origin.distanceToSquared(a); zb.copy(this.direction).multiplyScalar(b).add(this.origin); return zb.distanceToSquared(a) }, distanceSqToSegment: function (a, b, c, d) {
-			Yg.copy(a).add(b).multiplyScalar(.5); Ef.copy(b).sub(a).normalize(); Pb.copy(this.origin).sub(Yg); var e = .5 * a.distanceTo(b), f = -this.direction.dot(Ef), g = Pb.dot(this.direction), h = -Pb.dot(Ef), l = Pb.lengthSq(), m = Math.abs(1 - f * f); if (0 < m) {
-				a = f * h - g; b = f *
-					g - h; var k = e * m; 0 <= a ? b >= -k ? b <= k ? (e = 1 / m, a *= e, b *= e, f = a * (a + f * b + 2 * g) + b * (f * a + b + 2 * h) + l) : (b = e, a = Math.max(0, -(f * b + g)), f = -a * a + b * (b + 2 * h) + l) : (b = -e, a = Math.max(0, -(f * b + g)), f = -a * a + b * (b + 2 * h) + l) : b <= -k ? (a = Math.max(0, -(-f * e + g)), b = 0 < a ? -e : Math.min(Math.max(-e, -h), e), f = -a * a + b * (b + 2 * h) + l) : b <= k ? (a = 0, b = Math.min(Math.max(-e, -h), e), f = b * (b + 2 * h) + l) : (a = Math.max(0, -(f * e + g)), b = 0 < a ? e : Math.min(Math.max(-e, -h), e), f = -a * a + b * (b + 2 * h) + l)
-			} else b = 0 < f ? -e : e, a = Math.max(0, -(f * b + g)), f = -a * a + b * (b + 2 * h) + l; c && c.copy(this.direction).multiplyScalar(a).add(this.origin);
-			d && d.copy(Ef).multiplyScalar(b).add(Yg); return f
-		}, intersectSphere: function (a, b) { zb.subVectors(a.center, this.origin); var c = zb.dot(this.direction), d = zb.dot(zb) - c * c; a = a.radius * a.radius; if (d > a) return null; a = Math.sqrt(a - d); d = c - a; c += a; return 0 > d && 0 > c ? null : 0 > d ? this.at(c, b) : this.at(d, b) }, intersectsSphere: function (a) { return this.distanceSqToPoint(a.center) <= a.radius * a.radius }, distanceToPlane: function (a) {
-			var b = a.normal.dot(this.direction); if (0 === b) return 0 === a.distanceToPoint(this.origin) ? 0 : null; a = -(this.origin.dot(a.normal) +
-				a.constant) / b; return 0 <= a ? a : null
-		}, intersectPlane: function (a, b) { a = this.distanceToPlane(a); return null === a ? null : this.at(a, b) }, intersectsPlane: function (a) { var b = a.distanceToPoint(this.origin); return 0 === b || 0 > a.normal.dot(this.direction) * b ? !0 : !1 }, intersectBox: function (a, b) {
-			var c = 1 / this.direction.x; var d = 1 / this.direction.y; var e = 1 / this.direction.z, f = this.origin; if (0 <= c) { var g = (a.min.x - f.x) * c; c *= a.max.x - f.x } else g = (a.max.x - f.x) * c, c *= a.min.x - f.x; if (0 <= d) { var h = (a.min.y - f.y) * d; d *= a.max.y - f.y } else h = (a.max.y -
-				f.y) * d, d *= a.min.y - f.y; if (g > d || h > c) return null; if (h > g || g !== g) g = h; if (d < c || c !== c) c = d; 0 <= e ? (h = (a.min.z - f.z) * e, a = (a.max.z - f.z) * e) : (h = (a.max.z - f.z) * e, a = (a.min.z - f.z) * e); if (g > a || h > c) return null; if (h > g || g !== g) g = h; if (a < c || c !== c) c = a; return 0 > c ? null : this.at(0 <= g ? g : c, b)
-		}, intersectsBox: function (a) { return null !== this.intersectBox(a, zb) }, intersectTriangle: function (a, b, c, d, e) {
-			Zg.subVectors(b, a); Ff.subVectors(c, a); $g.crossVectors(Zg, Ff); b = this.direction.dot($g); if (0 < b) { if (d) return null; d = 1 } else if (0 > b) d = -1, b = -b; else return null;
-			Pb.subVectors(this.origin, a); a = d * this.direction.dot(Ff.crossVectors(Pb, Ff)); if (0 > a) return null; c = d * this.direction.dot(Zg.cross(Pb)); if (0 > c || a + c > b) return null; a = -d * Pb.dot($g); return 0 > a ? null : this.at(a / b, e)
-		}, applyMatrix4: function (a) { this.origin.applyMatrix4(a); this.direction.transformDirection(a); return this }, equals: function (a) { return a.origin.equals(this.origin) && a.direction.equals(this.direction) }
-	}); var ah = new n, Qk = new n, Rk = new xa; Object.assign(Ta.prototype, {
-		isPlane: !0, set: function (a, b) {
-			this.normal.copy(a);
-			this.constant = b; return this
-		}, setComponents: function (a, b, c, d) { this.normal.set(a, b, c); this.constant = d; return this }, setFromNormalAndCoplanarPoint: function (a, b) { this.normal.copy(a); this.constant = -b.dot(this.normal); return this }, setFromCoplanarPoints: function (a, b, c) { b = ah.subVectors(c, b).cross(Qk.subVectors(a, b)).normalize(); this.setFromNormalAndCoplanarPoint(b, a); return this }, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) {
-			this.normal.copy(a.normal); this.constant = a.constant;
-			return this
-		}, normalize: function () { var a = 1 / this.normal.length(); this.normal.multiplyScalar(a); this.constant *= a; return this }, negate: function () { this.constant *= -1; this.normal.negate(); return this }, distanceToPoint: function (a) { return this.normal.dot(a) + this.constant }, distanceToSphere: function (a) { return this.distanceToPoint(a.center) - a.radius }, projectPoint: function (a, b) { void 0 === b && (console.warn("THREE.Plane: .projectPoint() target is now required"), b = new n); return b.copy(this.normal).multiplyScalar(-this.distanceToPoint(a)).add(a) },
-		intersectLine: function (a, b) { void 0 === b && (console.warn("THREE.Plane: .intersectLine() target is now required"), b = new n); var c = a.delta(ah), d = this.normal.dot(c); if (0 === d) { if (0 === this.distanceToPoint(a.start)) return b.copy(a.start) } else if (d = -(a.start.dot(this.normal) + this.constant) / d, !(0 > d || 1 < d)) return b.copy(c).multiplyScalar(d).add(a.start) }, intersectsLine: function (a) { var b = this.distanceToPoint(a.start); a = this.distanceToPoint(a.end); return 0 > b && 0 < a || 0 > a && 0 < b }, intersectsBox: function (a) { return a.intersectsPlane(this) },
-		intersectsSphere: function (a) { return a.intersectsPlane(this) }, coplanarPoint: function (a) { void 0 === a && (console.warn("THREE.Plane: .coplanarPoint() target is now required"), a = new n); return a.copy(this.normal).multiplyScalar(-this.constant) }, applyMatrix4: function (a, b) { b = b || Rk.getNormalMatrix(a); a = this.coplanarPoint(ah).applyMatrix4(a); b = this.normal.applyMatrix3(b).normalize(); this.constant = -a.dot(b); return this }, translate: function (a) { this.constant -= a.dot(this.normal); return this }, equals: function (a) {
-			return a.normal.equals(this.normal) &&
-				a.constant === this.constant
-		}
-	}); var ab = new n, Ab = new n, bh = new n, Bb = new n, qd = new n, rd = new n, Di = new n, ch = new n, dh = new n, eh = new n; Object.assign(wa, {
-		getNormal: function (a, b, c, d) { void 0 === d && (console.warn("THREE.Triangle: .getNormal() target is now required"), d = new n); d.subVectors(c, b); ab.subVectors(a, b); d.cross(ab); a = d.lengthSq(); return 0 < a ? d.multiplyScalar(1 / Math.sqrt(a)) : d.set(0, 0, 0) }, getBarycoord: function (a, b, c, d, e) {
-			ab.subVectors(d, b); Ab.subVectors(c, b); bh.subVectors(a, b); a = ab.dot(ab); b = ab.dot(Ab); c = ab.dot(bh);
-			var f = Ab.dot(Ab); d = Ab.dot(bh); var g = a * f - b * b; void 0 === e && (console.warn("THREE.Triangle: .getBarycoord() target is now required"), e = new n); if (0 === g) return e.set(-2, -1, -1); g = 1 / g; f = (f * c - b * d) * g; a = (a * d - b * c) * g; return e.set(1 - f - a, a, f)
-		}, containsPoint: function (a, b, c, d) { wa.getBarycoord(a, b, c, d, Bb); return 0 <= Bb.x && 0 <= Bb.y && 1 >= Bb.x + Bb.y }, getUV: function (a, b, c, d, e, f, g, h) { this.getBarycoord(a, b, c, d, Bb); h.set(0, 0); h.addScaledVector(e, Bb.x); h.addScaledVector(f, Bb.y); h.addScaledVector(g, Bb.z); return h }, isFrontFacing: function (a,
-			b, c, d) { ab.subVectors(c, b); Ab.subVectors(a, b); return 0 > ab.cross(Ab).dot(d) ? !0 : !1 }
-	}); Object.assign(wa.prototype, {
-		set: function (a, b, c) { this.a.copy(a); this.b.copy(b); this.c.copy(c); return this }, setFromPointsAndIndices: function (a, b, c, d) { this.a.copy(a[b]); this.b.copy(a[c]); this.c.copy(a[d]); return this }, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) { this.a.copy(a.a); this.b.copy(a.b); this.c.copy(a.c); return this }, getArea: function () {
-			ab.subVectors(this.c, this.b); Ab.subVectors(this.a,
-				this.b); return .5 * ab.cross(Ab).length()
-		}, getMidpoint: function (a) { void 0 === a && (console.warn("THREE.Triangle: .getMidpoint() target is now required"), a = new n); return a.addVectors(this.a, this.b).add(this.c).multiplyScalar(1 / 3) }, getNormal: function (a) { return wa.getNormal(this.a, this.b, this.c, a) }, getPlane: function (a) { void 0 === a && (console.warn("THREE.Triangle: .getPlane() target is now required"), a = new Ta); return a.setFromCoplanarPoints(this.a, this.b, this.c) }, getBarycoord: function (a, b) {
-			return wa.getBarycoord(a,
-				this.a, this.b, this.c, b)
-		}, getUV: function (a, b, c, d, e) { return wa.getUV(a, this.a, this.b, this.c, b, c, d, e) }, containsPoint: function (a) { return wa.containsPoint(a, this.a, this.b, this.c) }, isFrontFacing: function (a) { return wa.isFrontFacing(this.a, this.b, this.c, a) }, intersectsBox: function (a) { return a.intersectsTriangle(this) }, closestPointToPoint: function (a, b) {
-		void 0 === b && (console.warn("THREE.Triangle: .closestPointToPoint() target is now required"), b = new n); var c = this.a, d = this.b, e = this.c; qd.subVectors(d, c); rd.subVectors(e,
-			c); ch.subVectors(a, c); var f = qd.dot(ch), g = rd.dot(ch); if (0 >= f && 0 >= g) return b.copy(c); dh.subVectors(a, d); var h = qd.dot(dh), l = rd.dot(dh); if (0 <= h && l <= h) return b.copy(d); var m = f * l - h * g; if (0 >= m && 0 <= f && 0 >= h) return d = f / (f - h), b.copy(c).addScaledVector(qd, d); eh.subVectors(a, e); a = qd.dot(eh); var k = rd.dot(eh); if (0 <= k && a <= k) return b.copy(e); f = a * g - f * k; if (0 >= f && 0 <= g && 0 >= k) return m = g / (g - k), b.copy(c).addScaledVector(rd, m); g = h * k - a * l; if (0 >= g && 0 <= l - h && 0 <= a - k) return Di.subVectors(e, d), m = (l - h) / (l - h + (a - k)), b.copy(d).addScaledVector(Di,
-				m); e = 1 / (g + f + m); d = f * e; m *= e; return b.copy(c).addScaledVector(qd, d).addScaledVector(rd, m)
-		}, equals: function (a) { return a.a.equals(this.a) && a.b.equals(this.b) && a.c.equals(this.c) }
-	}); var Ei = {
-		aliceblue: 15792383, antiquewhite: 16444375, aqua: 65535, aquamarine: 8388564, azure: 15794175, beige: 16119260, bisque: 16770244, black: 0, blanchedalmond: 16772045, blue: 255, blueviolet: 9055202, brown: 10824234, burlywood: 14596231, cadetblue: 6266528, chartreuse: 8388352, chocolate: 13789470, coral: 16744272, cornflowerblue: 6591981, cornsilk: 16775388,
-		crimson: 14423100, cyan: 65535, darkblue: 139, darkcyan: 35723, darkgoldenrod: 12092939, darkgray: 11119017, darkgreen: 25600, darkgrey: 11119017, darkkhaki: 12433259, darkmagenta: 9109643, darkolivegreen: 5597999, darkorange: 16747520, darkorchid: 10040012, darkred: 9109504, darksalmon: 15308410, darkseagreen: 9419919, darkslateblue: 4734347, darkslategray: 3100495, darkslategrey: 3100495, darkturquoise: 52945, darkviolet: 9699539, deeppink: 16716947, deepskyblue: 49151, dimgray: 6908265, dimgrey: 6908265, dodgerblue: 2003199, firebrick: 11674146,
-		floralwhite: 16775920, forestgreen: 2263842, fuchsia: 16711935, gainsboro: 14474460, ghostwhite: 16316671, gold: 16766720, goldenrod: 14329120, gray: 8421504, green: 32768, greenyellow: 11403055, grey: 8421504, honeydew: 15794160, hotpink: 16738740, indianred: 13458524, indigo: 4915330, ivory: 16777200, khaki: 15787660, lavender: 15132410, lavenderblush: 16773365, lawngreen: 8190976, lemonchiffon: 16775885, lightblue: 11393254, lightcoral: 15761536, lightcyan: 14745599, lightgoldenrodyellow: 16448210, lightgray: 13882323, lightgreen: 9498256, lightgrey: 13882323,
-		lightpink: 16758465, lightsalmon: 16752762, lightseagreen: 2142890, lightskyblue: 8900346, lightslategray: 7833753, lightslategrey: 7833753, lightsteelblue: 11584734, lightyellow: 16777184, lime: 65280, limegreen: 3329330, linen: 16445670, magenta: 16711935, maroon: 8388608, mediumaquamarine: 6737322, mediumblue: 205, mediumorchid: 12211667, mediumpurple: 9662683, mediumseagreen: 3978097, mediumslateblue: 8087790, mediumspringgreen: 64154, mediumturquoise: 4772300, mediumvioletred: 13047173, midnightblue: 1644912, mintcream: 16121850, mistyrose: 16770273,
-		moccasin: 16770229, navajowhite: 16768685, navy: 128, oldlace: 16643558, olive: 8421376, olivedrab: 7048739, orange: 16753920, orangered: 16729344, orchid: 14315734, palegoldenrod: 15657130, palegreen: 10025880, paleturquoise: 11529966, palevioletred: 14381203, papayawhip: 16773077, peachpuff: 16767673, peru: 13468991, pink: 16761035, plum: 14524637, powderblue: 11591910, purple: 8388736, rebeccapurple: 6697881, red: 16711680, rosybrown: 12357519, royalblue: 4286945, saddlebrown: 9127187, salmon: 16416882, sandybrown: 16032864, seagreen: 3050327, seashell: 16774638,
-		sienna: 10506797, silver: 12632256, skyblue: 8900331, slateblue: 6970061, slategray: 7372944, slategrey: 7372944, snow: 16775930, springgreen: 65407, steelblue: 4620980, tan: 13808780, teal: 32896, thistle: 14204888, tomato: 16737095, turquoise: 4251856, violet: 15631086, wheat: 16113331, white: 16777215, whitesmoke: 16119285, yellow: 16776960, yellowgreen: 10145074
-	}, Da = { h: 0, s: 0, l: 0 }, Gf = { h: 0, s: 0, l: 0 }; Object.assign(A.prototype, {
-		isColor: !0, r: 1, g: 1, b: 1, set: function (a) {
-			a && a.isColor ? this.copy(a) : "number" === typeof a ? this.setHex(a) : "string" ===
-				typeof a && this.setStyle(a); return this
-		}, setScalar: function (a) { this.b = this.g = this.r = a; return this }, setHex: function (a) { a = Math.floor(a); this.r = (a >> 16 & 255) / 255; this.g = (a >> 8 & 255) / 255; this.b = (a & 255) / 255; return this }, setRGB: function (a, b, c) { this.r = a; this.g = b; this.b = c; return this }, setHSL: function (a, b, c) { a = L.euclideanModulo(a, 1); b = L.clamp(b, 0, 1); c = L.clamp(c, 0, 1); 0 === b ? this.r = this.g = this.b = c : (b = .5 >= c ? c * (1 + b) : c + b - c * b, c = 2 * c - b, this.r = Zf(c, b, a + 1 / 3), this.g = Zf(c, b, a), this.b = Zf(c, b, a - 1 / 3)); return this }, setStyle: function (a) {
-			function b(b) {
-			void 0 !==
-				b && 1 > parseFloat(b) && console.warn("THREE.Color: Alpha component of " + a + " will be ignored.")
-			} var c; if (c = /^((?:rgb|hsl)a?)\(\s*([^\)]*)\)/.exec(a)) {
-				var d = c[2]; switch (c[1]) {
-					case "rgb": case "rgba": if (c = /^(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(,\s*([0-9]*\.?[0-9]+)\s*)?$/.exec(d)) return this.r = Math.min(255, parseInt(c[1], 10)) / 255, this.g = Math.min(255, parseInt(c[2], 10)) / 255, this.b = Math.min(255, parseInt(c[3], 10)) / 255, b(c[5]), this; if (c = /^(\d+)%\s*,\s*(\d+)%\s*,\s*(\d+)%\s*(,\s*([0-9]*\.?[0-9]+)\s*)?$/.exec(d)) return this.r =
-						Math.min(100, parseInt(c[1], 10)) / 100, this.g = Math.min(100, parseInt(c[2], 10)) / 100, this.b = Math.min(100, parseInt(c[3], 10)) / 100, b(c[5]), this; break; case "hsl": case "hsla": if (c = /^([0-9]*\.?[0-9]+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*(,\s*([0-9]*\.?[0-9]+)\s*)?$/.exec(d)) { d = parseFloat(c[1]) / 360; var e = parseInt(c[2], 10) / 100, f = parseInt(c[3], 10) / 100; b(c[5]); return this.setHSL(d, e, f) }
-				}
-			} else if (c = /^#([A-Fa-f0-9]+)$/.exec(a)) {
-				c = c[1]; d = c.length; if (3 === d) return this.r = parseInt(c.charAt(0) + c.charAt(0), 16) / 255, this.g = parseInt(c.charAt(1) +
-					c.charAt(1), 16) / 255, this.b = parseInt(c.charAt(2) + c.charAt(2), 16) / 255, this; if (6 === d) return this.r = parseInt(c.charAt(0) + c.charAt(1), 16) / 255, this.g = parseInt(c.charAt(2) + c.charAt(3), 16) / 255, this.b = parseInt(c.charAt(4) + c.charAt(5), 16) / 255, this
-			} return a && 0 < a.length ? this.setColorName(a) : this
-		}, setColorName: function (a) { var b = Ei[a]; void 0 !== b ? this.setHex(b) : console.warn("THREE.Color: Unknown color " + a); return this }, clone: function () { return new this.constructor(this.r, this.g, this.b) }, copy: function (a) {
-		this.r = a.r;
-			this.g = a.g; this.b = a.b; return this
-		}, copyGammaToLinear: function (a, b) { void 0 === b && (b = 2); this.r = Math.pow(a.r, b); this.g = Math.pow(a.g, b); this.b = Math.pow(a.b, b); return this }, copyLinearToGamma: function (a, b) { void 0 === b && (b = 2); b = 0 < b ? 1 / b : 1; this.r = Math.pow(a.r, b); this.g = Math.pow(a.g, b); this.b = Math.pow(a.b, b); return this }, convertGammaToLinear: function (a) { this.copyGammaToLinear(this, a); return this }, convertLinearToGamma: function (a) { this.copyLinearToGamma(this, a); return this }, copySRGBToLinear: function (a) {
-		this.r =
-			$f(a.r); this.g = $f(a.g); this.b = $f(a.b); return this
-		}, copyLinearToSRGB: function (a) { this.r = ag(a.r); this.g = ag(a.g); this.b = ag(a.b); return this }, convertSRGBToLinear: function () { this.copySRGBToLinear(this); return this }, convertLinearToSRGB: function () { this.copyLinearToSRGB(this); return this }, getHex: function () { return 255 * this.r << 16 ^ 255 * this.g << 8 ^ 255 * this.b << 0 }, getHexString: function () { return ("000000" + this.getHex().toString(16)).slice(-6) }, getHSL: function (a) {
-		void 0 === a && (console.warn("THREE.Color: .getHSL() target is now required"),
-			a = { h: 0, s: 0, l: 0 }); var b = this.r, c = this.g, d = this.b, e = Math.max(b, c, d), f = Math.min(b, c, d), g, h = (f + e) / 2; if (f === e) f = g = 0; else { var l = e - f; f = .5 >= h ? l / (e + f) : l / (2 - e - f); switch (e) { case b: g = (c - d) / l + (c < d ? 6 : 0); break; case c: g = (d - b) / l + 2; break; case d: g = (b - c) / l + 4 }g /= 6 } a.h = g; a.s = f; a.l = h; return a
-		}, getStyle: function () { return "rgb(" + (255 * this.r | 0) + "," + (255 * this.g | 0) + "," + (255 * this.b | 0) + ")" }, offsetHSL: function (a, b, c) { this.getHSL(Da); Da.h += a; Da.s += b; Da.l += c; this.setHSL(Da.h, Da.s, Da.l); return this }, add: function (a) {
-		this.r += a.r; this.g +=
-			a.g; this.b += a.b; return this
-		}, addColors: function (a, b) { this.r = a.r + b.r; this.g = a.g + b.g; this.b = a.b + b.b; return this }, addScalar: function (a) { this.r += a; this.g += a; this.b += a; return this }, sub: function (a) { this.r = Math.max(0, this.r - a.r); this.g = Math.max(0, this.g - a.g); this.b = Math.max(0, this.b - a.b); return this }, multiply: function (a) { this.r *= a.r; this.g *= a.g; this.b *= a.b; return this }, multiplyScalar: function (a) { this.r *= a; this.g *= a; this.b *= a; return this }, lerp: function (a, b) {
-		this.r += (a.r - this.r) * b; this.g += (a.g - this.g) * b; this.b +=
-			(a.b - this.b) * b; return this
-		}, lerpHSL: function (a, b) { this.getHSL(Da); a.getHSL(Gf); a = L.lerp(Da.h, Gf.h, b); var c = L.lerp(Da.s, Gf.s, b); b = L.lerp(Da.l, Gf.l, b); this.setHSL(a, c, b); return this }, equals: function (a) { return a.r === this.r && a.g === this.g && a.b === this.b }, fromArray: function (a, b) { void 0 === b && (b = 0); this.r = a[b]; this.g = a[b + 1]; this.b = a[b + 2]; return this }, toArray: function (a, b) { void 0 === a && (a = []); void 0 === b && (b = 0); a[b] = this.r; a[b + 1] = this.g; a[b + 2] = this.b; return a }, toJSON: function () { return this.getHex() }
-	}); A.NAMES =
-		Ei; Object.assign(yc.prototype, { clone: function () { return (new this.constructor).copy(this) }, copy: function (a) { this.a = a.a; this.b = a.b; this.c = a.c; this.normal.copy(a.normal); this.color.copy(a.color); this.materialIndex = a.materialIndex; for (var b = 0, c = a.vertexNormals.length; b < c; b++)this.vertexNormals[b] = a.vertexNormals[b].clone(); b = 0; for (c = a.vertexColors.length; b < c; b++)this.vertexColors[b] = a.vertexColors[b].clone(); return this } }); var jj = 0; K.prototype = Object.assign(Object.create(ua.prototype), {
-			constructor: K, isMaterial: !0,
-			onBeforeCompile: function () { }, setValues: function (a) {
-				if (void 0 !== a) for (var b in a) {
-					var c = a[b]; if (void 0 === c) console.warn("THREE.Material: '" + b + "' parameter is undefined."); else if ("shading" === b) console.warn("THREE." + this.type + ": .shading has been removed. Use the boolean .flatShading instead."), this.flatShading = 1 === c ? !0 : !1; else {
-						var d = this[b]; void 0 === d ? console.warn("THREE." + this.type + ": '" + b + "' is not a property of this material.") : d && d.isColor ? d.set(c) : d && d.isVector3 && c && c.isVector3 ? d.copy(c) : this[b] =
-							c
+					var d = L.clamp, e = a.elements; a = e[0]; var f = e[4], g = e[8], h = e[1], l = e[5], m = e[9], k = e[2], p = e[6]; e = e[10]; b = b || this._order; switch (b) {
+						case "XYZ": this._y = Math.asin(d(g, -1, 1)); .9999999 > Math.abs(g) ? (this._x = Math.atan2(-m, e), this._z = Math.atan2(-f, a)) : (this._x = Math.atan2(p, l), this._z = 0); break; case "YXZ": this._x = Math.asin(-d(m, -1, 1)); .9999999 > Math.abs(m) ? (this._y = Math.atan2(g, e), this._z = Math.atan2(h,
+							l)) : (this._y = Math.atan2(-k, a), this._z = 0); break; case "ZXY": this._x = Math.asin(d(p, -1, 1)); .9999999 > Math.abs(p) ? (this._y = Math.atan2(-k, e), this._z = Math.atan2(-f, l)) : (this._y = 0, this._z = Math.atan2(h, a)); break; case "ZYX": this._y = Math.asin(-d(k, -1, 1)); .9999999 > Math.abs(k) ? (this._x = Math.atan2(p, e), this._z = Math.atan2(h, a)) : (this._x = 0, this._z = Math.atan2(-f, l)); break; case "YZX": this._z = Math.asin(d(h, -1, 1)); .9999999 > Math.abs(h) ? (this._x = Math.atan2(-m, l), this._y = Math.atan2(-k, a)) : (this._x = 0, this._y = Math.atan2(g,
+								e)); break; case "XZY": this._z = Math.asin(-d(f, -1, 1)); .9999999 > Math.abs(f) ? (this._x = Math.atan2(p, l), this._y = Math.atan2(g, a)) : (this._x = Math.atan2(-m, e), this._y = 0); break; default: console.warn("THREE.Euler: .setFromRotationMatrix() encountered an unknown order: " + b)
+					}this._order = b; !1 !== c && this._onChangeCallback(); return this
+				}, setFromQuaternion: function (a, b, c) { xi.makeRotationFromQuaternion(a); return this.setFromRotationMatrix(xi, b, c) }, setFromVector3: function (a, b) { return this.set(a.x, a.y, a.z, b || this._order) },
+				reorder: function (a) { yi.setFromEuler(this); return this.setFromQuaternion(yi, a) }, equals: function (a) { return a._x === this._x && a._y === this._y && a._z === this._z && a._order === this._order }, fromArray: function (a) { this._x = a[0]; this._y = a[1]; this._z = a[2]; void 0 !== a[3] && (this._order = a[3]); this._onChangeCallback(); return this }, toArray: function (a, b) { void 0 === a && (a = []); void 0 === b && (b = 0); a[b] = this._x; a[b + 1] = this._y; a[b + 2] = this._z; a[b + 3] = this._order; return a }, toVector3: function (a) {
+					return a ? a.set(this._x, this._y, this._z) :
+						new n(this._x, this._y, this._z)
+				}, _onChange: function (a) { this._onChangeCallback = a; return this }, _onChangeCallback: function () { }
+			}); Object.assign(De.prototype, { set: function (a) { this.mask = 1 << a | 0 }, enable: function (a) { this.mask = this.mask | 1 << a | 0 }, enableAll: function () { this.mask = -1 }, toggle: function (a) { this.mask ^= 1 << a | 0 }, disable: function (a) { this.mask &= ~(1 << a | 0) }, disableAll: function () { this.mask = 0 }, test: function (a) { return 0 !== (this.mask & a.mask) } }); var ij = 0, zi = new n, md = new ma, xb = new P, Bf = new n, te = new n, Lk = new n, Mk =
+				new ma, Ai = new n(1, 0, 0), Bi = new n(0, 1, 0), Ci = new n(0, 0, 1), Nk = { type: "added" }, Ok = { type: "removed" }; F.DefaultUp = new n(0, 1, 0); F.DefaultMatrixAutoUpdate = !0; F.prototype = Object.assign(Object.create(ua.prototype), {
+					constructor: F, isObject3D: !0, onBeforeRender: function () { }, onAfterRender: function () { }, applyMatrix4: function (a) { this.matrixAutoUpdate && this.updateMatrix(); this.matrix.premultiply(a); this.matrix.decompose(this.position, this.quaternion, this.scale) }, applyQuaternion: function (a) {
+						this.quaternion.premultiply(a);
+						return this
+					}, setRotationFromAxisAngle: function (a, b) { this.quaternion.setFromAxisAngle(a, b) }, setRotationFromEuler: function (a) { this.quaternion.setFromEuler(a, !0) }, setRotationFromMatrix: function (a) { this.quaternion.setFromRotationMatrix(a) }, setRotationFromQuaternion: function (a) { this.quaternion.copy(a) }, rotateOnAxis: function (a, b) { md.setFromAxisAngle(a, b); this.quaternion.multiply(md); return this }, rotateOnWorldAxis: function (a, b) { md.setFromAxisAngle(a, b); this.quaternion.premultiply(md); return this }, rotateX: function (a) {
+						return this.rotateOnAxis(Ai,
+							a)
+					}, rotateY: function (a) { return this.rotateOnAxis(Bi, a) }, rotateZ: function (a) { return this.rotateOnAxis(Ci, a) }, translateOnAxis: function (a, b) { zi.copy(a).applyQuaternion(this.quaternion); this.position.add(zi.multiplyScalar(b)); return this }, translateX: function (a) { return this.translateOnAxis(Ai, a) }, translateY: function (a) { return this.translateOnAxis(Bi, a) }, translateZ: function (a) { return this.translateOnAxis(Ci, a) }, localToWorld: function (a) { return a.applyMatrix4(this.matrixWorld) }, worldToLocal: function (a) { return a.applyMatrix4(xb.getInverse(this.matrixWorld)) },
+					lookAt: function (a, b, c) { a.isVector3 ? Bf.copy(a) : Bf.set(a, b, c); a = this.parent; this.updateWorldMatrix(!0, !1); te.setFromMatrixPosition(this.matrixWorld); this.isCamera || this.isLight ? xb.lookAt(te, Bf, this.up) : xb.lookAt(Bf, te, this.up); this.quaternion.setFromRotationMatrix(xb); a && (xb.extractRotation(a.matrixWorld), md.setFromRotationMatrix(xb), this.quaternion.premultiply(md.inverse())) }, add: function (a) {
+						if (1 < arguments.length) { for (var b = 0; b < arguments.length; b++)this.add(arguments[b]); return this } if (a === this) return console.error("THREE.Object3D.add: object can't be added as a child of itself.",
+							a), this; a && a.isObject3D ? (null !== a.parent && a.parent.remove(a), a.parent = this, this.children.push(a), a.dispatchEvent(Nk)) : console.error("THREE.Object3D.add: object not an instance of THREE.Object3D.", a); return this
+					}, remove: function (a) { if (1 < arguments.length) { for (var b = 0; b < arguments.length; b++)this.remove(arguments[b]); return this } b = this.children.indexOf(a); -1 !== b && (a.parent = null, this.children.splice(b, 1), a.dispatchEvent(Ok)); return this }, attach: function (a) {
+						this.updateWorldMatrix(!0, !1); xb.getInverse(this.matrixWorld);
+						null !== a.parent && (a.parent.updateWorldMatrix(!0, !1), xb.multiply(a.parent.matrixWorld)); a.applyMatrix4(xb); a.updateWorldMatrix(!1, !1); this.add(a); return this
+					}, getObjectById: function (a) { return this.getObjectByProperty("id", a) }, getObjectByName: function (a) { return this.getObjectByProperty("name", a) }, getObjectByProperty: function (a, b) { if (this[a] === b) return this; for (var c = 0, d = this.children.length; c < d; c++) { var e = this.children[c].getObjectByProperty(a, b); if (void 0 !== e) return e } }, getWorldPosition: function (a) {
+					void 0 ===
+						a && (console.warn("THREE.Object3D: .getWorldPosition() target is now required"), a = new n); this.updateMatrixWorld(!0); return a.setFromMatrixPosition(this.matrixWorld)
+					}, getWorldQuaternion: function (a) { void 0 === a && (console.warn("THREE.Object3D: .getWorldQuaternion() target is now required"), a = new ma); this.updateMatrixWorld(!0); this.matrixWorld.decompose(te, a, Lk); return a }, getWorldScale: function (a) {
+					void 0 === a && (console.warn("THREE.Object3D: .getWorldScale() target is now required"), a = new n); this.updateMatrixWorld(!0);
+						this.matrixWorld.decompose(te, Mk, a); return a
+					}, getWorldDirection: function (a) { void 0 === a && (console.warn("THREE.Object3D: .getWorldDirection() target is now required"), a = new n); this.updateMatrixWorld(!0); var b = this.matrixWorld.elements; return a.set(b[8], b[9], b[10]).normalize() }, raycast: function () { }, traverse: function (a) { a(this); for (var b = this.children, c = 0, d = b.length; c < d; c++)b[c].traverse(a) }, traverseVisible: function (a) { if (!1 !== this.visible) { a(this); for (var b = this.children, c = 0, d = b.length; c < d; c++)b[c].traverseVisible(a) } },
+					traverseAncestors: function (a) { var b = this.parent; null !== b && (a(b), b.traverseAncestors(a)) }, updateMatrix: function () { this.matrix.compose(this.position, this.quaternion, this.scale); this.matrixWorldNeedsUpdate = !0 }, updateMatrixWorld: function (a) {
+					this.matrixAutoUpdate && this.updateMatrix(); if (this.matrixWorldNeedsUpdate || a) null === this.parent ? this.matrixWorld.copy(this.matrix) : this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix), this.matrixWorldNeedsUpdate = !1, a = !0; for (var b = this.children, c =
+						0, d = b.length; c < d; c++)b[c].updateMatrixWorld(a)
+					}, updateWorldMatrix: function (a, b) { var c = this.parent; !0 === a && null !== c && c.updateWorldMatrix(!0, !1); this.matrixAutoUpdate && this.updateMatrix(); null === this.parent ? this.matrixWorld.copy(this.matrix) : this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix); if (!0 === b) for (a = this.children, b = 0, c = a.length; b < c; b++)a[b].updateWorldMatrix(!1, !0) }, toJSON: function (a) {
+						function b(b, c) { void 0 === b[c.uuid] && (b[c.uuid] = c.toJSON(a)); return c.uuid } function c(a) {
+							var b =
+								[], c; for (c in a) { var d = a[c]; delete d.metadata; b.push(d) } return b
+						} var d = void 0 === a || "string" === typeof a, e = {}; d && (a = { geometries: {}, materials: {}, textures: {}, images: {}, shapes: {} }, e.metadata = { version: 4.5, type: "Object", generator: "Object3D.toJSON" }); var f = {}; f.uuid = this.uuid; f.type = this.type; "" !== this.name && (f.name = this.name); !0 === this.castShadow && (f.castShadow = !0); !0 === this.receiveShadow && (f.receiveShadow = !0); !1 === this.visible && (f.visible = !1); !1 === this.frustumCulled && (f.frustumCulled = !1); 0 !== this.renderOrder &&
+							(f.renderOrder = this.renderOrder); "{}" !== JSON.stringify(this.userData) && (f.userData = this.userData); f.layers = this.layers.mask; f.matrix = this.matrix.toArray(); !1 === this.matrixAutoUpdate && (f.matrixAutoUpdate = !1); this.isInstancedMesh && (f.type = "InstancedMesh", f.count = this.count, f.instanceMatrix = this.instanceMatrix.toJSON()); if (this.isMesh || this.isLine || this.isPoints) {
+							f.geometry = b(a.geometries, this.geometry); var g = this.geometry.parameters; if (void 0 !== g && void 0 !== g.shapes) if (g = g.shapes, Array.isArray(g)) for (var h =
+								0, l = g.length; h < l; h++)b(a.shapes, g[h]); else b(a.shapes, g)
+							} if (void 0 !== this.material) if (Array.isArray(this.material)) { g = []; h = 0; for (l = this.material.length; h < l; h++)g.push(b(a.materials, this.material[h])); f.material = g } else f.material = b(a.materials, this.material); if (0 < this.children.length) for (f.children = [], h = 0; h < this.children.length; h++)f.children.push(this.children[h].toJSON(a).object); if (d) {
+								d = c(a.geometries); h = c(a.materials); l = c(a.textures); var m = c(a.images); g = c(a.shapes); 0 < d.length && (e.geometries = d);
+								0 < h.length && (e.materials = h); 0 < l.length && (e.textures = l); 0 < m.length && (e.images = m); 0 < g.length && (e.shapes = g)
+							} e.object = f; return e
+					}, clone: function (a) { return (new this.constructor).copy(this, a) }, copy: function (a, b) {
+					void 0 === b && (b = !0); this.name = a.name; this.up.copy(a.up); this.position.copy(a.position); this.quaternion.copy(a.quaternion); this.scale.copy(a.scale); this.matrix.copy(a.matrix); this.matrixWorld.copy(a.matrixWorld); this.matrixAutoUpdate = a.matrixAutoUpdate; this.matrixWorldNeedsUpdate = a.matrixWorldNeedsUpdate;
+						this.layers.mask = a.layers.mask; this.visible = a.visible; this.castShadow = a.castShadow; this.receiveShadow = a.receiveShadow; this.frustumCulled = a.frustumCulled; this.renderOrder = a.renderOrder; this.userData = JSON.parse(JSON.stringify(a.userData)); if (!0 === b) for (b = 0; b < a.children.length; b++)this.add(a.children[b].clone()); return this
 					}
-				}
-			}, toJSON: function (a) {
-				function b(a) { var b = [], c; for (c in a) { var d = a[c]; delete d.metadata; b.push(d) } return b } var c = void 0 === a || "string" === typeof a; c && (a = { textures: {}, images: {} }); var d = { metadata: { version: 4.5, type: "Material", generator: "Material.toJSON" } }; d.uuid = this.uuid; d.type = this.type; "" !== this.name && (d.name = this.name); this.color && this.color.isColor && (d.color = this.color.getHex()); void 0 !== this.roughness && (d.roughness = this.roughness); void 0 !== this.metalness && (d.metalness = this.metalness); this.sheen &&
-					this.sheen.isColor && (d.sheen = this.sheen.getHex()); this.emissive && this.emissive.isColor && (d.emissive = this.emissive.getHex()); this.emissiveIntensity && 1 !== this.emissiveIntensity && (d.emissiveIntensity = this.emissiveIntensity); this.specular && this.specular.isColor && (d.specular = this.specular.getHex()); void 0 !== this.shininess && (d.shininess = this.shininess); void 0 !== this.clearcoat && (d.clearcoat = this.clearcoat); void 0 !== this.clearcoatRoughness && (d.clearcoatRoughness = this.clearcoatRoughness); this.clearcoatMap &&
-						this.clearcoatMap.isTexture && (d.clearcoatMap = this.clearcoatMap.toJSON(a).uuid); this.clearcoatRoughnessMap && this.clearcoatRoughnessMap.isTexture && (d.clearcoatRoughnessMap = this.clearcoatRoughnessMap.toJSON(a).uuid); this.clearcoatNormalMap && this.clearcoatNormalMap.isTexture && (d.clearcoatNormalMap = this.clearcoatNormalMap.toJSON(a).uuid, d.clearcoatNormalScale = this.clearcoatNormalScale.toArray()); this.map && this.map.isTexture && (d.map = this.map.toJSON(a).uuid); this.matcap && this.matcap.isTexture && (d.matcap =
-							this.matcap.toJSON(a).uuid); this.alphaMap && this.alphaMap.isTexture && (d.alphaMap = this.alphaMap.toJSON(a).uuid); this.lightMap && this.lightMap.isTexture && (d.lightMap = this.lightMap.toJSON(a).uuid); this.aoMap && this.aoMap.isTexture && (d.aoMap = this.aoMap.toJSON(a).uuid, d.aoMapIntensity = this.aoMapIntensity); this.bumpMap && this.bumpMap.isTexture && (d.bumpMap = this.bumpMap.toJSON(a).uuid, d.bumpScale = this.bumpScale); this.normalMap && this.normalMap.isTexture && (d.normalMap = this.normalMap.toJSON(a).uuid, d.normalMapType =
-								this.normalMapType, d.normalScale = this.normalScale.toArray()); this.displacementMap && this.displacementMap.isTexture && (d.displacementMap = this.displacementMap.toJSON(a).uuid, d.displacementScale = this.displacementScale, d.displacementBias = this.displacementBias); this.roughnessMap && this.roughnessMap.isTexture && (d.roughnessMap = this.roughnessMap.toJSON(a).uuid); this.metalnessMap && this.metalnessMap.isTexture && (d.metalnessMap = this.metalnessMap.toJSON(a).uuid); this.emissiveMap && this.emissiveMap.isTexture && (d.emissiveMap =
-									this.emissiveMap.toJSON(a).uuid); this.specularMap && this.specularMap.isTexture && (d.specularMap = this.specularMap.toJSON(a).uuid); this.envMap && this.envMap.isTexture && (d.envMap = this.envMap.toJSON(a).uuid, d.reflectivity = this.reflectivity, d.refractionRatio = this.refractionRatio, void 0 !== this.combine && (d.combine = this.combine), void 0 !== this.envMapIntensity && (d.envMapIntensity = this.envMapIntensity)); this.gradientMap && this.gradientMap.isTexture && (d.gradientMap = this.gradientMap.toJSON(a).uuid); void 0 !== this.size &&
-										(d.size = this.size); void 0 !== this.sizeAttenuation && (d.sizeAttenuation = this.sizeAttenuation); 1 !== this.blending && (d.blending = this.blending); !0 === this.flatShading && (d.flatShading = this.flatShading); 0 !== this.side && (d.side = this.side); this.vertexColors && (d.vertexColors = !0); 1 > this.opacity && (d.opacity = this.opacity); !0 === this.transparent && (d.transparent = this.transparent); d.depthFunc = this.depthFunc; d.depthTest = this.depthTest; d.depthWrite = this.depthWrite; d.stencilWrite = this.stencilWrite; d.stencilWriteMask = this.stencilWriteMask;
-				d.stencilFunc = this.stencilFunc; d.stencilRef = this.stencilRef; d.stencilFuncMask = this.stencilFuncMask; d.stencilFail = this.stencilFail; d.stencilZFail = this.stencilZFail; d.stencilZPass = this.stencilZPass; this.rotation && 0 !== this.rotation && (d.rotation = this.rotation); !0 === this.polygonOffset && (d.polygonOffset = !0); 0 !== this.polygonOffsetFactor && (d.polygonOffsetFactor = this.polygonOffsetFactor); 0 !== this.polygonOffsetUnits && (d.polygonOffsetUnits = this.polygonOffsetUnits); this.linewidth && 1 !== this.linewidth && (d.linewidth =
-					this.linewidth); void 0 !== this.dashSize && (d.dashSize = this.dashSize); void 0 !== this.gapSize && (d.gapSize = this.gapSize); void 0 !== this.scale && (d.scale = this.scale); !0 === this.dithering && (d.dithering = !0); 0 < this.alphaTest && (d.alphaTest = this.alphaTest); !0 === this.premultipliedAlpha && (d.premultipliedAlpha = this.premultipliedAlpha); !0 === this.wireframe && (d.wireframe = this.wireframe); 1 < this.wireframeLinewidth && (d.wireframeLinewidth = this.wireframeLinewidth); "round" !== this.wireframeLinecap && (d.wireframeLinecap = this.wireframeLinecap);
-				"round" !== this.wireframeLinejoin && (d.wireframeLinejoin = this.wireframeLinejoin); !0 === this.morphTargets && (d.morphTargets = !0); !0 === this.morphNormals && (d.morphNormals = !0); !0 === this.skinning && (d.skinning = !0); !1 === this.visible && (d.visible = !1); !1 === this.toneMapped && (d.toneMapped = !1); "{}" !== JSON.stringify(this.userData) && (d.userData = this.userData); c && (c = b(a.textures), a = b(a.images), 0 < c.length && (d.textures = c), 0 < a.length && (d.images = a)); return d
-			}, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) {
-			this.name =
-				a.name; this.fog = a.fog; this.blending = a.blending; this.side = a.side; this.flatShading = a.flatShading; this.vertexColors = a.vertexColors; this.opacity = a.opacity; this.transparent = a.transparent; this.blendSrc = a.blendSrc; this.blendDst = a.blendDst; this.blendEquation = a.blendEquation; this.blendSrcAlpha = a.blendSrcAlpha; this.blendDstAlpha = a.blendDstAlpha; this.blendEquationAlpha = a.blendEquationAlpha; this.depthFunc = a.depthFunc; this.depthTest = a.depthTest; this.depthWrite = a.depthWrite; this.stencilWriteMask = a.stencilWriteMask;
-				this.stencilFunc = a.stencilFunc; this.stencilRef = a.stencilRef; this.stencilFuncMask = a.stencilFuncMask; this.stencilFail = a.stencilFail; this.stencilZFail = a.stencilZFail; this.stencilZPass = a.stencilZPass; this.stencilWrite = a.stencilWrite; var b = a.clippingPlanes, c = null; if (null !== b) { var d = b.length; c = Array(d); for (var e = 0; e !== d; ++e)c[e] = b[e].clone() } this.clippingPlanes = c; this.clipIntersection = a.clipIntersection; this.clipShadows = a.clipShadows; this.shadowSide = a.shadowSide; this.colorWrite = a.colorWrite; this.precision =
-					a.precision; this.polygonOffset = a.polygonOffset; this.polygonOffsetFactor = a.polygonOffsetFactor; this.polygonOffsetUnits = a.polygonOffsetUnits; this.dithering = a.dithering; this.alphaTest = a.alphaTest; this.premultipliedAlpha = a.premultipliedAlpha; this.visible = a.visible; this.toneMapped = a.toneMapped; this.userData = JSON.parse(JSON.stringify(a.userData)); return this
-			}, dispose: function () { this.dispatchEvent({ type: "dispose" }) }
-		}); Object.defineProperty(K.prototype, "needsUpdate", { set: function (a) { !0 === a && this.version++ } });
+				}); ob.prototype = Object.assign(Object.create(F.prototype), {
+					constructor: ob, isScene: !0, copy: function (a, b) {
+						F.prototype.copy.call(this, a, b); null !== a.background && (this.background = a.background.clone());
+						null !== a.environment && (this.environment = a.environment.clone()); null !== a.fog && (this.fog = a.fog.clone()); null !== a.overrideMaterial && (this.overrideMaterial = a.overrideMaterial.clone()); this.autoUpdate = a.autoUpdate; this.matrixAutoUpdate = a.matrixAutoUpdate; return this
+					}, toJSON: function (a) {
+						var b = F.prototype.toJSON.call(this, a); null !== this.background && (b.object.background = this.background.toJSON(a)); null !== this.environment && (b.object.environment = this.environment.toJSON(a)); null !== this.fog && (b.object.fog = this.fog.toJSON());
+						return b
+					}, dispose: function () { this.dispatchEvent({ type: "dispose" }) }
+				}); var yb = [new n, new n, new n, new n, new n, new n, new n, new n], ue = new n, Xg = new Sa, nd = new n, od = new n, pd = new n, Nb = new n, Ob = new n, pc = new n, ve = new n, Cf = new n, Df = new n, Sb = new n; Object.assign(Sa.prototype, {
+					isBox3: !0, set: function (a, b) { this.min.copy(a); this.max.copy(b); return this }, setFromArray: function (a) {
+						for (var b = Infinity, c = Infinity, d = Infinity, e = -Infinity, f = -Infinity, g = -Infinity, h = 0, l = a.length; h < l; h += 3) {
+							var m = a[h], k = a[h + 1], p = a[h + 2]; m < b && (b =
+								m); k < c && (c = k); p < d && (d = p); m > e && (e = m); k > f && (f = k); p > g && (g = p)
+						} this.min.set(b, c, d); this.max.set(e, f, g); return this
+					}, setFromBufferAttribute: function (a) { for (var b = Infinity, c = Infinity, d = Infinity, e = -Infinity, f = -Infinity, g = -Infinity, h = 0, l = a.count; h < l; h++) { var m = a.getX(h), k = a.getY(h), p = a.getZ(h); m < b && (b = m); k < c && (c = k); p < d && (d = p); m > e && (e = m); k > f && (f = k); p > g && (g = p) } this.min.set(b, c, d); this.max.set(e, f, g); return this }, setFromPoints: function (a) {
+						this.makeEmpty(); for (var b = 0, c = a.length; b < c; b++)this.expandByPoint(a[b]);
+						return this
+					}, setFromCenterAndSize: function (a, b) { b = ue.copy(b).multiplyScalar(.5); this.min.copy(a).sub(b); this.max.copy(a).add(b); return this }, setFromObject: function (a) { this.makeEmpty(); return this.expandByObject(a) }, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) { this.min.copy(a.min); this.max.copy(a.max); return this }, makeEmpty: function () { this.min.x = this.min.y = this.min.z = Infinity; this.max.x = this.max.y = this.max.z = -Infinity; return this }, isEmpty: function () {
+						return this.max.x <
+							this.min.x || this.max.y < this.min.y || this.max.z < this.min.z
+					}, getCenter: function (a) { void 0 === a && (console.warn("THREE.Box3: .getCenter() target is now required"), a = new n); return this.isEmpty() ? a.set(0, 0, 0) : a.addVectors(this.min, this.max).multiplyScalar(.5) }, getSize: function (a) { void 0 === a && (console.warn("THREE.Box3: .getSize() target is now required"), a = new n); return this.isEmpty() ? a.set(0, 0, 0) : a.subVectors(this.max, this.min) }, expandByPoint: function (a) { this.min.min(a); this.max.max(a); return this }, expandByVector: function (a) {
+						this.min.sub(a);
+						this.max.add(a); return this
+					}, expandByScalar: function (a) { this.min.addScalar(-a); this.max.addScalar(a); return this }, expandByObject: function (a) { a.updateWorldMatrix(!1, !1); var b = a.geometry; void 0 !== b && (null === b.boundingBox && b.computeBoundingBox(), Xg.copy(b.boundingBox), Xg.applyMatrix4(a.matrixWorld), this.union(Xg)); a = a.children; b = 0; for (var c = a.length; b < c; b++)this.expandByObject(a[b]); return this }, containsPoint: function (a) {
+						return a.x < this.min.x || a.x > this.max.x || a.y < this.min.y || a.y > this.max.y || a.z < this.min.z ||
+							a.z > this.max.z ? !1 : !0
+					}, containsBox: function (a) { return this.min.x <= a.min.x && a.max.x <= this.max.x && this.min.y <= a.min.y && a.max.y <= this.max.y && this.min.z <= a.min.z && a.max.z <= this.max.z }, getParameter: function (a, b) { void 0 === b && (console.warn("THREE.Box3: .getParameter() target is now required"), b = new n); return b.set((a.x - this.min.x) / (this.max.x - this.min.x), (a.y - this.min.y) / (this.max.y - this.min.y), (a.z - this.min.z) / (this.max.z - this.min.z)) }, intersectsBox: function (a) {
+						return a.max.x < this.min.x || a.min.x > this.max.x ||
+							a.max.y < this.min.y || a.min.y > this.max.y || a.max.z < this.min.z || a.min.z > this.max.z ? !1 : !0
+					}, intersectsSphere: function (a) { this.clampPoint(a.center, ue); return ue.distanceToSquared(a.center) <= a.radius * a.radius }, intersectsPlane: function (a) {
+						if (0 < a.normal.x) { var b = a.normal.x * this.min.x; var c = a.normal.x * this.max.x } else b = a.normal.x * this.max.x, c = a.normal.x * this.min.x; 0 < a.normal.y ? (b += a.normal.y * this.min.y, c += a.normal.y * this.max.y) : (b += a.normal.y * this.max.y, c += a.normal.y * this.min.y); 0 < a.normal.z ? (b += a.normal.z *
+							this.min.z, c += a.normal.z * this.max.z) : (b += a.normal.z * this.max.z, c += a.normal.z * this.min.z); return b <= -a.constant && c >= -a.constant
+					}, intersectsTriangle: function (a) {
+						if (this.isEmpty()) return !1; this.getCenter(ve); Cf.subVectors(this.max, ve); nd.subVectors(a.a, ve); od.subVectors(a.b, ve); pd.subVectors(a.c, ve); Nb.subVectors(od, nd); Ob.subVectors(pd, od); pc.subVectors(nd, pd); a = [0, -Nb.z, Nb.y, 0, -Ob.z, Ob.y, 0, -pc.z, pc.y, Nb.z, 0, -Nb.x, Ob.z, 0, -Ob.x, pc.z, 0, -pc.x, -Nb.y, Nb.x, 0, -Ob.y, Ob.x, 0, -pc.y, pc.x, 0]; if (!Yf(a, nd, od, pd, Cf)) return !1;
+						a = [1, 0, 0, 0, 1, 0, 0, 0, 1]; if (!Yf(a, nd, od, pd, Cf)) return !1; Df.crossVectors(Nb, Ob); a = [Df.x, Df.y, Df.z]; return Yf(a, nd, od, pd, Cf)
+					}, clampPoint: function (a, b) { void 0 === b && (console.warn("THREE.Box3: .clampPoint() target is now required"), b = new n); return b.copy(a).clamp(this.min, this.max) }, distanceToPoint: function (a) { return ue.copy(a).clamp(this.min, this.max).sub(a).length() }, getBoundingSphere: function (a) {
+					void 0 === a && console.error("THREE.Box3: .getBoundingSphere() target is now required"); this.getCenter(a.center);
+						a.radius = .5 * this.getSize(ue).length(); return a
+					}, intersect: function (a) { this.min.max(a.min); this.max.min(a.max); this.isEmpty() && this.makeEmpty(); return this }, union: function (a) { this.min.min(a.min); this.max.max(a.max); return this }, applyMatrix4: function (a) {
+						if (this.isEmpty()) return this; yb[0].set(this.min.x, this.min.y, this.min.z).applyMatrix4(a); yb[1].set(this.min.x, this.min.y, this.max.z).applyMatrix4(a); yb[2].set(this.min.x, this.max.y, this.min.z).applyMatrix4(a); yb[3].set(this.min.x, this.max.y, this.max.z).applyMatrix4(a);
+						yb[4].set(this.max.x, this.min.y, this.min.z).applyMatrix4(a); yb[5].set(this.max.x, this.min.y, this.max.z).applyMatrix4(a); yb[6].set(this.max.x, this.max.y, this.min.z).applyMatrix4(a); yb[7].set(this.max.x, this.max.y, this.max.z).applyMatrix4(a); this.setFromPoints(yb); return this
+					}, translate: function (a) { this.min.add(a); this.max.add(a); return this }, equals: function (a) { return a.min.equals(this.min) && a.max.equals(this.max) }
+				}); var Pk = new Sa; Object.assign(cb.prototype, {
+					set: function (a, b) {
+						this.center.copy(a); this.radius =
+							b; return this
+					}, setFromPoints: function (a, b) { var c = this.center; void 0 !== b ? c.copy(b) : Pk.setFromPoints(a).getCenter(c); for (var d = b = 0, e = a.length; d < e; d++)b = Math.max(b, c.distanceToSquared(a[d])); this.radius = Math.sqrt(b); return this }, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) { this.center.copy(a.center); this.radius = a.radius; return this }, isEmpty: function () { return 0 > this.radius }, makeEmpty: function () { this.center.set(0, 0, 0); this.radius = -1; return this }, containsPoint: function (a) {
+						return a.distanceToSquared(this.center) <=
+							this.radius * this.radius
+					}, distanceToPoint: function (a) { return a.distanceTo(this.center) - this.radius }, intersectsSphere: function (a) { var b = this.radius + a.radius; return a.center.distanceToSquared(this.center) <= b * b }, intersectsBox: function (a) { return a.intersectsSphere(this) }, intersectsPlane: function (a) { return Math.abs(a.distanceToPoint(this.center)) <= this.radius }, clampPoint: function (a, b) {
+						var c = this.center.distanceToSquared(a); void 0 === b && (console.warn("THREE.Sphere: .clampPoint() target is now required"),
+							b = new n); b.copy(a); c > this.radius * this.radius && (b.sub(this.center).normalize(), b.multiplyScalar(this.radius).add(this.center)); return b
+					}, getBoundingBox: function (a) { void 0 === a && (console.warn("THREE.Sphere: .getBoundingBox() target is now required"), a = new Sa); if (this.isEmpty()) return a.makeEmpty(), a; a.set(this.center, this.center); a.expandByScalar(this.radius); return a }, applyMatrix4: function (a) { this.center.applyMatrix4(a); this.radius *= a.getMaxScaleOnAxis(); return this }, translate: function (a) {
+						this.center.add(a);
+						return this
+					}, equals: function (a) { return a.center.equals(this.center) && a.radius === this.radius }
+				}); var zb = new n, Yg = new n, Ef = new n, Pb = new n, Zg = new n, Ff = new n, $g = new n; Object.assign(Tb.prototype, {
+					set: function (a, b) { this.origin.copy(a); this.direction.copy(b); return this }, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) { this.origin.copy(a.origin); this.direction.copy(a.direction); return this }, at: function (a, b) {
+					void 0 === b && (console.warn("THREE.Ray: .at() target is now required"), b = new n);
+						return b.copy(this.direction).multiplyScalar(a).add(this.origin)
+					}, lookAt: function (a) { this.direction.copy(a).sub(this.origin).normalize(); return this }, recast: function (a) { this.origin.copy(this.at(a, zb)); return this }, closestPointToPoint: function (a, b) { void 0 === b && (console.warn("THREE.Ray: .closestPointToPoint() target is now required"), b = new n); b.subVectors(a, this.origin); a = b.dot(this.direction); return 0 > a ? b.copy(this.origin) : b.copy(this.direction).multiplyScalar(a).add(this.origin) }, distanceToPoint: function (a) { return Math.sqrt(this.distanceSqToPoint(a)) },
+					distanceSqToPoint: function (a) { var b = zb.subVectors(a, this.origin).dot(this.direction); if (0 > b) return this.origin.distanceToSquared(a); zb.copy(this.direction).multiplyScalar(b).add(this.origin); return zb.distanceToSquared(a) }, distanceSqToSegment: function (a, b, c, d) {
+						Yg.copy(a).add(b).multiplyScalar(.5); Ef.copy(b).sub(a).normalize(); Pb.copy(this.origin).sub(Yg); var e = .5 * a.distanceTo(b), f = -this.direction.dot(Ef), g = Pb.dot(this.direction), h = -Pb.dot(Ef), l = Pb.lengthSq(), m = Math.abs(1 - f * f); if (0 < m) {
+							a = f * h - g; b = f *
+								g - h; var k = e * m; 0 <= a ? b >= -k ? b <= k ? (e = 1 / m, a *= e, b *= e, f = a * (a + f * b + 2 * g) + b * (f * a + b + 2 * h) + l) : (b = e, a = Math.max(0, -(f * b + g)), f = -a * a + b * (b + 2 * h) + l) : (b = -e, a = Math.max(0, -(f * b + g)), f = -a * a + b * (b + 2 * h) + l) : b <= -k ? (a = Math.max(0, -(-f * e + g)), b = 0 < a ? -e : Math.min(Math.max(-e, -h), e), f = -a * a + b * (b + 2 * h) + l) : b <= k ? (a = 0, b = Math.min(Math.max(-e, -h), e), f = b * (b + 2 * h) + l) : (a = Math.max(0, -(f * e + g)), b = 0 < a ? e : Math.min(Math.max(-e, -h), e), f = -a * a + b * (b + 2 * h) + l)
+						} else b = 0 < f ? -e : e, a = Math.max(0, -(f * b + g)), f = -a * a + b * (b + 2 * h) + l; c && c.copy(this.direction).multiplyScalar(a).add(this.origin);
+						d && d.copy(Ef).multiplyScalar(b).add(Yg); return f
+					}, intersectSphere: function (a, b) { zb.subVectors(a.center, this.origin); var c = zb.dot(this.direction), d = zb.dot(zb) - c * c; a = a.radius * a.radius; if (d > a) return null; a = Math.sqrt(a - d); d = c - a; c += a; return 0 > d && 0 > c ? null : 0 > d ? this.at(c, b) : this.at(d, b) }, intersectsSphere: function (a) { return this.distanceSqToPoint(a.center) <= a.radius * a.radius }, distanceToPlane: function (a) {
+						var b = a.normal.dot(this.direction); if (0 === b) return 0 === a.distanceToPoint(this.origin) ? 0 : null; a = -(this.origin.dot(a.normal) +
+							a.constant) / b; return 0 <= a ? a : null
+					}, intersectPlane: function (a, b) { a = this.distanceToPlane(a); return null === a ? null : this.at(a, b) }, intersectsPlane: function (a) { var b = a.distanceToPoint(this.origin); return 0 === b || 0 > a.normal.dot(this.direction) * b ? !0 : !1 }, intersectBox: function (a, b) {
+						var c = 1 / this.direction.x; var d = 1 / this.direction.y; var e = 1 / this.direction.z, f = this.origin; if (0 <= c) { var g = (a.min.x - f.x) * c; c *= a.max.x - f.x } else g = (a.max.x - f.x) * c, c *= a.min.x - f.x; if (0 <= d) { var h = (a.min.y - f.y) * d; d *= a.max.y - f.y } else h = (a.max.y -
+							f.y) * d, d *= a.min.y - f.y; if (g > d || h > c) return null; if (h > g || g !== g) g = h; if (d < c || c !== c) c = d; 0 <= e ? (h = (a.min.z - f.z) * e, a = (a.max.z - f.z) * e) : (h = (a.max.z - f.z) * e, a = (a.min.z - f.z) * e); if (g > a || h > c) return null; if (h > g || g !== g) g = h; if (a < c || c !== c) c = a; return 0 > c ? null : this.at(0 <= g ? g : c, b)
+					}, intersectsBox: function (a) { return null !== this.intersectBox(a, zb) }, intersectTriangle: function (a, b, c, d, e) {
+						Zg.subVectors(b, a); Ff.subVectors(c, a); $g.crossVectors(Zg, Ff); b = this.direction.dot($g); if (0 < b) { if (d) return null; d = 1 } else if (0 > b) d = -1, b = -b; else return null;
+						Pb.subVectors(this.origin, a); a = d * this.direction.dot(Ff.crossVectors(Pb, Ff)); if (0 > a) return null; c = d * this.direction.dot(Zg.cross(Pb)); if (0 > c || a + c > b) return null; a = -d * Pb.dot($g); return 0 > a ? null : this.at(a / b, e)
+					}, applyMatrix4: function (a) { this.origin.applyMatrix4(a); this.direction.transformDirection(a); return this }, equals: function (a) { return a.origin.equals(this.origin) && a.direction.equals(this.direction) }
+				}); var ah = new n, Qk = new n, Rk = new xa; Object.assign(Ta.prototype, {
+					isPlane: !0, set: function (a, b) {
+						this.normal.copy(a);
+						this.constant = b; return this
+					}, setComponents: function (a, b, c, d) { this.normal.set(a, b, c); this.constant = d; return this }, setFromNormalAndCoplanarPoint: function (a, b) { this.normal.copy(a); this.constant = -b.dot(this.normal); return this }, setFromCoplanarPoints: function (a, b, c) { b = ah.subVectors(c, b).cross(Qk.subVectors(a, b)).normalize(); this.setFromNormalAndCoplanarPoint(b, a); return this }, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) {
+						this.normal.copy(a.normal); this.constant = a.constant;
+						return this
+					}, normalize: function () { var a = 1 / this.normal.length(); this.normal.multiplyScalar(a); this.constant *= a; return this }, negate: function () { this.constant *= -1; this.normal.negate(); return this }, distanceToPoint: function (a) { return this.normal.dot(a) + this.constant }, distanceToSphere: function (a) { return this.distanceToPoint(a.center) - a.radius }, projectPoint: function (a, b) { void 0 === b && (console.warn("THREE.Plane: .projectPoint() target is now required"), b = new n); return b.copy(this.normal).multiplyScalar(-this.distanceToPoint(a)).add(a) },
+					intersectLine: function (a, b) { void 0 === b && (console.warn("THREE.Plane: .intersectLine() target is now required"), b = new n); var c = a.delta(ah), d = this.normal.dot(c); if (0 === d) { if (0 === this.distanceToPoint(a.start)) return b.copy(a.start) } else if (d = -(a.start.dot(this.normal) + this.constant) / d, !(0 > d || 1 < d)) return b.copy(c).multiplyScalar(d).add(a.start) }, intersectsLine: function (a) { var b = this.distanceToPoint(a.start); a = this.distanceToPoint(a.end); return 0 > b && 0 < a || 0 > a && 0 < b }, intersectsBox: function (a) { return a.intersectsPlane(this) },
+					intersectsSphere: function (a) { return a.intersectsPlane(this) }, coplanarPoint: function (a) { void 0 === a && (console.warn("THREE.Plane: .coplanarPoint() target is now required"), a = new n); return a.copy(this.normal).multiplyScalar(-this.constant) }, applyMatrix4: function (a, b) { b = b || Rk.getNormalMatrix(a); a = this.coplanarPoint(ah).applyMatrix4(a); b = this.normal.applyMatrix3(b).normalize(); this.constant = -a.dot(b); return this }, translate: function (a) { this.constant -= a.dot(this.normal); return this }, equals: function (a) {
+						return a.normal.equals(this.normal) &&
+							a.constant === this.constant
+					}
+				}); var ab = new n, Ab = new n, bh = new n, Bb = new n, qd = new n, rd = new n, Di = new n, ch = new n, dh = new n, eh = new n; Object.assign(wa, {
+					getNormal: function (a, b, c, d) { void 0 === d && (console.warn("THREE.Triangle: .getNormal() target is now required"), d = new n); d.subVectors(c, b); ab.subVectors(a, b); d.cross(ab); a = d.lengthSq(); return 0 < a ? d.multiplyScalar(1 / Math.sqrt(a)) : d.set(0, 0, 0) }, getBarycoord: function (a, b, c, d, e) {
+						ab.subVectors(d, b); Ab.subVectors(c, b); bh.subVectors(a, b); a = ab.dot(ab); b = ab.dot(Ab); c = ab.dot(bh);
+						var f = Ab.dot(Ab); d = Ab.dot(bh); var g = a * f - b * b; void 0 === e && (console.warn("THREE.Triangle: .getBarycoord() target is now required"), e = new n); if (0 === g) return e.set(-2, -1, -1); g = 1 / g; f = (f * c - b * d) * g; a = (a * d - b * c) * g; return e.set(1 - f - a, a, f)
+					}, containsPoint: function (a, b, c, d) { wa.getBarycoord(a, b, c, d, Bb); return 0 <= Bb.x && 0 <= Bb.y && 1 >= Bb.x + Bb.y }, getUV: function (a, b, c, d, e, f, g, h) { this.getBarycoord(a, b, c, d, Bb); h.set(0, 0); h.addScaledVector(e, Bb.x); h.addScaledVector(f, Bb.y); h.addScaledVector(g, Bb.z); return h }, isFrontFacing: function (a,
+						b, c, d) { ab.subVectors(c, b); Ab.subVectors(a, b); return 0 > ab.cross(Ab).dot(d) ? !0 : !1 }
+				}); Object.assign(wa.prototype, {
+					set: function (a, b, c) { this.a.copy(a); this.b.copy(b); this.c.copy(c); return this }, setFromPointsAndIndices: function (a, b, c, d) { this.a.copy(a[b]); this.b.copy(a[c]); this.c.copy(a[d]); return this }, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) { this.a.copy(a.a); this.b.copy(a.b); this.c.copy(a.c); return this }, getArea: function () {
+						ab.subVectors(this.c, this.b); Ab.subVectors(this.a,
+							this.b); return .5 * ab.cross(Ab).length()
+					}, getMidpoint: function (a) { void 0 === a && (console.warn("THREE.Triangle: .getMidpoint() target is now required"), a = new n); return a.addVectors(this.a, this.b).add(this.c).multiplyScalar(1 / 3) }, getNormal: function (a) { return wa.getNormal(this.a, this.b, this.c, a) }, getPlane: function (a) { void 0 === a && (console.warn("THREE.Triangle: .getPlane() target is now required"), a = new Ta); return a.setFromCoplanarPoints(this.a, this.b, this.c) }, getBarycoord: function (a, b) {
+						return wa.getBarycoord(a,
+							this.a, this.b, this.c, b)
+					}, getUV: function (a, b, c, d, e) { return wa.getUV(a, this.a, this.b, this.c, b, c, d, e) }, containsPoint: function (a) { return wa.containsPoint(a, this.a, this.b, this.c) }, isFrontFacing: function (a) { return wa.isFrontFacing(this.a, this.b, this.c, a) }, intersectsBox: function (a) { return a.intersectsTriangle(this) }, closestPointToPoint: function (a, b) {
+					void 0 === b && (console.warn("THREE.Triangle: .closestPointToPoint() target is now required"), b = new n); var c = this.a, d = this.b, e = this.c; qd.subVectors(d, c); rd.subVectors(e,
+						c); ch.subVectors(a, c); var f = qd.dot(ch), g = rd.dot(ch); if (0 >= f && 0 >= g) return b.copy(c); dh.subVectors(a, d); var h = qd.dot(dh), l = rd.dot(dh); if (0 <= h && l <= h) return b.copy(d); var m = f * l - h * g; if (0 >= m && 0 <= f && 0 >= h) return d = f / (f - h), b.copy(c).addScaledVector(qd, d); eh.subVectors(a, e); a = qd.dot(eh); var k = rd.dot(eh); if (0 <= k && a <= k) return b.copy(e); f = a * g - f * k; if (0 >= f && 0 <= g && 0 >= k) return m = g / (g - k), b.copy(c).addScaledVector(rd, m); g = h * k - a * l; if (0 >= g && 0 <= l - h && 0 <= a - k) return Di.subVectors(e, d), m = (l - h) / (l - h + (a - k)), b.copy(d).addScaledVector(Di,
+							m); e = 1 / (g + f + m); d = f * e; m *= e; return b.copy(c).addScaledVector(qd, d).addScaledVector(rd, m)
+					}, equals: function (a) { return a.a.equals(this.a) && a.b.equals(this.b) && a.c.equals(this.c) }
+				}); var Ei = {
+					aliceblue: 15792383, antiquewhite: 16444375, aqua: 65535, aquamarine: 8388564, azure: 15794175, beige: 16119260, bisque: 16770244, black: 0, blanchedalmond: 16772045, blue: 255, blueviolet: 9055202, brown: 10824234, burlywood: 14596231, cadetblue: 6266528, chartreuse: 8388352, chocolate: 13789470, coral: 16744272, cornflowerblue: 6591981, cornsilk: 16775388,
+					crimson: 14423100, cyan: 65535, darkblue: 139, darkcyan: 35723, darkgoldenrod: 12092939, darkgray: 11119017, darkgreen: 25600, darkgrey: 11119017, darkkhaki: 12433259, darkmagenta: 9109643, darkolivegreen: 5597999, darkorange: 16747520, darkorchid: 10040012, darkred: 9109504, darksalmon: 15308410, darkseagreen: 9419919, darkslateblue: 4734347, darkslategray: 3100495, darkslategrey: 3100495, darkturquoise: 52945, darkviolet: 9699539, deeppink: 16716947, deepskyblue: 49151, dimgray: 6908265, dimgrey: 6908265, dodgerblue: 2003199, firebrick: 11674146,
+					floralwhite: 16775920, forestgreen: 2263842, fuchsia: 16711935, gainsboro: 14474460, ghostwhite: 16316671, gold: 16766720, goldenrod: 14329120, gray: 8421504, green: 32768, greenyellow: 11403055, grey: 8421504, honeydew: 15794160, hotpink: 16738740, indianred: 13458524, indigo: 4915330, ivory: 16777200, khaki: 15787660, lavender: 15132410, lavenderblush: 16773365, lawngreen: 8190976, lemonchiffon: 16775885, lightblue: 11393254, lightcoral: 15761536, lightcyan: 14745599, lightgoldenrodyellow: 16448210, lightgray: 13882323, lightgreen: 9498256, lightgrey: 13882323,
+					lightpink: 16758465, lightsalmon: 16752762, lightseagreen: 2142890, lightskyblue: 8900346, lightslategray: 7833753, lightslategrey: 7833753, lightsteelblue: 11584734, lightyellow: 16777184, lime: 65280, limegreen: 3329330, linen: 16445670, magenta: 16711935, maroon: 8388608, mediumaquamarine: 6737322, mediumblue: 205, mediumorchid: 12211667, mediumpurple: 9662683, mediumseagreen: 3978097, mediumslateblue: 8087790, mediumspringgreen: 64154, mediumturquoise: 4772300, mediumvioletred: 13047173, midnightblue: 1644912, mintcream: 16121850, mistyrose: 16770273,
+					moccasin: 16770229, navajowhite: 16768685, navy: 128, oldlace: 16643558, olive: 8421376, olivedrab: 7048739, orange: 16753920, orangered: 16729344, orchid: 14315734, palegoldenrod: 15657130, palegreen: 10025880, paleturquoise: 11529966, palevioletred: 14381203, papayawhip: 16773077, peachpuff: 16767673, peru: 13468991, pink: 16761035, plum: 14524637, powderblue: 11591910, purple: 8388736, rebeccapurple: 6697881, red: 16711680, rosybrown: 12357519, royalblue: 4286945, saddlebrown: 9127187, salmon: 16416882, sandybrown: 16032864, seagreen: 3050327, seashell: 16774638,
+					sienna: 10506797, silver: 12632256, skyblue: 8900331, slateblue: 6970061, slategray: 7372944, slategrey: 7372944, snow: 16775930, springgreen: 65407, steelblue: 4620980, tan: 13808780, teal: 32896, thistle: 14204888, tomato: 16737095, turquoise: 4251856, violet: 15631086, wheat: 16113331, white: 16777215, whitesmoke: 16119285, yellow: 16776960, yellowgreen: 10145074
+				}, Da = { h: 0, s: 0, l: 0 }, Gf = { h: 0, s: 0, l: 0 }; Object.assign(A.prototype, {
+					isColor: !0, r: 1, g: 1, b: 1, set: function (a) {
+						a && a.isColor ? this.copy(a) : "number" === typeof a ? this.setHex(a) : "string" ===
+							typeof a && this.setStyle(a); return this
+					}, setScalar: function (a) { this.b = this.g = this.r = a; return this }, setHex: function (a) { a = Math.floor(a); this.r = (a >> 16 & 255) / 255; this.g = (a >> 8 & 255) / 255; this.b = (a & 255) / 255; return this }, setRGB: function (a, b, c) { this.r = a; this.g = b; this.b = c; return this }, setHSL: function (a, b, c) { a = L.euclideanModulo(a, 1); b = L.clamp(b, 0, 1); c = L.clamp(c, 0, 1); 0 === b ? this.r = this.g = this.b = c : (b = .5 >= c ? c * (1 + b) : c + b - c * b, c = 2 * c - b, this.r = Zf(c, b, a + 1 / 3), this.g = Zf(c, b, a), this.b = Zf(c, b, a - 1 / 3)); return this }, setStyle: function (a) {
+						function b(b) {
+						void 0 !==
+							b && 1 > parseFloat(b) && console.warn("THREE.Color: Alpha component of " + a + " will be ignored.")
+						} var c; if (c = /^((?:rgb|hsl)a?)\(\s*([^\)]*)\)/.exec(a)) {
+							var d = c[2]; switch (c[1]) {
+								case "rgb": case "rgba": if (c = /^(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(,\s*([0-9]*\.?[0-9]+)\s*)?$/.exec(d)) return this.r = Math.min(255, parseInt(c[1], 10)) / 255, this.g = Math.min(255, parseInt(c[2], 10)) / 255, this.b = Math.min(255, parseInt(c[3], 10)) / 255, b(c[5]), this; if (c = /^(\d+)%\s*,\s*(\d+)%\s*,\s*(\d+)%\s*(,\s*([0-9]*\.?[0-9]+)\s*)?$/.exec(d)) return this.r =
+									Math.min(100, parseInt(c[1], 10)) / 100, this.g = Math.min(100, parseInt(c[2], 10)) / 100, this.b = Math.min(100, parseInt(c[3], 10)) / 100, b(c[5]), this; break; case "hsl": case "hsla": if (c = /^([0-9]*\.?[0-9]+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*(,\s*([0-9]*\.?[0-9]+)\s*)?$/.exec(d)) { d = parseFloat(c[1]) / 360; var e = parseInt(c[2], 10) / 100, f = parseInt(c[3], 10) / 100; b(c[5]); return this.setHSL(d, e, f) }
+							}
+						} else if (c = /^#([A-Fa-f0-9]+)$/.exec(a)) {
+							c = c[1]; d = c.length; if (3 === d) return this.r = parseInt(c.charAt(0) + c.charAt(0), 16) / 255, this.g = parseInt(c.charAt(1) +
+								c.charAt(1), 16) / 255, this.b = parseInt(c.charAt(2) + c.charAt(2), 16) / 255, this; if (6 === d) return this.r = parseInt(c.charAt(0) + c.charAt(1), 16) / 255, this.g = parseInt(c.charAt(2) + c.charAt(3), 16) / 255, this.b = parseInt(c.charAt(4) + c.charAt(5), 16) / 255, this
+						} return a && 0 < a.length ? this.setColorName(a) : this
+					}, setColorName: function (a) { var b = Ei[a]; void 0 !== b ? this.setHex(b) : console.warn("THREE.Color: Unknown color " + a); return this }, clone: function () { return new this.constructor(this.r, this.g, this.b) }, copy: function (a) {
+					this.r = a.r;
+						this.g = a.g; this.b = a.b; return this
+					}, copyGammaToLinear: function (a, b) { void 0 === b && (b = 2); this.r = Math.pow(a.r, b); this.g = Math.pow(a.g, b); this.b = Math.pow(a.b, b); return this }, copyLinearToGamma: function (a, b) { void 0 === b && (b = 2); b = 0 < b ? 1 / b : 1; this.r = Math.pow(a.r, b); this.g = Math.pow(a.g, b); this.b = Math.pow(a.b, b); return this }, convertGammaToLinear: function (a) { this.copyGammaToLinear(this, a); return this }, convertLinearToGamma: function (a) { this.copyLinearToGamma(this, a); return this }, copySRGBToLinear: function (a) {
+					this.r =
+						$f(a.r); this.g = $f(a.g); this.b = $f(a.b); return this
+					}, copyLinearToSRGB: function (a) { this.r = ag(a.r); this.g = ag(a.g); this.b = ag(a.b); return this }, convertSRGBToLinear: function () { this.copySRGBToLinear(this); return this }, convertLinearToSRGB: function () { this.copyLinearToSRGB(this); return this }, getHex: function () { return 255 * this.r << 16 ^ 255 * this.g << 8 ^ 255 * this.b << 0 }, getHexString: function () { return ("000000" + this.getHex().toString(16)).slice(-6) }, getHSL: function (a) {
+					void 0 === a && (console.warn("THREE.Color: .getHSL() target is now required"),
+						a = { h: 0, s: 0, l: 0 }); var b = this.r, c = this.g, d = this.b, e = Math.max(b, c, d), f = Math.min(b, c, d), g, h = (f + e) / 2; if (f === e) f = g = 0; else { var l = e - f; f = .5 >= h ? l / (e + f) : l / (2 - e - f); switch (e) { case b: g = (c - d) / l + (c < d ? 6 : 0); break; case c: g = (d - b) / l + 2; break; case d: g = (b - c) / l + 4 }g /= 6 } a.h = g; a.s = f; a.l = h; return a
+					}, getStyle: function () { return "rgb(" + (255 * this.r | 0) + "," + (255 * this.g | 0) + "," + (255 * this.b | 0) + ")" }, offsetHSL: function (a, b, c) { this.getHSL(Da); Da.h += a; Da.s += b; Da.l += c; this.setHSL(Da.h, Da.s, Da.l); return this }, add: function (a) {
+					this.r += a.r; this.g +=
+						a.g; this.b += a.b; return this
+					}, addColors: function (a, b) { this.r = a.r + b.r; this.g = a.g + b.g; this.b = a.b + b.b; return this }, addScalar: function (a) { this.r += a; this.g += a; this.b += a; return this }, sub: function (a) { this.r = Math.max(0, this.r - a.r); this.g = Math.max(0, this.g - a.g); this.b = Math.max(0, this.b - a.b); return this }, multiply: function (a) { this.r *= a.r; this.g *= a.g; this.b *= a.b; return this }, multiplyScalar: function (a) { this.r *= a; this.g *= a; this.b *= a; return this }, lerp: function (a, b) {
+					this.r += (a.r - this.r) * b; this.g += (a.g - this.g) * b; this.b +=
+						(a.b - this.b) * b; return this
+					}, lerpHSL: function (a, b) { this.getHSL(Da); a.getHSL(Gf); a = L.lerp(Da.h, Gf.h, b); var c = L.lerp(Da.s, Gf.s, b); b = L.lerp(Da.l, Gf.l, b); this.setHSL(a, c, b); return this }, equals: function (a) { return a.r === this.r && a.g === this.g && a.b === this.b }, fromArray: function (a, b) { void 0 === b && (b = 0); this.r = a[b]; this.g = a[b + 1]; this.b = a[b + 2]; return this }, toArray: function (a, b) { void 0 === a && (a = []); void 0 === b && (b = 0); a[b] = this.r; a[b + 1] = this.g; a[b + 2] = this.b; return a }, toJSON: function () { return this.getHex() }
+				}); A.NAMES =
+					Ei; Object.assign(yc.prototype, { clone: function () { return (new this.constructor).copy(this) }, copy: function (a) { this.a = a.a; this.b = a.b; this.c = a.c; this.normal.copy(a.normal); this.color.copy(a.color); this.materialIndex = a.materialIndex; for (var b = 0, c = a.vertexNormals.length; b < c; b++)this.vertexNormals[b] = a.vertexNormals[b].clone(); b = 0; for (c = a.vertexColors.length; b < c; b++)this.vertexColors[b] = a.vertexColors[b].clone(); return this } }); var jj = 0; K.prototype = Object.assign(Object.create(ua.prototype), {
+						constructor: K, isMaterial: !0,
+						onBeforeCompile: function () { }, setValues: function (a) {
+							if (void 0 !== a) for (var b in a) {
+								var c = a[b]; if (void 0 === c) console.warn("THREE.Material: '" + b + "' parameter is undefined."); else if ("shading" === b) console.warn("THREE." + this.type + ": .shading has been removed. Use the boolean .flatShading instead."), this.flatShading = 1 === c ? !0 : !1; else {
+									var d = this[b]; void 0 === d ? console.warn("THREE." + this.type + ": '" + b + "' is not a property of this material.") : d && d.isColor ? d.set(c) : d && d.isVector3 && c && c.isVector3 ? d.copy(c) : this[b] =
+										c
+								}
+							}
+						}, toJSON: function (a) {
+							function b(a) { var b = [], c; for (c in a) { var d = a[c]; delete d.metadata; b.push(d) } return b } var c = void 0 === a || "string" === typeof a; c && (a = { textures: {}, images: {} }); var d = { metadata: { version: 4.5, type: "Material", generator: "Material.toJSON" } }; d.uuid = this.uuid; d.type = this.type; "" !== this.name && (d.name = this.name); this.color && this.color.isColor && (d.color = this.color.getHex()); void 0 !== this.roughness && (d.roughness = this.roughness); void 0 !== this.metalness && (d.metalness = this.metalness); this.sheen &&
+								this.sheen.isColor && (d.sheen = this.sheen.getHex()); this.emissive && this.emissive.isColor && (d.emissive = this.emissive.getHex()); this.emissiveIntensity && 1 !== this.emissiveIntensity && (d.emissiveIntensity = this.emissiveIntensity); this.specular && this.specular.isColor && (d.specular = this.specular.getHex()); void 0 !== this.shininess && (d.shininess = this.shininess); void 0 !== this.clearcoat && (d.clearcoat = this.clearcoat); void 0 !== this.clearcoatRoughness && (d.clearcoatRoughness = this.clearcoatRoughness); this.clearcoatMap &&
+									this.clearcoatMap.isTexture && (d.clearcoatMap = this.clearcoatMap.toJSON(a).uuid); this.clearcoatRoughnessMap && this.clearcoatRoughnessMap.isTexture && (d.clearcoatRoughnessMap = this.clearcoatRoughnessMap.toJSON(a).uuid); this.clearcoatNormalMap && this.clearcoatNormalMap.isTexture && (d.clearcoatNormalMap = this.clearcoatNormalMap.toJSON(a).uuid, d.clearcoatNormalScale = this.clearcoatNormalScale.toArray()); this.map && this.map.isTexture && (d.map = this.map.toJSON(a).uuid); this.matcap && this.matcap.isTexture && (d.matcap =
+										this.matcap.toJSON(a).uuid); this.alphaMap && this.alphaMap.isTexture && (d.alphaMap = this.alphaMap.toJSON(a).uuid); this.lightMap && this.lightMap.isTexture && (d.lightMap = this.lightMap.toJSON(a).uuid); this.aoMap && this.aoMap.isTexture && (d.aoMap = this.aoMap.toJSON(a).uuid, d.aoMapIntensity = this.aoMapIntensity); this.bumpMap && this.bumpMap.isTexture && (d.bumpMap = this.bumpMap.toJSON(a).uuid, d.bumpScale = this.bumpScale); this.normalMap && this.normalMap.isTexture && (d.normalMap = this.normalMap.toJSON(a).uuid, d.normalMapType =
+											this.normalMapType, d.normalScale = this.normalScale.toArray()); this.displacementMap && this.displacementMap.isTexture && (d.displacementMap = this.displacementMap.toJSON(a).uuid, d.displacementScale = this.displacementScale, d.displacementBias = this.displacementBias); this.roughnessMap && this.roughnessMap.isTexture && (d.roughnessMap = this.roughnessMap.toJSON(a).uuid); this.metalnessMap && this.metalnessMap.isTexture && (d.metalnessMap = this.metalnessMap.toJSON(a).uuid); this.emissiveMap && this.emissiveMap.isTexture && (d.emissiveMap =
+												this.emissiveMap.toJSON(a).uuid); this.specularMap && this.specularMap.isTexture && (d.specularMap = this.specularMap.toJSON(a).uuid); this.envMap && this.envMap.isTexture && (d.envMap = this.envMap.toJSON(a).uuid, d.reflectivity = this.reflectivity, d.refractionRatio = this.refractionRatio, void 0 !== this.combine && (d.combine = this.combine), void 0 !== this.envMapIntensity && (d.envMapIntensity = this.envMapIntensity)); this.gradientMap && this.gradientMap.isTexture && (d.gradientMap = this.gradientMap.toJSON(a).uuid); void 0 !== this.size &&
+													(d.size = this.size); void 0 !== this.sizeAttenuation && (d.sizeAttenuation = this.sizeAttenuation); 1 !== this.blending && (d.blending = this.blending); !0 === this.flatShading && (d.flatShading = this.flatShading); 0 !== this.side && (d.side = this.side); this.vertexColors && (d.vertexColors = !0); 1 > this.opacity && (d.opacity = this.opacity); !0 === this.transparent && (d.transparent = this.transparent); d.depthFunc = this.depthFunc; d.depthTest = this.depthTest; d.depthWrite = this.depthWrite; d.stencilWrite = this.stencilWrite; d.stencilWriteMask = this.stencilWriteMask;
+							d.stencilFunc = this.stencilFunc; d.stencilRef = this.stencilRef; d.stencilFuncMask = this.stencilFuncMask; d.stencilFail = this.stencilFail; d.stencilZFail = this.stencilZFail; d.stencilZPass = this.stencilZPass; this.rotation && 0 !== this.rotation && (d.rotation = this.rotation); !0 === this.polygonOffset && (d.polygonOffset = !0); 0 !== this.polygonOffsetFactor && (d.polygonOffsetFactor = this.polygonOffsetFactor); 0 !== this.polygonOffsetUnits && (d.polygonOffsetUnits = this.polygonOffsetUnits); this.linewidth && 1 !== this.linewidth && (d.linewidth =
+								this.linewidth); void 0 !== this.dashSize && (d.dashSize = this.dashSize); void 0 !== this.gapSize && (d.gapSize = this.gapSize); void 0 !== this.scale && (d.scale = this.scale); !0 === this.dithering && (d.dithering = !0); 0 < this.alphaTest && (d.alphaTest = this.alphaTest); !0 === this.premultipliedAlpha && (d.premultipliedAlpha = this.premultipliedAlpha); !0 === this.wireframe && (d.wireframe = this.wireframe); 1 < this.wireframeLinewidth && (d.wireframeLinewidth = this.wireframeLinewidth); "round" !== this.wireframeLinecap && (d.wireframeLinecap = this.wireframeLinecap);
+							"round" !== this.wireframeLinejoin && (d.wireframeLinejoin = this.wireframeLinejoin); !0 === this.morphTargets && (d.morphTargets = !0); !0 === this.morphNormals && (d.morphNormals = !0); !0 === this.skinning && (d.skinning = !0); !1 === this.visible && (d.visible = !1); !1 === this.toneMapped && (d.toneMapped = !1); "{}" !== JSON.stringify(this.userData) && (d.userData = this.userData); c && (c = b(a.textures), a = b(a.images), 0 < c.length && (d.textures = c), 0 < a.length && (d.images = a)); return d
+						}, clone: function () { return (new this.constructor).copy(this) }, copy: function (a) {
+						this.name =
+							a.name; this.fog = a.fog; this.blending = a.blending; this.side = a.side; this.flatShading = a.flatShading; this.vertexColors = a.vertexColors; this.opacity = a.opacity; this.transparent = a.transparent; this.blendSrc = a.blendSrc; this.blendDst = a.blendDst; this.blendEquation = a.blendEquation; this.blendSrcAlpha = a.blendSrcAlpha; this.blendDstAlpha = a.blendDstAlpha; this.blendEquationAlpha = a.blendEquationAlpha; this.depthFunc = a.depthFunc; this.depthTest = a.depthTest; this.depthWrite = a.depthWrite; this.stencilWriteMask = a.stencilWriteMask;
+							this.stencilFunc = a.stencilFunc; this.stencilRef = a.stencilRef; this.stencilFuncMask = a.stencilFuncMask; this.stencilFail = a.stencilFail; this.stencilZFail = a.stencilZFail; this.stencilZPass = a.stencilZPass; this.stencilWrite = a.stencilWrite; var b = a.clippingPlanes, c = null; if (null !== b) { var d = b.length; c = Array(d); for (var e = 0; e !== d; ++e)c[e] = b[e].clone() } this.clippingPlanes = c; this.clipIntersection = a.clipIntersection; this.clipShadows = a.clipShadows; this.shadowSide = a.shadowSide; this.colorWrite = a.colorWrite; this.precision =
+								a.precision; this.polygonOffset = a.polygonOffset; this.polygonOffsetFactor = a.polygonOffsetFactor; this.polygonOffsetUnits = a.polygonOffsetUnits; this.dithering = a.dithering; this.alphaTest = a.alphaTest; this.premultipliedAlpha = a.premultipliedAlpha; this.visible = a.visible; this.toneMapped = a.toneMapped; this.userData = JSON.parse(JSON.stringify(a.userData)); return this
+						}, dispose: function () { this.dispatchEvent({ type: "dispose" }) }
+					}); Object.defineProperty(K.prototype, "needsUpdate", { set: function (a) { !0 === a && this.version++ } });
 	Na.prototype = Object.create(K.prototype); Na.prototype.constructor = Na; Na.prototype.isMeshBasicMaterial = !0; Na.prototype.copy = function (a) {
 		K.prototype.copy.call(this, a); this.color.copy(a.color); this.map = a.map; this.lightMap = a.lightMap; this.lightMapIntensity = a.lightMapIntensity; this.aoMap = a.aoMap; this.aoMapIntensity = a.aoMapIntensity; this.specularMap = a.specularMap; this.alphaMap = a.alphaMap; this.envMap = a.envMap; this.combine = a.combine; this.reflectivity = a.reflectivity; this.refractionRatio = a.refractionRatio; this.wireframe =
 			a.wireframe; this.wireframeLinewidth = a.wireframeLinewidth; this.wireframeLinecap = a.wireframeLinecap; this.wireframeLinejoin = a.wireframeLinejoin; this.skinning = a.skinning; this.morphTargets = a.morphTargets; return this
@@ -18063,7 +18378,7 @@ module.exports = exports = tube;
 						emissive: { value: new A(0) },
 						specular: { value: new A(1118481) }, shininess: { value: 30 }
 					}]), vertexShader: O.meshphong_vert, fragmentShader: O.meshphong_frag
-				}, standard: { uniforms: va([D.common, D.envmap, D.aomap, D.lightmap, D.emissivemap, D.bumpmap, D.normalmap, D.displacementmap, D.roughnessmap, D.metalnessmap, D.fog, D.lights, { emissive: { value: new A(0) }, roughness: { value: .5 }, metalness: { value: .5 }, envMapIntensity: { value: 1 } }]), vertexShader: O.meshphysical_vert, fragmentShader: O.meshphysical_frag }, toon: {
+				}, standard: { uniforms: va([D.common, D.envmap, D.aomap, D.lightmap, D.emissivemap, D.bumpmap, D.normalmap, D.displacementmap, D.roughnessmap, D.metalnessmap, D.fog, D.lights, { emissive: { value: new A(0) }, roughness: { value: 1 }, metalness: { value: 0 }, envMapIntensity: { value: 1 } }]), vertexShader: O.meshphysical_vert, fragmentShader: O.meshphysical_frag }, toon: {
 					uniforms: va([D.common, D.specularmap, D.aomap, D.lightmap,
 					D.emissivemap, D.bumpmap, D.normalmap, D.displacementmap, D.gradientmap, D.fog, D.lights, { emissive: { value: new A(0) }, specular: { value: new A(1118481) }, shininess: { value: 30 } }]), vertexShader: O.meshtoon_vert, fragmentShader: O.meshtoon_frag
 				}, matcap: { uniforms: va([D.common, D.bumpmap, D.normalmap, D.displacementmap, D.fog, { matcap: { value: null } }]), vertexShader: O.meshmatcap_vert, fragmentShader: O.meshmatcap_frag }, points: { uniforms: va([D.points, D.fog]), vertexShader: O.points_vert, fragmentShader: O.points_frag }, dashed: {
@@ -19310,11 +19625,9 @@ module.exports = exports = tube;
 						return new Qa(a)
 					}; k.ZeroCurvatureEnding = 2400; k.ZeroFactor = 200; k.ZeroSlopeEnding = 2401; k.ZeroStencilOp = 0; k.sRGBEncoding = 3001; Object.defineProperty(k, "__esModule", { value: !0 })
 });
-
-
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 arguments[4][4][0].apply(exports,arguments)
-},{"dup":4}],23:[function(require,module,exports){
+},{"dup":4}],24:[function(require,module,exports){
 // This module creates a THREE material from the options object provided into the Objects class.
 // Users can do this in one of three ways:
 
@@ -19367,8 +19680,8 @@ function material (options) {
 
 module.exports = exports = material;
 
-},{"../Utils/Utils.js":3,"../three.js":21}],24:[function(require,module,exports){
+},{"../Utils/Utils.js":3,"../three.js":22}],25:[function(require,module,exports){
 arguments[4][3][0].apply(exports,arguments)
-},{"../three.js":21,"./constants.js":22,"./validate.js":25,"dup":3}],25:[function(require,module,exports){
+},{"../three.js":22,"./constants.js":23,"./validate.js":26,"dup":3}],26:[function(require,module,exports){
 arguments[4][5][0].apply(exports,arguments)
 },{"dup":5}]},{},[1]);
