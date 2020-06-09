@@ -23,7 +23,7 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Optimization of Camera perspective to have Raycast with pixel-precision level.
 - Adjusted positioning for Objects3D to set center and rotation axises by config.
 
-<img alt="threebox" src="docs/soldieranimation.jpg">
+<img alt="threebox" src="docs/SoldierAnimation.jpg">
 
 ### Compatibility/Dependencies
 
