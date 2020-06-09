@@ -128,39 +128,40 @@ Threebox.prototype = {
 				if (intersectionExists) {
 					let nearestObject = Threebox.prototype.findParent3DObject(intersects[0]);
 
-					//if selected extrusion, unselect
-					if (selectedFeature) {
-						this.setFeatureState(
-							{ source: selectedFeature.source, id: selectedFeature.id },
-							{ select: false }
-						);
-						selectedFeature = null;
+					if (nearestObject) {
+						//if selected extrusion, unselect
+						if (selectedFeature) {
+							this.setFeatureState(
+								{ source: selectedFeature.source, id: selectedFeature.id },
+								{ select: false }
+							);
+							selectedFeature = null;
+						}
+						//if not selected yet, select it
+						if (!selectedObject) {
+							selectedObject = nearestObject;
+							selectedObject.selected = true;
+						}
+						else if (selectedObject.uuid != nearestObject.uuid) {
+							//it's a different object, restore the previous and select the new one
+							selectedObject.selected = false;
+							nearestObject.selected = true;
+							selectedObject = nearestObject;
+
+						} else if (selectedObject.uuid == nearestObject.uuid) {
+							//deselect, reset and return
+							selectedObject.selected = false;
+							selectedObject = null;
+							return;
+						}
+
+						// fire the Wireframed event to notify UI status change
+						selectedObject.dispatchEvent(new CustomEvent('Wireframed', { detail: selectedObject, bubbles: true, cancelable: true }));
+						selectedObject.dispatchEvent(new CustomEvent('IsPlayingChanged', { detail: selectedObject, bubbles: true, cancelable: true }));
+
+						this.repaint = true;
+						e.preventDefault();
 					}
-					//if not selected yet, select it
-					if (!selectedObject) {
-						selectedObject = nearestObject;
-						selectedObject.selected = true;
-					}
-					else if (selectedObject.uuid != nearestObject.uuid) {
-						//it's a different object, restore the previous and select the new one
-						selectedObject.selected = false;
-						nearestObject.selected = true;
-						selectedObject = nearestObject;
-
-					} else if (selectedObject.uuid == nearestObject.uuid) {
-						//deselect, reset and return
-						selectedObject.selected = false;
-						selectedObject = null;
-						return;
-					}
-
-					// fire the Wireframed event to notify UI status change
-					selectedObject.dispatchEvent(new CustomEvent('Wireframed', { detail: selectedObject, bubbles: true, cancelable: true }));
-					selectedObject.dispatchEvent(new CustomEvent('IsPlayingChanged', { detail: selectedObject, bubbles: true, cancelable: true }));
-
-					this.repaint = true;
-					e.preventDefault();
-
 				}
 				else {
 
@@ -245,20 +246,20 @@ Threebox.prototype = {
 
 				// if intersect exists, highlight it, if not check the extrusion layer
 				if (intersectionExists) {
-					this.getCanvasContainer().style.cursor = 'pointer';
-
 					let nearestObject = Threebox.prototype.findParent3DObject(intersects[0]);
-					if (!selectedObject || nearestObject.uuid != selectedObject.uuid) {
-						if (overedObject) {
-							overedObject.over = false;
-							overedObject = null;
+					if (nearestObject) {
+						this.getCanvasContainer().style.cursor = 'pointer';
+						if (!selectedObject || nearestObject.uuid != selectedObject.uuid) {
+							if (overedObject) {
+								overedObject.over = false;
+								overedObject = null;
+							}
+							nearestObject.over = true;
+							overedObject = nearestObject;
 						}
-						nearestObject.over = true;
-						overedObject = nearestObject;
+						this.repaint = true;
+						e.preventDefault();
 					}
-					this.repaint = true;
-					e.preventDefault();
-
 				} else {
 					//clean the object overed
 					if (overedObject) { overedObject.over = false; overedObject = null; }
@@ -527,6 +528,8 @@ Threebox.prototype = {
 			}
 
 		});
+		this.map.remove();
+		this.map = {};
 		this.scene.remove(this.world);
 		this.scene.dispose();
 		this.world.children = [];

@@ -22,34 +22,39 @@ AnimationManager.prototype = {
 		obj.actions = [];
 		obj.mixer;
 
+		//[jscastro] if the object includes animations
 		if (obj.animations && obj.animations.length) {
 
 			obj.hasDefaultAnimation = true;
-			let daIndex = obj.userData.feature.properties.defaultanimation;
 
+			//check first if a defaultAnimation is defined by options
+			let daIndex = (obj.userData.defaultAnimation ? obj.userData.defaultAnimation : 0);
 			obj.mixer = new THREE.AnimationMixer(obj);
 
+			setAction(daIndex);
+		}
+
+		//[jscastro] set the action to play
+		function setAction(animationIndex) {
 			for (let i = 0; i < obj.animations.length; i++) {
 
+				if (animationIndex > obj.animations.length)
+					console.log("The animation index " + animationIndex + " doesn't exist for this object");
 				let animation = obj.animations[i];
 				let action = obj.mixer.clipAction(animation);
 				obj.actions.push(action);
 
-				if (daIndex) {
-					if (daIndex === i) {
-						obj.defaultAction = action;
-						action.setEffectiveWeight(1);
-					}
-					else {
-						action.setEffectiveWeight(0);
-					}
-				} else {
+				//select the default animation and set the weight to 1
+				if (animationIndex === i) {
 					obj.defaultAction = action;
+					action.setEffectiveWeight(1);
+				}
+				else {
+					action.setEffectiveWeight(0);
 				}
 				action.play();
 
 			}
-
 		}
 
 		let _isPlaying = false;
@@ -137,13 +142,14 @@ AnimationManager.prototype = {
 
 		};
 
-		//[jscastro] default animation is set by update method
-		obj.defaultAnimation = null;
-		//[jscastro] stop default animation and the queue
+		//[jscastro] animation method, is set by update method
+		obj.animationMethod = null;
+
+		//[jscastro] stop animation and the queue
 		obj.stop = function () {
 			if (obj.mixer) {
 				obj.isPlaying = false;
-				cancelAnimationFrame(obj.defaultAnimation);
+				cancelAnimationFrame(obj.animationMethod);
 			}
 			this.animationQueue = [];
 			return this;
@@ -182,7 +188,7 @@ AnimationManager.prototype = {
 			var r = options.rotation; // radians
 			var s = options.scale; // 
 			var w = options.worldCoordinates; //Vector3
-			var q = options.quaternion; // [axis, angle]
+			var q = options.quaternion; // [axis, angle in rads]
 			var t = options.translate; //[jscastro] lnglat + height for 3D objects
 
 			if (p) {
@@ -199,26 +205,14 @@ AnimationManager.prototype = {
 				this.translateZ(c.z);
 			}
 
-			if (r) {
+			if (r) this.rotation.set(r[0], r[1], r[2]);
 
-				//if (r[0]) { this.rotateOnAxis(new THREE.Vector3(1, 0, 0), r[0]) }; // rotate the OBJECT}
-				//if (r[1]) { this.rotateOnAxis(new THREE.Vector3(0, 1, 0), r[1]) }; // rotate the OBJECT}
-				//if (r[2]) { this.rotateOnAxis(new THREE.Vector3(0, 0, 1), r[2]) }; // rotate the OBJECT}
-				this.rotation.set(r[0], r[1], r[2]);
+			if (s) this.scale.set(s[0], s[1], s[2]);
 
-			}
-			if (s) {
-				this.scale.set(s[0], s[1], s[2]);
-			}
+			if (q) this.quaternion.setFromAxisAngle(q[0], q[1]);
 
+			if (w) this.position.copy(w);
 
-			if (q) {
-				this.quaternion.setFromAxisAngle(q[0], utils.radify(q[1]));
-			}
-
-			if (w) {
-				this.position.copy(w);
-			}
 			this.updateMatrixWorld();
 			map.repaint = true
 		};
@@ -245,6 +239,18 @@ AnimationManager.prototype = {
 
 				map.repaint = true
 				return this;
+			}
+		}
+
+		//[jscastro] play an animation, requires options.animation as an index, if not it will play the default one
+		obj.playAnimation = function (options) {
+			if (obj.mixer) {
+
+				if (options.animation) {
+					setAction(options.animation)
+				}
+				obj.playDefault(options);
+
 			}
 		}
 
@@ -288,9 +294,8 @@ AnimationManager.prototype = {
 		//[jscastro] move the model action one tick just to avoid issues with initial position
 		obj.idle = function () {
 			if (obj.mixer) {
-				// Update the animation mixer, the stats panel, and render this frame
+				// Update the animation mixer and render this frame
 				obj.mixer.update(0.01);
-				//object.deactivateAllActions();
 			}
 			map.repaint = true;
 			return this;
@@ -314,105 +319,110 @@ AnimationManager.prototype = {
 
 			if (!object.animationQueue || object.animationQueue.length === 0) continue;
 
-			//focus on first item in queue
-			var item = object.animationQueue[0];
-			var options = item.parameters;
+			//[jscastro] now multiple animations on a single object is possible
+			for (var i = object.animationQueue.length - 1; i >= 0; i--) {
 
-			// if an animation is past its expiration date, cull it
-			if (!options.expiration) {
-				// console.log('culled')
+				//focus on first item in queue
+				var item = object.animationQueue[i];
+				var options = item.parameters;
 
-				object.animationQueue.splice(0, 1);
+				// if an animation is past its expiration date, cull it
+				if (!options.expiration) {
+					// console.log('culled')
 
-				// set the start time of the next animation
-				if (object.animationQueue[0]) object.animationQueue[0].parameters.start = now;
+					object.animationQueue.splice(i, 1);
 
-				return
-			}
+					// set the start time of the next animation
+					if (object.animationQueue[i]) object.animationQueue[i].parameters.start = now;
 
-			//if finished, jump to end state and flag animation entry for removal next time around. Execute callback if there is one
-			var expiring = now >= options.expiration;
-
-			if (expiring) {
-				options.expiration = false;
-				if (item.type === 'playDefault') {
-					//object.isPlaying = false;
-					object.stop();
-				} else {
-					if (options.endState) object._setObject(options.endState);
-					if (typeof (options.cb) != 'undefined') options.cb();
+					return
 				}
-			}
 
-			else {
+				//if finished, jump to end state and flag animation entry for removal next time around. Execute callback if there is one
+				var expiring = now >= options.expiration;
 
-				var timeProgress = (now - options.start) / options.duration;
+				if (expiring) {
+					options.expiration = false;
+					if (item.type === 'playDefault') {
+						//object.isPlaying = false;
+						object.stop();
+					} else {
+						if (options.endState) object._setObject(options.endState);
+						if (typeof (options.cb) != 'undefined') options.cb();
+					}
+				}
 
-				if (item.type === 'set') {
+				else {
 
-					var objectState = {};
+					var timeProgress = (now - options.start) / options.duration;
 
-					if (options.pathCurve) objectState.worldCoordinates = options.pathCurve.getPoint(timeProgress);
+					if (item.type === 'set') {
 
-					if (options.rotationPerMs) {
-						objectState.rotation = options.startRotation.map(function (rad, index) {
-							return rad + options.rotationPerMs[index] * timeProgress * options.duration
-						})
+						var objectState = {};
+
+						if (options.pathCurve) objectState.worldCoordinates = options.pathCurve.getPoint(timeProgress);
+
+						if (options.rotationPerMs) {
+							objectState.rotation = options.startRotation.map(function (rad, index) {
+								return rad + options.rotationPerMs[index] * timeProgress * options.duration
+							})
+						}
+
+						if (options.scalePerMs) {
+							objectState.scale = options.startScale.map(function (scale, index) {
+								return scale + options.scalePerMs[index] * timeProgress * options.duration
+							})
+						}
+
+						object._setObject(objectState);
 					}
 
-					if (options.scalePerMs) {
-						objectState.scale = options.startScale.map(function (scale, index) {
-							return scale + options.scalePerMs[index] * timeProgress * options.duration
-						})
-					}
+					if (item.type === 'followPath') {
 
-					object._setObject(objectState);
-				}
+						var position = options.pathCurve.getPointAt(timeProgress);
+						objectState = { worldCoordinates: position };
 
-				if (item.type === 'followPath') {
+						// if we need to track heading
+						if (options.trackHeading) {
 
-					var position = options.pathCurve.getPointAt(timeProgress);
-					objectState = { worldCoordinates: position };
+							var tangent = options.pathCurve
+								.getTangentAt(timeProgress)
+								.normalize();
 
-					// if we need to track heading
-					if (options.trackHeading) {
+							var axis = new THREE.Vector3(0, 0, 0);
+							var up = new THREE.Vector3(0, 1, 0);
 
-						var tangent = options.pathCurve
-							.getTangentAt(timeProgress)
-							.normalize();
+							axis
+								.crossVectors(up, tangent)
+								.normalize();
 
-						var axis = new THREE.Vector3(0, 0, 0);
-						var up = new THREE.Vector3(0, 1, 0);
+							var radians = Math.acos(up.dot(tangent));
 
-						axis
-							.crossVectors(up, tangent)
-							.normalize();
+							objectState.quaternion = [axis, radians];
 
-						var radians = Math.acos(up.dot(tangent));
+						}
 
-						objectState.quaternion = [axis, radians];
+						object._setObject(objectState);
 
 					}
 
-					object._setObject(objectState);
+					//[jscastro] play default animation
+					if (item.type === 'playDefault') {
+						object.activateAllActions();
+						object.isPlaying = true;
+						object.animationMethod = requestAnimationFrame(this.update);
+						object.mixer.update(object.clock.getDelta());
+						map.repaint = true;
+					}
 
 				}
-
-				//[jscastro] play default animation
-				if (item.type === 'playDefault') {
-					object.activateAllActions();
-					object.isPlaying = true;
-					object.defaultAnimation = requestAnimationFrame(this.update);
-					object.mixer.update(object.clock.getDelta());
-					map.repaint = true;
-				}
-
 			}
 
 		}
 
 		this.previousFrameTime = now;
 	}
+
 }
 
 const defaults = {

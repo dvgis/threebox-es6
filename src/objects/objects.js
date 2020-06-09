@@ -550,6 +550,7 @@ Objects.prototype = {
 			units: 'scene',
 			scale: 1,
 			rotation: 0,
+			defaultAnimation: 0,
 			feature: null
 		},
 

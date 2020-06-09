@@ -14,7 +14,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <LastActiveSolutionConfig>Debug|Any CPU</LastActiveSolutionConfig>
     <StartWebBrowser>True</StartWebBrowser>
-    <LaunchUrl>/examples/logistics.html</LaunchUrl>
+    <LaunchUrl>/examples/animation.html</LaunchUrl>
     <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
     <NodejsPort>8080</NodejsPort>
   </PropertyGroup>
@@ -23,6 +23,17 @@
   <ItemGroup>
     <Content Include=".gitignore" />
     <Content Include=".npmrc" />
+    <Content Include="docs\SoldierAnimation.jpg" />
+    <Content Include="examples\animation.html" />
+    <Content Include="examples\css\fontawesome.js" />
+    <Content Include="examples\css\free-fa-solid-900.woff2" />
+    <Content Include="examples\css\free-v4-font-face-min.css" />
+    <Content Include="examples\css\free-v4-shims.min.css" />
+    <Content Include="examples\css\free.min.css" />
+    <Content Include="examples\models\Soldier.glb" />
+    <Content Include="examples\models\Truck.mtl" />
+    <Content Include="examples\models\Truck.obj" />
+    <Content Include="examples\plugins\jquery.min.js" />
     <Content Include="LICENSE.txt" />
     <Content Include="package-lock.json" />
     <Content Include="package.json" />
@@ -90,8 +101,10 @@
     <Folder Include="docs" />
     <Folder Include="docs\img" />
     <Folder Include="examples" />
+    <Folder Include="examples\css\" />
     <Folder Include="examples\models" />
     <Folder Include="examples\old" />
+    <Folder Include="examples\plugins\" />
     <Folder Include="src" />
     <Folder Include="src\Animation" />
     <Folder Include="src\Camera" />

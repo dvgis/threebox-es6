@@ -1,0 +1,316 @@
+<!doctype html>
+<head>
+	<title>Animated truck</title>
+	<script src="../dist/threebox.js" type="text/javascript"></script>
+	<script src="config.js"></script>
+	<script src="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.css" rel="stylesheet" />
+	<script src="https://d3js.org/d3.v5.min.js"></script>
+	<script src="plugins/jquery.min.js"></script>
+	<!-- Place your kit's code here -->
+	<script src="css/fontawesome.js"></script>
+	<link href="css/free.min.css" rel="stylesheet" />
+	<link href="css/free-v4-font-face-min.css" rel="stylesheet" />
+	<link href="css/free-v4-shims.min.css" rel="stylesheet" />
+
+	<style>
+		body, html {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			background: black;
+		}
+
+		#map {
+			width: 100%;
+			height: 100%;
+		}
+
+		#explainer {
+			z-index: 99;
+		}
+
+		.top-right-tools {
+			display: flex;
+			right: 40px;
+			z-index: 10;
+		}
+
+		.tools-i.mapboxgl-ctrl {
+			margin: 10px 20px 0 0;
+			display: inline-flex;
+		}
+
+		.helpDiv {
+			width: auto;
+			left: 50%;
+			top: 0px;
+			z-index: 2;
+			position: absolute;
+		}
+
+		.help {
+			background: rgba(0, 0, 0, 0.5);
+			color: #fff;
+			position: relative;
+			text-align: center;
+			top: 10px;
+			left: -50%;
+			padding: 5px 10px;
+			margin: 0;
+			font-size: 11px;
+			line-height: 18px;
+			border-radius: 3px;
+			z-index: 1;
+			display: block;
+		}
+	</style>
+</head>
+<body>
+	<div id='map' class='map'>
+		<div class="mapboxgl-ctrl-top-right top-right-tools" aria-label="Map Tools Control">
+			<div class="tools-i mapboxgl-ctrl mapboxgl-ctrl-group">
+				<button type="button" name="wireButton" id="wireButton" title="Wireframe/Texture selected item [W]" alt="Wireframe/Texture selected item [W]" disabled><i class="fas fa-border-none"></i></button>
+				<button type="button" name="playButton" id="playButton" title="Play/Pause animations" alt="Play/Pause animations" disabled><i class="fas fa-play"></i></button>
+			</div>
+		</div>
+		<div class="mapboxgl-ctrl helpDiv">
+			<div id="help" class="help">
+				Add or Select an object
+			</div>
+		</div>
+	</div>
+	<div id='explainer'>Select the soldier, drag, rotate, wireframe and play animation</div>
+
+	<script>
+		var config = {
+			accessToken: 'pk.eyJ1IjoianNjYXN0cm8iLCJhIjoiY2s2YzB6Z25kMDVhejNrbXNpcmtjNGtpbiJ9.28ynPf1Y5Q8EyB_moOHylw'
+		};
+
+		// This example downloads a soldier model from an external OBJ/MTL file, adds it to the map, and drives it around via paths fetched from the Mapbox Directions API
+
+		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
+
+		mapboxgl.accessToken = config.accessToken;
+
+		var origin = [-122.47920912, 37.716351775];
+		var destination, line;
+		var soldier;
+
+		var map = new mapboxgl.Map({
+			container: 'map',
+			style: 'mapbox://styles/mapbox/outdoors-v11',
+			center: origin,
+			zoom: 18,
+			pitch: 60,
+			bearing: 0
+		});
+		map.addControl(new mapboxgl.NavigationControl());
+
+		map.on('style.load', function () {
+
+			map
+				.addLayer({
+					id: 'custom_layer',
+					type: 'custom',
+					renderingMode: '3d',
+					onAdd: function (map, mbxContext) {
+
+						window.tb = new Threebox(
+							map,
+							mbxContext,
+							{ defaultLights: true }
+						);
+
+						// import soldier from an external glb file, scaling up its size 20x
+						// IMPORTANT: .glb is not a standard MIME TYPE, you'll have to add it to your web server config,
+						// otherwise you'll receive a 404 error
+						var options = {
+							obj: 'models/soldier.glb',
+							type: 'gltf',
+							scale: 20,
+							units: 'meters',
+							rotation: { x: 90, y: 0, z: 0 }, //default rotation
+							adjustment: { x: 0, y: 0, z: 0 } // model center is displaced
+						}
+
+						tb.loadObj(options, function (model) {
+
+							soldier = model.setCoords(origin);
+
+							// Listening to the events
+							model.addEventListener('SelectedChange', onSelectedChange, false);
+							model.addEventListener('Wireframed', onWireframed, false);
+							model.addEventListener('IsPlayingChanged', onIsPlayingChanged, false);
+							model.addEventListener('ObjectDragged', onDraggedObject, false);
+							model.addEventListener('ObjectMouseOver', onObjectMouseOver, false);
+							model.addEventListener('ObjectMouseOut', onObjectMouseOut, false);
+
+							tb.add(soldier);
+						})
+
+					},
+
+					render: function (gl, matrix) {
+						tb.update();
+					}
+				});
+		}).on('click', function (e) {
+			var pt = [e.lngLat.lng, e.lngLat.lat];
+			travelPath(pt);
+		})
+
+		function travelPath(destination) {
+
+			// request directions. See https://docs.mapbox.com/api/navigation/#directions for details
+
+			var url = "https://api.mapbox.com/directions/v5/mapbox/driving/" + [origin, destination].join(';') + "?geometries=geojson&access_token=" + config.accessToken
+
+
+			fetchFunction(url, function (data) {
+
+				let duration = 10000;
+				// extract path geometry from callback geojson, and set duration of travel
+				var options = {
+					animation: 1,
+					path: data.routes[0].geometry.coordinates,
+					duration: duration
+				}
+
+
+				// start the soldier animation with above options, and remove the line when animation ends
+				soldier.followPath(
+					options,
+					function () {
+						tb.remove(line);
+					}
+				);
+
+				soldier.playAnimation(options);
+
+				// set up geometry for a line to be added to map, lofting it up a bit for *style*
+				var lineGeometry = options.path
+					.map(function (coordinate) {
+						return coordinate.concat([15])
+					})
+
+				// create and add line object
+				line = tb.line({
+					geometry: lineGeometry,
+					width: 5,
+					color: 'steelblue'
+				})
+
+				tb.add(line);
+
+				// set destination as the new origin, for the next trip
+				origin = destination;
+
+			})
+		}
+
+		//convenience function for fetch
+
+		function fetchFunction(url, cb) {
+			fetch(url)
+				.then(
+					function (response) {
+						if (response.status === 200) {
+							response.json()
+								.then(function (data) {
+									cb(data)
+								})
+						}
+					}
+				)
+		}
+
+		//actions to execute onSelectedChange
+		function onSelectedChange(e) {
+			let selected = e.detail.selected;
+			console.log("onSelectedChange: " + selected);
+			$('#wireButton')[0].disabled = !selected;
+			if (e.detail.hasDefaultAnimation) { $('#playButton')[0].disabled = !selected; }
+
+			if (selected) {
+				selectedObject = e.detail;
+				$('#help')[0].innerHTML = "Press 'Shift' to drag or ress 'Alt' to rotate <br>\ Tap 'Wireframe' or 'Play' buttons ";
+			}
+			else {
+				$('#help')[0].innerHTML = "Add or Select an object";
+			}
+			tb.update();
+			map.repaint = true;
+		}
+
+		//actions to execute onWireFramed
+		function onWireframed(e) {
+			if (e.detail.wireframe) {
+				$('#wireButton').children(".fas").removeClass("fa-border-none").addClass("fa-border-all");
+			}
+			else {
+				$('#wireButton').children(".fas").removeClass("fa-border-all").addClass("fa-border-none");
+			}
+			console.log("onWireframed: " + e.detail.wireframe);
+			tb.update();
+			map.repaint = true;
+		}
+
+		//actions to execute onIsPlayingChanged
+		function onIsPlayingChanged(e) {
+			if (e.detail.isPlaying) {
+				$('#playButton').children(".fas").removeClass("fa-play").addClass("fa-pause");
+			}
+			else {
+				$('#playButton').children(".fas").removeClass("fa-pause").addClass("fa-play");
+			}
+		}
+
+		//actions to execute onDraggedObject
+		function onDraggedObject(e) {
+			let draggedObject = e.detail.draggedObject;
+			let draggedAction = e.detail.draggedAction;
+
+			console.log("onDraggedObject" + draggedAction);
+
+		}
+
+		//actions to execute onObjectMouseOver
+		function onObjectMouseOver(e) {
+			console.log("onObjectMouseOver");
+		}
+
+		//actions to execute onObjectMouseOut
+		function onObjectMouseOut(e) {
+			console.log("onObjectMouseOut");
+		}
+
+		//wire / unwire object
+		$('#wireButton').on('click', function () {
+			if (selectedObject) {
+				if (selectedObject.wireframe) {
+					selectedObject.wireframe = false;
+				} else {
+					selectedObject.wireframe = true;
+				}
+			}
+		});
+
+		//play/pause default animation
+		$('#playButton').on('click', function () {
+			if (selectedObject) {
+				if (selectedObject.isPlaying) {
+					selectedObject.stop();
+				} else {
+					// play animation 3, for 10 seconds
+					selectedObject.playAnimation(options = { animation: 1, duration: 10000 });
+
+					//if animationDefault was defined in creation just do this
+					//selectedObject.playDefault(options = { duration: 10000 });
+
+				}
+			}
+		});
+
+	</script>
+</body>
