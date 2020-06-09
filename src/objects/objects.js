@@ -26,7 +26,7 @@ Objects.prototype = {
 
 		var positions = new Float32Array(flattenedArray); // 3 vertices per point
 		var geometry = new THREE.BufferGeometry();
-		geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
+		geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
 		// material
 		var material = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 21 });
@@ -282,7 +282,7 @@ Objects.prototype = {
 				obj.label = new CSS2D.CSS2DObject(div);
 				let p = obj.userData.feature.properties;
 				let labelHeight = (p.label ? height / p.label : 0) + (height / 10); //if label correction adjust + 10%
-				obj.label.position.set(-size.x / 2, -size.y / 2, 0);//height + labelHeight);
+				obj.label.position.set(-size.x / 2, -size.y / 2, -size.z / 2);//height + labelHeight);
 				obj.label.visible = visible;
 				obj.label.alwaysVisible = visible;
 

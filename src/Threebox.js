@@ -451,9 +451,9 @@ Threebox.prototype = {
 				//TODO: this could be a multidimensional array
 				let location = feature.geometry.coordinates[0][0];
 				let floorHeightMin = (level * feature.properties.levelHeight);
-				//calculate height of the object in its current position minus the level height
-				let objectHeight = feature.properties.height;
-				let modelHeightFloor = objectHeight + floorHeightMin;
+				//object height is modelSize.z + base_height configured for this object
+				let objectHeight = obj.modelSize.z + feature.properties.base_height;
+				let modelHeightFloor = floorHeightMin + objectHeight;
 				//if height is not yet included as 3rd coordinate, add it, if not just update it
 				(location.length < 3 ? location.push(modelHeightFloor) : location[2] = modelHeightFloor);
 				//position on location with height calculated
@@ -502,7 +502,8 @@ Threebox.prototype = {
 
 	remove: function (obj) {
 		//[jscastro] remove also the label if exists dispatching the event removed to fire CSS2DRenderer "removed" listener
-		if (obj.label) { obj.label.dispatchEvent({ type: "removed" }) };
+		if (obj.label) { obj.label.remove() };
+		if (obj.tooltip) { obj.tooltip.remove() };
 		this.world.remove(obj);
 	},
 

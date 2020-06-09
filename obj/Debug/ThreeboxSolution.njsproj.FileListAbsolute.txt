@@ -1,5 +1,4 @@
 C:\Users\jscastro\source\repos\threebox\obj\Debug\ThreeboxSolution.njsproj.CoreCompileInputs.cache
 C:\Users\jscastro\source\repos\threebox\bin\Microsoft.NodejsTools.WebRole.dll
-C:\Users\jscastro\Documents\GitHub\threebox\obj\Debug\ThreeboxSolution.njsprojAssemblyReference.cache
 C:\Users\jscastro\Documents\GitHub\threebox\obj\Debug\ThreeboxSolution.njsproj.CoreCompileInputs.cache
 C:\Users\jscastro\Documents\GitHub\threebox\bin\Microsoft.NodejsTools.WebRole.dll

@@ -66,7 +66,10 @@
 					var options = {
 						obj: 'models/Truck.obj',
 						mtl: 'models/Truck.mtl',
-						scale: 10
+						scale: 10,
+						units: 'meters',
+						rotation: { x: 90, y: 0, z: 0 }, //default rotation
+
 					}
 
 					tb.loadObj(options, function(model) {

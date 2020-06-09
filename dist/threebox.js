@@ -456,9 +456,9 @@ Threebox.prototype = {
 				//TODO: this could be a multidimensional array
 				let location = feature.geometry.coordinates[0][0];
 				let floorHeightMin = (level * feature.properties.levelHeight);
-				//calculate height of the object in its current position minus the level height
-				let objectHeight = feature.properties.height;
-				let modelHeightFloor = objectHeight + floorHeightMin;
+				//object height is modelSize.z + base_height configured for this object
+				let objectHeight = obj.modelSize.z + feature.properties.base_height;
+				let modelHeightFloor = floorHeightMin + objectHeight;
 				//if height is not yet included as 3rd coordinate, add it, if not just update it
 				(location.length < 3 ? location.push(modelHeightFloor) : location[2] = modelHeightFloor);
 				//position on location with height calculated
@@ -507,7 +507,8 @@ Threebox.prototype = {
 
 	remove: function (obj) {
 		//[jscastro] remove also the label if exists dispatching the event removed to fire CSS2DRenderer "removed" listener
-		if (obj.label) { obj.label.dispatchEvent({ type: "removed" }) };
+		if (obj.label) { obj.label.remove() };
+		if (obj.tooltip) { obj.tooltip.remove() };
 		this.world.remove(obj);
 	},
 
@@ -1540,17 +1541,12 @@ THREE.CSS2DObject = function (element) {
 
 	THREE.Object3D.call(this);
 
-	this.element = element;
+	this.element = element || document.createElement('div');
+
 	this.element.style.position = 'absolute';
 
-	this.alwaysVisible = false; //[jscastro] some labels must be always visible
-
-	this.clone = function (recursive) {
-		if (this.element)
-			return new THREE.CSS2DObject(this.element);
-		else
-			return new THREE.CSS2DObject();
-	}
+	//[jscastro] some labels must be always visible
+	this.alwaysVisible = false;
 
 	this.dispose = function () {
 		this.remove();
@@ -1567,6 +1563,7 @@ THREE.CSS2DObject = function (element) {
 
 		});
 	}
+
 	this.addEventListener('removed', function () {
 
 		this.remove();
@@ -1575,8 +1572,21 @@ THREE.CSS2DObject = function (element) {
 
 };
 
-THREE.CSS2DObject.prototype = Object.create(THREE.Object3D.prototype);
-THREE.CSS2DObject.prototype.constructor = THREE.CSS2DObject;
+THREE.CSS2DObject.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
+
+	constructor: THREE.CSS2DObject,
+
+	copy: function (source, recursive) {
+
+		THREE.Object3D.prototype.copy.call(this, source, recursive);
+
+		this.element = source.element.cloneNode(true);
+
+		return this;
+
+	}
+
+});
 
 THREE.CSS2DRenderer = function () {
 
@@ -1736,8 +1746,6 @@ THREE.CSS2DRenderer = function () {
 			this.renderObject(l, scene, camera);
 		});
 	};
-
-	//TODO: setZoomRange
 
 };
 
@@ -1945,8 +1953,8 @@ THREE.LineSegmentsGeometry = function () {
 	var index = [ 0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5 ];
 
 	this.setIndex( index );
-	this.addAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
-	this.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
+	this.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
+	this.setAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
 
 };
 
@@ -2003,8 +2011,8 @@ THREE.LineSegmentsGeometry.prototype = Object.assign( Object.create( THREE.Insta
 
 		var instanceBuffer = new THREE.InstancedInterleavedBuffer( lineSegments, 6, 1 ); // xyz, xyz
 
-		this.addAttribute( 'instanceStart', new THREE.InterleavedBufferAttribute( instanceBuffer, 3, 0 ) ); // xyz
-		this.addAttribute( 'instanceEnd', new THREE.InterleavedBufferAttribute( instanceBuffer, 3, 3 ) ); // xyz
+		this.setAttribute( 'instanceStart', new THREE.InterleavedBufferAttribute( instanceBuffer, 3, 0 ) ); // xyz
+		this.setAttribute( 'instanceEnd', new THREE.InterleavedBufferAttribute( instanceBuffer, 3, 3 ) ); // xyz
 
 		//
 
@@ -2031,8 +2039,8 @@ THREE.LineSegmentsGeometry.prototype = Object.assign( Object.create( THREE.Insta
 
 		var instanceColorBuffer = new THREE.InstancedInterleavedBuffer( colors, 6, 1 ); // rgb, rgb
 
-		this.addAttribute( 'instanceColorStart', new THREE.InterleavedBufferAttribute( instanceColorBuffer, 3, 0 ) ); // rgb
-		this.addAttribute( 'instanceColorEnd', new THREE.InterleavedBufferAttribute( instanceColorBuffer, 3, 3 ) ); // rgb
+		this.setAttribute( 'instanceColorStart', new THREE.InterleavedBufferAttribute( instanceColorBuffer, 3, 0 ) ); // rgb
+		this.setAttribute( 'instanceColorEnd', new THREE.InterleavedBufferAttribute( instanceColorBuffer, 3, 3 ) ); // rgb
 
 		return this;
 
@@ -2761,8 +2769,8 @@ THREE.LineSegments2.prototype = Object.assign( Object.create( THREE.Mesh.prototy
 
 			var instanceDistanceBuffer = new THREE.InstancedInterleavedBuffer( lineDistances, 2, 1 ); // d0, d1
 
-			geometry.addAttribute( 'instanceDistanceStart', new THREE.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 0 ) ); // d0
-			geometry.addAttribute( 'instanceDistanceEnd', new THREE.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 1 ) ); // d1
+			geometry.setAttribute( 'instanceDistanceStart', new THREE.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 0 ) ); // d0
+			geometry.setAttribute( 'instanceDistanceEnd', new THREE.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 1 ) ); // d1
 
 			return this;
 
@@ -2859,8 +2867,8 @@ THREE.Wireframe.prototype = Object.assign( Object.create( THREE.Mesh.prototype )
 
 			var instanceDistanceBuffer = new THREE.InstancedInterleavedBuffer( lineDistances, 2, 1 ); // d0, d1
 
-			geometry.addAttribute( 'instanceDistanceStart', new THREE.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 0 ) ); // d0
-			geometry.addAttribute( 'instanceDistanceEnd', new THREE.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 1 ) ); // d1
+			geometry.setAttribute( 'instanceDistanceStart', new THREE.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 0 ) ); // d0
+			geometry.setAttribute( 'instanceDistanceEnd', new THREE.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 1 ) ); // d1
 
 			return this;
 
@@ -15605,11 +15613,11 @@ OBJLoader.prototype = {
 
             var buffergeometry = new THREE.BufferGeometry();
 
-            buffergeometry.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array( geometry.vertices ), 3 ) );
+            buffergeometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array( geometry.vertices ), 3 ) );
 
             if ( geometry.normals.length > 0 ) {
 
-                buffergeometry.addAttribute( 'normal', new THREE.BufferAttribute( new Float32Array( geometry.normals ), 3 ) );
+                buffergeometry.setAttribute( 'normal', new THREE.BufferAttribute( new Float32Array( geometry.normals ), 3 ) );
 
             } else {
 
@@ -15619,7 +15627,7 @@ OBJLoader.prototype = {
 
             if ( geometry.uvs.length > 0 ) {
 
-                buffergeometry.addAttribute( 'uv', new THREE.BufferAttribute( new Float32Array( geometry.uvs ), 2 ) );
+                buffergeometry.setAttribute( 'uv', new THREE.BufferAttribute( new Float32Array( geometry.uvs ), 2 ) );
 
             }
 
@@ -15726,7 +15734,7 @@ Objects.prototype = {
 
 		var positions = new Float32Array(flattenedArray); // 3 vertices per point
 		var geometry = new THREE.BufferGeometry();
-		geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
+		geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
 		// material
 		var material = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 21 });
@@ -15982,7 +15990,7 @@ Objects.prototype = {
 				obj.label = new CSS2D.CSS2DObject(div);
 				let p = obj.userData.feature.properties;
 				let labelHeight = (p.label ? height / p.label : 0) + (height / 10); //if label correction adjust + 10%
-				obj.label.position.set(-size.x / 2, -size.y / 2, 0);//height + labelHeight);
+				obj.label.position.set(-size.x / 2, -size.y / 2, -size.z / 2);//height + labelHeight);
 				obj.label.visible = visible;
 				obj.label.alwaysVisible = visible;
 
