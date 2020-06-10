@@ -513,33 +513,61 @@ Threebox.prototype = {
 		this.world.remove(obj);
 	},
 
-	dispose: function () {
-		//geometry.dispose(); material.dispose(); texture.dispose(); renderer.dispose()
-		this.world.traverse(function (obj) {
-			if (obj.geometry) {
-				obj.geometry.dispose();
-			}
-			if (obj.material) {
-				if (obj.material instanceof THREE.MeshFaceMaterial) {
-					obj.material.materials.forEach(function (m) {
-						m.dispose();
-					});
-				} else {
-					obj.material.dispose();
-				}
-			}
-			if (obj.dispose) {
-				obj.dispose();
-			}
+	dispose: async function () {
 
+		console.log(window.tb.memory());
+		//console.log(window.performance.memory);
+
+		return new Promise(disposed => {
+			this.world.traverse(function (obj) {
+				if (obj.geometry) {
+					obj.geometry.dispose();
+				}
+				if (obj.material) {
+					if (obj.material instanceof THREE.MeshFaceMaterial) {
+						obj.material.materials.forEach(function (m) {
+							m.dispose();
+							if (m.map) {
+								m.map.dispose();
+							}
+						});
+					} else {
+						obj.material.dispose();
+					}
+
+					let m = obj.material;
+					let md = (m.map || m.alphaMap || m.aoMap || m.bumpMap || m.displacementMap || m.emissiveMap || m.envMap || m.lightMap || m.metalnessMap || m.normalMap || m.roughnessMap)
+					if (md) {
+						if (m.map) m.map.dispose();
+						if (m.alphaMap) m.alphaMap.dispose();
+						if (m.aoMap) m.aoMap.dispose();
+						if (m.bumpMap) m.bumpMap.dispose();
+						if (m.displacementMap) m.displacementMap.dispose();
+						if (m.emissiveMap) m.emissiveMap.dispose();
+						if (m.envMap) m.envMap.dispose();
+						if (m.lightMap) m.lightMap.dispose();
+						if (m.metalnessMap) m.metalnessMap.dispose();
+						if (m.normalMap) m.normalMap.dispose();
+						if (m.roughnessMap) m.roughnessMap.dispose();
+					}
+				}
+				if (obj.dispose) {
+					obj.dispose();
+				}
+			});
+			this.map.remove();
+			this.map = {};
+			this.scene.remove(this.world);
+			this.scene.dispose();
+			this.world.children = [];
+			this.world = null;
+			this.labelRenderer.dispose();
+			console.log(window.tb.memory());
+			this.renderer.dispose();
+			disposed('dispose finished');
+			//console.log(window.performance.memory);
 		});
-		this.map.remove();
-		this.map = {};
-		this.scene.remove(this.world);
-		this.scene.dispose();
-		this.world.children = [];
-		this.world = null;
-		this.renderer.dispose();
+
 	},
 
 	defaultLights: function () {
@@ -558,6 +586,8 @@ Threebox.prototype = {
 	},
 
 	memory: function () { return this.renderer.info.memory },
+
+	programs: function () { return this.renderer.info.programs.length },
 
 	version: '1.0.0',
 
@@ -1648,36 +1678,40 @@ THREE.CSS2DRenderer = function () {
 
 		if (object instanceof THREE.CSS2DObject) {
 
-			object.onBeforeRender(_this, scene, camera);
+			//[jscastro] optimize performance and don't update and remove the labels that are not visible
+			if (!object.visible) { object.remove(); }
+			else {
 
-			vector.setFromMatrixPosition(object.matrixWorld);
-			vector.applyMatrix4(viewProjectionMatrix);
+				object.onBeforeRender(_this, scene, camera);
 
-			var element = object.element;
-			var style = 'translate(-50%,-50%) translate(' + (vector.x * _widthHalf + _widthHalf) + 'px,' + (- vector.y * _heightHalf + _heightHalf) + 'px)';
+				vector.setFromMatrixPosition(object.matrixWorld);
+				vector.applyMatrix4(viewProjectionMatrix);
 
-			element.style.WebkitTransform = style;
-			element.style.MozTransform = style;
-			element.style.oTransform = style;
-			element.style.transform = style;
+				var element = object.element;
+				var style = 'translate(-50%,-50%) translate(' + (vector.x * _widthHalf + _widthHalf) + 'px,' + (- vector.y * _heightHalf + _heightHalf) + 'px)';
 
-			element.style.display = (object.visible && vector.z >= - 1 && vector.z <= 1) ? '' : 'none';
+				element.style.WebkitTransform = style;
+				element.style.MozTransform = style;
+				element.style.oTransform = style;
+				element.style.transform = style;
 
-			var objectData = {
-				distanceToCameraSquared: getDistanceToSquared(camera, object)
-			};
+				element.style.display = (object.visible && vector.z >= - 1 && vector.z <= 1) ? '' : 'none';
 
-			cache.objects.set(object, objectData);
-			cache.list.set(object, object);
+				var objectData = {
+					distanceToCameraSquared: getDistanceToSquared(camera, object)
+				};
 
-			if (element.parentNode !== domElement) {
+				cache.objects.set(object, objectData);
+				cache.list.set(object, object);
 
-				domElement.appendChild(element);
+				if (element.parentNode !== domElement) {
 
+					domElement.appendChild(element);
+
+				}
+
+				object.onAfterRender(_this, scene, camera);
 			}
-
-			object.onAfterRender(_this, scene, camera);
-
 		}
 
 		for (var i = 0, l = object.children.length; i < l; i++) {
@@ -1721,11 +1755,16 @@ THREE.CSS2DRenderer = function () {
 	var zOrder = function (scene) {
 
 		var sorted = filterAndFlatten(scene).sort(function (a, b) {
+			//[jscastro] check the objects already exist in the cache
+			let cacheA = cache.objects.get(a);
+			let cacheB = cache.objects.get(b);
 
-			var distanceA = cache.objects.get(a).distanceToCameraSquared;
-			var distanceB = cache.objects.get(b).distanceToCameraSquared;
+			if (cacheA && cacheB) {
+				var distanceA = cacheA.distanceToCameraSquared;
+				var distanceB = cacheB.distanceToCameraSquared;
 
-			return distanceA - distanceB;
+				return distanceA - distanceB;
+			}
 
 		});
 
@@ -1792,6 +1831,13 @@ LabelRenderer = function (map) {
 	this.map.getCanvasContainer().appendChild(this.renderer.domElement);
 
 	this.scene, this.camera;
+
+	this.dispose = function () {
+		this.map.getCanvasContainer().removeChild(this.renderer.domElement)
+		this.renderer.domElement.remove();
+		this.renderer = {};
+	}
+
 	this.setSize = function (width, height) {
 		this.renderer.setSize(width, height);
 	}
@@ -16200,6 +16246,12 @@ Objects.prototype = {
 			dupe.userData = obj.userData;
 			root._addMethods(dupe);
 			return dupe
+		}
+
+		obj.dispose = function () {
+			if (obj.label) { obj.label.dispose() };
+			if (obj.tooltip) { obj.tooltip.dispose() };
+			if (obj.model) { obj.model = {} };
 		}
 
 		return obj

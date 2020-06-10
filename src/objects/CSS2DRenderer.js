@@ -101,36 +101,40 @@ THREE.CSS2DRenderer = function () {
 
 		if (object instanceof THREE.CSS2DObject) {
 
-			object.onBeforeRender(_this, scene, camera);
+			//[jscastro] optimize performance and don't update and remove the labels that are not visible
+			if (!object.visible) { object.remove(); }
+			else {
 
-			vector.setFromMatrixPosition(object.matrixWorld);
-			vector.applyMatrix4(viewProjectionMatrix);
+				object.onBeforeRender(_this, scene, camera);
 
-			var element = object.element;
-			var style = 'translate(-50%,-50%) translate(' + (vector.x * _widthHalf + _widthHalf) + 'px,' + (- vector.y * _heightHalf + _heightHalf) + 'px)';
+				vector.setFromMatrixPosition(object.matrixWorld);
+				vector.applyMatrix4(viewProjectionMatrix);
 
-			element.style.WebkitTransform = style;
-			element.style.MozTransform = style;
-			element.style.oTransform = style;
-			element.style.transform = style;
+				var element = object.element;
+				var style = 'translate(-50%,-50%) translate(' + (vector.x * _widthHalf + _widthHalf) + 'px,' + (- vector.y * _heightHalf + _heightHalf) + 'px)';
 
-			element.style.display = (object.visible && vector.z >= - 1 && vector.z <= 1) ? '' : 'none';
+				element.style.WebkitTransform = style;
+				element.style.MozTransform = style;
+				element.style.oTransform = style;
+				element.style.transform = style;
 
-			var objectData = {
-				distanceToCameraSquared: getDistanceToSquared(camera, object)
-			};
+				element.style.display = (object.visible && vector.z >= - 1 && vector.z <= 1) ? '' : 'none';
 
-			cache.objects.set(object, objectData);
-			cache.list.set(object, object);
+				var objectData = {
+					distanceToCameraSquared: getDistanceToSquared(camera, object)
+				};
 
-			if (element.parentNode !== domElement) {
+				cache.objects.set(object, objectData);
+				cache.list.set(object, object);
 
-				domElement.appendChild(element);
+				if (element.parentNode !== domElement) {
 
+					domElement.appendChild(element);
+
+				}
+
+				object.onAfterRender(_this, scene, camera);
 			}
-
-			object.onAfterRender(_this, scene, camera);
-
 		}
 
 		for (var i = 0, l = object.children.length; i < l; i++) {
@@ -174,11 +178,16 @@ THREE.CSS2DRenderer = function () {
 	var zOrder = function (scene) {
 
 		var sorted = filterAndFlatten(scene).sort(function (a, b) {
+			//[jscastro] check the objects already exist in the cache
+			let cacheA = cache.objects.get(a);
+			let cacheB = cache.objects.get(b);
 
-			var distanceA = cache.objects.get(a).distanceToCameraSquared;
-			var distanceB = cache.objects.get(b).distanceToCameraSquared;
+			if (cacheA && cacheB) {
+				var distanceA = cacheA.distanceToCameraSquared;
+				var distanceB = cacheB.distanceToCameraSquared;
 
-			return distanceA - distanceB;
+				return distanceA - distanceB;
+			}
 
 		});
 

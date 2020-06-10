@@ -481,6 +481,12 @@ Objects.prototype = {
 			return dupe
 		}
 
+		obj.dispose = function () {
+			if (obj.label) { obj.label.dispose() };
+			if (obj.tooltip) { obj.tooltip.dispose() };
+			if (obj.model) { obj.model = {} };
+		}
+
 		return obj
 	},
 

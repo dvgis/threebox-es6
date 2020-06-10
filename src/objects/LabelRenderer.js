@@ -24,6 +24,13 @@ LabelRenderer = function (map) {
 	this.map.getCanvasContainer().appendChild(this.renderer.domElement);
 
 	this.scene, this.camera;
+
+	this.dispose = function () {
+		this.map.getCanvasContainer().removeChild(this.renderer.domElement)
+		this.renderer.domElement.remove();
+		this.renderer = {};
+	}
+
 	this.setSize = function (width, height) {
 		this.renderer.setSize(width, height);
 	}

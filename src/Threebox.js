@@ -508,33 +508,61 @@ Threebox.prototype = {
 		this.world.remove(obj);
 	},
 
-	dispose: function () {
-		//geometry.dispose(); material.dispose(); texture.dispose(); renderer.dispose()
-		this.world.traverse(function (obj) {
-			if (obj.geometry) {
-				obj.geometry.dispose();
-			}
-			if (obj.material) {
-				if (obj.material instanceof THREE.MeshFaceMaterial) {
-					obj.material.materials.forEach(function (m) {
-						m.dispose();
-					});
-				} else {
-					obj.material.dispose();
-				}
-			}
-			if (obj.dispose) {
-				obj.dispose();
-			}
+	dispose: async function () {
 
+		console.log(window.tb.memory());
+		//console.log(window.performance.memory);
+
+		return new Promise(disposed => {
+			this.world.traverse(function (obj) {
+				if (obj.geometry) {
+					obj.geometry.dispose();
+				}
+				if (obj.material) {
+					if (obj.material instanceof THREE.MeshFaceMaterial) {
+						obj.material.materials.forEach(function (m) {
+							m.dispose();
+							if (m.map) {
+								m.map.dispose();
+							}
+						});
+					} else {
+						obj.material.dispose();
+					}
+
+					let m = obj.material;
+					let md = (m.map || m.alphaMap || m.aoMap || m.bumpMap || m.displacementMap || m.emissiveMap || m.envMap || m.lightMap || m.metalnessMap || m.normalMap || m.roughnessMap)
+					if (md) {
+						if (m.map) m.map.dispose();
+						if (m.alphaMap) m.alphaMap.dispose();
+						if (m.aoMap) m.aoMap.dispose();
+						if (m.bumpMap) m.bumpMap.dispose();
+						if (m.displacementMap) m.displacementMap.dispose();
+						if (m.emissiveMap) m.emissiveMap.dispose();
+						if (m.envMap) m.envMap.dispose();
+						if (m.lightMap) m.lightMap.dispose();
+						if (m.metalnessMap) m.metalnessMap.dispose();
+						if (m.normalMap) m.normalMap.dispose();
+						if (m.roughnessMap) m.roughnessMap.dispose();
+					}
+				}
+				if (obj.dispose) {
+					obj.dispose();
+				}
+			});
+			this.map.remove();
+			this.map = {};
+			this.scene.remove(this.world);
+			this.scene.dispose();
+			this.world.children = [];
+			this.world = null;
+			this.labelRenderer.dispose();
+			console.log(window.tb.memory());
+			this.renderer.dispose();
+			disposed('dispose finished');
+			//console.log(window.performance.memory);
 		});
-		this.map.remove();
-		this.map = {};
-		this.scene.remove(this.world);
-		this.scene.dispose();
-		this.world.children = [];
-		this.world = null;
-		this.renderer.dispose();
+
 	},
 
 	defaultLights: function () {
@@ -553,6 +581,8 @@ Threebox.prototype = {
 	},
 
 	memory: function () { return this.renderer.info.memory },
+
+	programs: function () { return this.renderer.info.programs.length },
 
 	version: '1.0.0',
 
