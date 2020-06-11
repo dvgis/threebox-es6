@@ -151,7 +151,6 @@ AnimationManager.prototype = {
 				obj.isPlaying = false;
 				cancelAnimationFrame(obj.animationMethod);
 			}
-			this.animationQueue = [];
 			return this;
 		}
 
