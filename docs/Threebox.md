@@ -113,39 +113,36 @@ Loads an object via an external .obj and .mtl file. Note that unlike all the oth
              
 [jscastro] After the callback is initiated, the object returned will have the following events already available to listen taht enable the UI to behave and react to those.
 
-`
 
-model.addEventListener('SelectedChange', onSelectedChange, false);
-model.addEventListener('Wireframed', onWireframed, false);
-model.addEventListener('IsPlayingChanged', onIsPlayingChanged, false);
-model.addEventListener('ObjectDragged', onDraggedObject, false);
-model.addEventListener('ObjectMouseOver', onObjectMouseOver, false);
-model.addEventListener('ObjectMouseOut', onObjectMouseOut, false);
+	model.addEventListener('SelectedChange', onSelectedChange, false);
+	model.addEventListener('Wireframed', onWireframed, false);
+	model.addEventListener('IsPlayingChanged', onIsPlayingChanged, false);
+	model.addEventListener('ObjectDragged', onDraggedObject, false);
+	model.addEventListener('ObjectMouseOver', onObjectMouseOver, false);
+	model.addEventListener('ObjectMouseOut', onObjectMouseOut, false);
 
-`
 
 [jscastro] Then you can manage in you UI through a function method once these events are fired. See below an example for `onSelectedChange`:
 
-`
-function onSelectedChange(e) {
-	let selected = e.detail.selected;
-	$('#deleteButton')[0].disabled = !selected;
 
-	if (selected) {
-		selectedObject = e.detail;
-		//we fly smoothly to the object selected
-		map.flyTo({
-			center: selectedObject.userData.feature.properties.camera,
-			zoom: selectedObject.userData.feature.properties.zoom,
-			pitch: selectedObject.userData.feature.properties.pitch,
-			bearing: selectedObject.userData.feature.properties.bearing
-		});
+	function onSelectedChange(e) {
+		let selected = e.detail.selected;
+		$('#deleteButton')[0].disabled = !selected;
+
+		if (selected) {
+			selectedObject = e.detail;
+			//we fly smoothly to the object selected
+			map.flyTo({
+				center: selectedObject.userData.feature.properties.camera,
+				zoom: selectedObject.userData.feature.properties.zoom,
+				pitch: selectedObject.userData.feature.properties.pitch,
+				bearing: selectedObject.userData.feature.properties.bearing
+			});
+		}
+		tb.update();
+		map.repaint = true;
 	}
-	tb.update();
-	map.repaint = true;
-}
 
-`
 
 <br>
 ###Object3D
