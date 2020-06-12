@@ -1,18 +1,26 @@
-# Documentation
----
+# Threebox Documentation
+
+<br>
+
 ## Background
 
-Threebox works by adding a *Three.js* scene to *Mapbox GL*, creating a new *Mapbox GL* custom layer that implements [CustomLayerInterface](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface)
-. The custom layer API takes a fair amount of finessing to be useful, and Threebox tackles several hurdles to getting *Three.js* and *Mapbox GL* to work together. 
+Threebox works by adding a *Three.js* scene to *Mapbox GL*, creating a new *Mapbox GL* custom layer that implements [CustomLayerInterface](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface). The custom layer API takes a fair amount of finessing to be useful, and Threebox tackles several hurdles to getting *Three.js* and *Mapbox GL* to work together. 
 
----
+<br>
 
-## Threebox Constructor
+- - -
+
+## Threebox
+
+### Using Threebox
+
+The instance of Threebox will be used normally across the full page, so it's recommended to be created at `window` scope to be used as a global variable, but this also will require to explicitly  `dispose` the instance, otherwise it can produce memory leaks.
+
+#### constructor
 
 ```js
 var tb = new Threebox(map, mapboxGLContext [, options])
 ```
-The instance of Threebox will be used normally across the full page, so it's recommended to be created at `window` level.
 
 Sets up a threebox scene inside a [*Mapbox GL* custom layer's onAdd function](https://www.mapbox.com/mapbox-gl-js/api/#customlayerinterface), which provides both inputs for this method. Automatically synchronizes the camera movement and events between *Three.js* and *Mapbox GL* JS. 
 
@@ -58,108 +66,158 @@ window.tb = new Threebox(
 	{ defaultLights: true }
 );
 ```
+<br>
+
 - - -
-
-## Threebox Dispose
-```js
-tb.dispose()
-```
-If Threebox is being used as a part of a web application, it's recommended to dispose explicitely the instance of Threebox whenever its instance is not going to be used anymore or before navigating to another page that does not include Threebox, otherwise it's likely that you will face memory leaks issues not only due to Threebox, but also due to the internal use of *Mapbox GL* and *Three.js* instances needed to manage the objects.<br>
-<br>
-To dispose completely all the resources and memory Threebox can acumulate, including the internal resources from *Three.js* and *Mapbox GL*, it's needed to invoke the `dispose` method. <br>
-<br>
-This will go through the scene created to dispose every object, geometry, material and texture in *Three.js*, then it will dispose all the resources from *Mapbox GL*, including the `WebGLRenderingContext` and itselft the Threebox instance.<br>
-<br>
-After calling to this method, Threebox and *Mapbox GL* map instances will be fully disposed so it's only recommended before navigating to other pages. 
-<br>
-
-# Objects
-
-Threebox offers convenience functions to construct meshes of various *Three.js* meshes, as well asl . Under the hood, they invoke a subclass of [THREE.Object3D](https://threejs.org/docs/#api/en/core/Object3D). 
-
-Objects in Threebox fall under two broad varieties. *Static objects* don't move or change once they're placed, and used usually to display background or geographical features. They may have complex internal geometry, which are expressed primarily in lnglat coordinates. 
-
-In contrast, *dynamic objects* can move around the map, positioned by a single lnglat point. Their internal geometries are produced mainly in local scene units, whether through external obj files, or these convenience methods below.
-
-## Static objects
-
-### Line 
-
-```js
-tb.line(options);
-```
-
-Adds a line to the map, in full 3D space. Color renders independently of scene lighting. Internally, calls a [custom line shader](https://threejs.org/examples/?q=line#webgl_lines_fat).
-
-
-| option | required | default | type   | purpose                                                                                  |
-|-----------|----------|---------|--------|----------------------------------------------------------------------------------------------|
-| `geometry`    | yes       | NA      | lineGeometry | Array of lnglat coordinates to draw the line |
-| `color`     | no       | black   | color  | Color of line. Unlike other Threebox objects, this color will render on screen precisely as specified, regardless of scene lighting |
-| `width`     | no       | 1   | number  | Line width. Unlike other Threebox objects, this width is in units of display pixels, rather than meters or scene units. |
-| `opacity`     | no       | 1   | Number  | Line opacity |                                                                       
-
-
-<br>
-
-### Tube
-
-```js
-tb.tube(options);
-```
-
-Extrude a tube along a specific lineGeometry, with an equilateral polygon as cross section. Internally uses a custom tube geometry generator.
-
-
-| option | required | default | type   | description                                                                                  |
-|-----------|----------|---------|--------|----------|
-| `geometry`    | yes       | NA      | lineGeometry | Line coordinates forming the tube backbone |
-| `radius`    | no       | 20      | number | Radius of the tube cross section, or half of tube width.|
-| `sides`  | no       | 8       | number | Number of facets along the tube. The higher, the more closely the tube will approximate a smooth cylinder. |
-| `material`     | no       | MeshLambertMaterial   | threeMaterial  | [THREE material](https://github.com/mrdoob/three.js/tree/master/src/materials) to use. Can be invoked with a text string, or a predefined material object via THREE itself.|   
-| `color`     | no       | black   | color  | Tube color. Ignored if `material` is a predefined `THREE.Material` object.  |
-| `opacity`     | no       | 1   | Number  | Tube opacity |                                                                                                                                                   
-
-
-<br>
-
-## Dynamic objects
-
-<br>
-
-### Sphere
-
-```js
-tb.sphere(options);
-```
-
-Add a sphere to the map. Internally, calls `THREE.Mesh` with a `THREE.SphereGeometry`.
-
-
-| option | required | default | type   | description                                                                                  |
-|-----------|----------|---------|--------|-------|
-| `radius`    | no       | 50      | number | Radius of sphere. |
-| `units`    | no       | scene      | string ("scene" or "meters") | Units with which to interpret `radius`. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
-| sides  | no       | 8       | number | Number of width and height segments. The higher the number, the smoother the sphere. |
-| color     | no       | black   | color  | Color of sphere.                                                                             
-| `material`     | no       | MeshLambertMaterial   | threeMaterial  | [THREE material](https://github.com/mrdoob/three.js/tree/master/src/materials) to use. Can be invoked with a text string, or a predefined material object via THREE itself.|   
-
-<br>
 
 ### Loading a 3D model
 
-```js
-tb.loadObj(options, callback(obj));
-```
-
-This method Loads a 3D model of in different formats from its respective files. 
-Note that unlike all the other object classes, this is asynchronous, and returns the object as an argument of the callback function. 
-Internally, uses [`THREE.OBJLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/OBJLoader.js), [`THREE.FBXLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/FBXLoader.js), [`THREE.GLTFLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/GLTFLoader.js) or [`THREE.ColladaLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/ColladaLoader.js) respectively to fetch the  assets to each 3D format. [`THREE.FBXLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/FBXLoader.js) also dependes on [Zlib](https://github.com/imaya/zlib.js) to open compressed files which this format is based on.
+One of the most powerful capabilities of Threebox is the option to load 3D models from external files in different formats (OBJ/MTL, GLTF/GLB, FBX, DAE are supported). 
+Once the model is loaded and added to Threebox, the object is powered by default with some methods, interactions, events and animations. 
 
 Once the object is loaded and added to Threebox instance, it is by default **selectable**, **draggable** and **rotable** (over the z axis) with the mouse.
 
 - To **drag** an object you have to select the object and then press **SHIFT** key and move the mouse.
 - To **rotate** and object you have to select the object and then press **ALT** key and move the mouse.
+
+*TODO: In future version, these behaviours could be deactivated*
+
+Here below is the simplest sample to load a 3D model:
+
+```html
+<!doctype html>
+<head>
+	<title>Simplest sample of 3D Model loading</title>
+	<script src="../dist/threebox.js" type="text/javascript"></script>
+	<script src="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.css" rel="stylesheet" />
+	<style>
+		body, html {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			background: black;
+		}
+		#map {
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+</head>
+<body>
+	<div id='map' class='map'></div>
+	<script>
+		mapboxgl.accessToken = 'Paste here your mapbox access token key';
+
+		var origin = [-122.47920912, 37.716351775];
+		var destination, line;
+		var soldier;
+
+		var map = new mapboxgl.Map({
+			container: 'map',
+			style: 'mapbox://styles/mapbox/outdoors-v11',
+			center: origin,
+			zoom: 18,
+			pitch: 60,
+			bearing: 0
+		});
+
+		map.on('style.load', function () {
+			map.addLayer({
+				id: 'custom_layer',
+				type: 'custom',
+				renderingMode: '3d',
+				onAdd: function (map, mbxContext) {
+
+					window.tb = new Threebox(
+						map,
+						mbxContext,
+						{ defaultLights: true }
+					);
+
+					var options = {
+						obj: '/3D/soldier/soldier.glb',
+						type: 'gltf',
+						scale: 1,
+						units: 'meters',
+						rotation: { x: 90, y: 0, z: 0 } //default rotation
+					}
+
+					tb.loadObj(options, function (model) {
+						soldier = model.setCoords(origin);
+						tb.add(soldier);
+					})
+
+				},
+				render: function (gl, matrix) {
+					tb.update();
+				}
+			});
+		})
+	</script>
+</body>
+```
+
+<br>
+
+- - -
+
+
+### Threebox Methods
+
+Here is the full list of all the methods exposed by Threebox. 
+In all the samples below, the instance of Threebox will be always referred as `tb`.
+
+#### add 
+```js
+tb.add(obj)
+```
+method to add an object to Threebox scene. It will add it to `tb.world.children` array.
+
+<br>
+
+
+#### defaultLights 
+```js
+tb.defaultLights()
+```
+This method creates the default illumination of the Threebox `scene`. It creates a [`THREE.AmbientLight`](https://threejs.org/docs/#api/en/lights/AmbientLight) and two [`THREE.DirectionalLight`](https://threejs.org/docs/#api/en/lights/DirectionalLight).
+These lights can be overriden manually adding custom lights to the Threebox `scene`.
+
+<br>
+
+#### dispose
+```js
+tb.dispose() : Promise (async)
+```
+If Threebox is being used as a part of a web application, it's recommended to dispose explicitely the instance of Threebox whenever 
+its instance is not going to be used anymore or before navigating to another page that does not include Threebox, otherwise it's 
+likely that you will face **memory leaks** issues not only due to Threebox, but also due to the internal use of *Mapbox GL* and *Three.js* instances needed to manage the objects.<br>
+<br>
+To dispose completely all the resources and memory Threebox can acumulate, including the internal resources from *Three.js* and *Mapbox GL*, it's needed to invoke the `dispose` method. <br>
+<br>
+This method will go through the scene created to dispose every object, geometry, material and texture in *Three.js*, then it will dispose all the resources from *Mapbox GL*, including the `WebGLRenderingContext` and itselft the Threebox instance.<br>
+<br>
+After calling to this method, Threebox and *Mapbox GL* map instances will be fully disposed so it's only recommended before navigating to other pages. 
+
+<br>
+
+#### findParent3DObject 
+```js
+tb.findParent3DObject(mesh) : Object3D
+```
+This method finds the parent Object3D in the Threebox scene by a mesh. This method is used in combination with `tb.queryRenderedFeatures` that returns an Array of objects, most of them Meshes where the [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) has interesected.
+
+<br>
+
+#### loadObj
+```js
+tb.loadObj(options, callback(obj));
+```
+
+This method loads a 3D model in different formats from its respective files. 
+Note that unlike all the other object classes, this is asynchronous, and returns the object as an argument of the callback function. 
+Internally, uses [`THREE.OBJLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/OBJLoader.js), [`THREE.FBXLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/FBXLoader.js), [`THREE.GLTFLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/GLTFLoader.js) or [`THREE.ColladaLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/ColladaLoader.js) respectively to fetch the  assets to each 3D format. [`THREE.FBXLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/FBXLoader.js) also dependes on [Zlib](https://github.com/imaya/zlib.js) to open compressed files which this format is based on.
 
 *[jscastro]* **IMPORTANT**: There are breaking changes in this release regarding the attributes below comparing to [@peterqliu original Threebox](https://github.com/peterqliu/threebox/). 
 
@@ -196,7 +254,7 @@ map.addLayer({
 			scale: 20, //20x the original size
 			units: 'meters', //everything will be converted to meters in setCoords method				
 			rotation: { x: 90, y: 0, z: 0 }, //default rotation
-			adjustment: { x: 0, y: 0, z: 0 } // model center is displaced
+			adjustment: { x: 0, y: 0, z: 0 }, // model center is displaced
 			feature: geoJsonFeature // a valid GeoJson feature
 		}
 
@@ -212,7 +270,8 @@ map.addLayer({
 	}
 });
 ```
-*[jscastro]* After the callback is initiated, the object returned will have the following events already available to listen taht enable the UI to behave and react to those. You can add these lines below:
+
+After the callback is initiated, the object returned will have the following events already available to listen that enable the UI to behave and react to those. You can add these lines below:
 
 ```js
 	tb.loadObj(options, function (model) {
@@ -255,11 +314,12 @@ function onSelectedChange(e) {
 	map.repaint = true;
 }
 ```
-<br>
 
-**IMPORTANT NOTE:** Most of the popular 3D formats extensions (.glb, .gltf, .fbx, .dae, ...) are not standard [MIME TYPES](https://www.iana.org/assignments/media-types/media-types.xhtml), so you will need to configure your web server engine to accept this extensions, otherwise you'll receive different HTTP errors downloading them. 
+
+##### 3D Formats and MIME types 
+Most of the popular 3D formats extensions (.glb, .gltf, .fbx, .dae, ...) are not standard [MIME types](https://www.iana.org/assignments/media-types/media-types.xhtml), so you will need to configure your web server engine to accept this extensions, otherwise you'll receive different HTTP errors downloading them. 
 <br>
-If you are using **IIS** server, add these extensions to your *web.config* file *ASP.Net*, add the xml lines below in the `</system.webServer>` node:
+If you are using **IIS** server from an *ASP.Net* application, add the xml lines below in the `</system.webServer>` node of your *web.config* file:
 ```xml
 <system.webServer>
 	  ...
@@ -278,7 +338,7 @@ If you are using **IIS** server, add these extensions to your *web.config* file 
 </system.webServer>
 ```
 If you are using an **nginx** server, add the following lines to the *nginx.conf* file in the `http` object:
-```json
+```
 http {
 	include /etc/nginx/mime.types;
 	types {
@@ -292,7 +352,7 @@ http {
 }
 ```
 If you are using an **Apache** server, add the following lines to the *mime.types* file:
-```json
+```
 model/mtl mtl
 model/obj obj
 model/gltf+json gltf
@@ -300,10 +360,195 @@ model/gltf-binary glb
 application/octet-stream fbx
 ```
 
+<br>
 
----
+#### memory 
+```js
+tb.memory() : Object
+```
+This will return the member `memory` from [`THREE.WebGLRenderer.info`](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.info)
 
-### Object3D
+<br>
+
+#### programs 
+```js
+tb.programs() : int
+```
+This will return the lenght of the `programs` member from [`THREE.WebGLRenderer.info`](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.info)
+
+<br>
+
+#### projectToWorld 
+```js
+tb.projectToWorld(lnglat) : THREE.Vector3
+```
+Calculate the corresponding [`THREE.Vector3`](https://threejs.org/docs/#api/en/math/Vector3) for a given `lnglat`. It's inverse method is `tb.unprojectFromWorld`.
+
+<br>
+
+#### queryRenderedFeatures 
+```js
+tb.queryRenderedFeatures(point) : Array
+```
+This methods calculate objects intersecting the picking ray using [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) and returns an Array of the Threebox objects in the scene ordered by distance from closer to farther away.
+
+Takes an input of `{x: number, y: number}` as an object with values representing screen coordinates (as returned by *Mapbox GL*  mouse events as `e.point`). 
+
+<br>
+
+#### remove 
+```js
+tb.remove(obj)
+```
+method to remove an object from Threebox scene and the `tb.world.children` array.
+
+<br>
+
+#### setLayerHeigthProperty 
+```js
+tb.setLayerHeigthProperty(layerId, level) 
+```
+method to set the height of all the objects in a level. this only works if the objects have a geojson feature
+
+<br>
+
+#### setLayerZoomRange 
+```js
+tb.setLayerZoomRange(layer3d, minZoomLayer, maxZoomLayer)
+```
+Custom Layers don't work on minzoom and maxzoom attributes, and if the layer is including labels they don't hide either on minzoom
+
+<br>
+
+
+#### setLabelZoomRange 
+```js
+tb.setLabelZoomRange(minzoom, maxzoom)  
+```
+method set the CSS2DObjects zoom range and hide them at the same time the layer is
+
+<br>
+
+
+#### setLayoutProperty 
+```js
+tb.setLayoutProperty(layerId, name, value)
+```
+This method to replicates the behaviour of [`map.setLayoutProperty](https://docs.mapbox.com/mapbox-gl-js/api/map/#map#setlayoutproperty) when custom layers are affected but it can used for any layer type.
+
+<br>
+
+
+#### toggleLayer 
+```js
+tb.toggleLayer(layerId, visible) 
+```
+This method to toggles any layer visibility but it's specifically designed for custom layers. 
+If you want to avoid differentiating between Mapbox layers (including custom layers) this method replaces the call to [`map.setLayoutProperty(layerId, 'visibility', visible)`](https://docs.mapbox.com/mapbox-gl-js/api/map/#map#setlayoutproperty)
+
+<br>
+
+
+#### update 
+```js
+tb.update()
+```
+With `tb.loadObj(options, callback(obj))` this is probably the most important method in Threebox 
+as it's responsible of invoking the [`THREE.WebGLRenderer.render(scene, camera)`](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.render)
+ method.
+
+<br>
+
+#### unprojectFromWorld 
+```js
+tb.unprojectFromWorld(Vector3): lnglat
+```
+Calculate the corresponding `lnglat` for a given [`THREE.Vector3`](https://threejs.org/docs/#api/en/math/Vector3). It's inverse method is `tb.projectToWorld`.
+
+<br>
+
+#### versions 
+```js
+tb.version() : string
+```
+This will return the version of Threebox
+
+<br>
+
+- - -
+
+## Objects
+
+Threebox offers convenience functions to construct meshes of various *Three.js* meshes, as well asl . Under the hood, they invoke a subclass of [THREE.Object3D](https://threejs.org/docs/#api/en/core/Object3D). 
+
+Objects in Threebox fall under two broad varieties. *Static objects* don't move or change once they're placed, and used usually to display background or geographical features. They may have complex internal geometry, which are expressed primarily in lnglat coordinates. 
+
+In contrast, *dynamic objects* can move around the map, positioned by a single lnglat point. Their internal geometries are produced mainly in local scene units, whether through external obj files, or these convenience methods below.
+
+### Static objects
+
+#### Line 
+
+```js
+tb.line(options);
+```
+
+Adds a line to the map, in full 3D space. Color renders independently of scene lighting. Internally, calls a [custom line shader](https://threejs.org/examples/?q=line#webgl_lines_fat).
+
+
+| option | required | default | type   | purpose                                                                                  |
+|-----------|----------|---------|--------|----------------------------------------------------------------------------------------------|
+| `geometry`    | yes       | NA      | lineGeometry | Array of lnglat coordinates to draw the line |
+| `color`     | no       | black   | color  | Color of line. Unlike other Threebox objects, this color will render on screen precisely as specified, regardless of scene lighting |
+| `width`     | no       | 1   | number  | Line width. Unlike other Threebox objects, this width is in units of display pixels, rather than meters or scene units. |
+| `opacity`     | no       | 1   | Number  | Line opacity |                                                                       
+
+
+<br>
+
+#### Tube
+
+```js
+tb.tube(options);
+```
+
+Extrude a tube along a specific lineGeometry, with an equilateral polygon as cross section. Internally uses a custom tube geometry generator.
+
+
+| option | required | default | type   | description                                                                                  |
+|-----------|----------|---------|--------|----------|
+| `geometry`    | yes       | NA      | lineGeometry | Line coordinates forming the tube backbone |
+| `radius`    | no       | 20      | number | Radius of the tube cross section, or half of tube width.|
+| `sides`  | no       | 8       | number | Number of facets along the tube. The higher, the more closely the tube will approximate a smooth cylinder. |
+| `material`     | no       | MeshLambertMaterial   | threeMaterial  | [THREE material](https://github.com/mrdoob/three.js/tree/master/src/materials) to use. Can be invoked with a text string, or a predefined material object via THREE itself.|   
+| `color`     | no       | black   | color  | Tube color. Ignored if `material` is a predefined `THREE.Material` object.  |
+| `opacity`     | no       | 1   | Number  | Tube opacity |                                                                                                                                                   
+
+
+<br>
+
+### Dynamic objects
+
+#### Sphere
+
+```js
+tb.sphere(options);
+```
+
+Add a sphere to the map. Internally, calls `THREE.Mesh` with a `THREE.SphereGeometry`.
+
+
+| option | required | default | type   | description                                                                                  |
+|-----------|----------|---------|--------|-------|
+| `radius`    | no       | 50      | number | Radius of sphere. |
+| `units`    | no       | scene      | string ("scene" or "meters") | Units with which to interpret `radius`. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
+| sides  | no       | 8       | number | Number of width and height segments. The higher the number, the smoother the sphere. |
+| color     | no       | black   | color  | Color of sphere.                                                                             
+| `material`     | no       | MeshLambertMaterial   | threeMaterial  | [THREE material](https://github.com/mrdoob/three.js/tree/master/src/materials) to use. Can be invoked with a text string, or a predefined material object via THREE itself.|   
+
+<br>
+
+#### Object3D
 
 ```js
 tb.Object3D(obj)
@@ -319,29 +564,87 @@ Add a `THREE.Object3D` instantiated elsewhere in *Three.js*, to empower it with 
 
 ---
 
-### Shared methods between dynamic objects
+
+### Object methods
+
+In all the samples below, the instance of the Threebox object will be always referred as `obj`
+
+<br>
+
+#### addLabel
+```js
+obj.addLabel(HTMLElement [, visible] [, bottomMargin])
+
+```
+It uses the DOM [HTMLElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement) received to paint it on screen in a relative position to the object that contains it. 
+If `visible` is true, the label will be always visible, otherwise by default its value is false and it's regular behavior is only to be shown on MouseOver.
+If `bottomMargin` is defined in number, it will be added to it's vertical position in `em's` unit.
+Its position is always relative to the object that contains it and rerendered whenever that label is visible.
+Internally this method uses [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
+
+*TODO: In next versions of Threebox, this object position will be configurable. In this versión it's positioned at the top of the object.*
+
+<br>
+
+#### addTooltip
+```js
+obj.addTooltip(tooltipText)
+```
+This method creates a browser-like tooltip for the object using the tooltipText. 
+Its position is always relative to the object that contains it and rerendered whenever that label is visible.
+
+Internally this method uses [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
+
+*TODO: In next versions of Threebox, this object position will be configurable. In this versión it's positioned at the center of the object.*
+
+<br>
+
+#### drawBoundingBox
+```js
+obj.drawBoundingBox
+```
+This method creates two bounding boxes using [`THREE.Box3Helper`](https://threejs.org/docs/#api/en/helpers/BoxHelper)
+The first bounding box will be assigned to `obj.boundingBox` property and the second will be assigned to `obj.boundingBoxShadow`.  
+
+<br>
+
 
 #### set
 ```js
 obj.set(options)
 ```
+Broad method to update object's position, rotation, and scale in only one call. Internally it calls to `obj._setObject(options)` method. 
+This method can also be used to animate an object if `options.duration` has a value.
+Check out the Threebox Types section below for details. 
 
-Broad method to update object's position, rotation, and scale. Check out the Threebox Types section below for details
-
-Options
+**options object**
 
 | option | required | default | type   | description                                                                                  |
 |-----------|----------|---------|--------|------------|
 | `coords`    | no       | NA      | `lnglat` | Position to which to move the object |
 | `rotation`    | no       | NA      | `rotationTransform` | Rotation(s) to set the object, in units of degrees |
 | `scale`    | no       | NA      | `scaleTransform` | Scale(s) to set the object, where 1 is the default scale |
+| `duration`    | no       | 1000      | number | Duration of the animation, in milliseconds to complete the values specified in the other properties `scale`, `rotation` and `coords`. If 0 or undefined it will apply the values to the object directly with no animation. |
+
+<br>
+
+#### setBoundingBoxShadowFloor
+```js
+obj.setBoundingBoxShadowFloor()
+```
+This method is called from `obj.setCoords` every time an object receives new coords to position `obj.boundingBoxShadow` at the height of the floor. 
+So in this way if an object changes it's height the shadow box always projects over the floor and it's easier to visualize, position and rotate dragging it.
+
+<br>
 
 #### setCoords
 ```js
 obj.setCoords(lnglat)
 ```
+Positions the object at the defined `lnglat` coordinates, and resizes it appropriately if it was instantiated with `units: "meters"`. 
+Can be called before adding object to the map.
 
-Positions the object at the desired coordinate, and resizes it appropriately if it was instantiated with `units: "meters"`. Can be called before adding object to the map.
+<br>
 
 #### setRotation
 ```js
@@ -350,7 +653,153 @@ obj.setRotation(xyz)
 
 Rotates the object over its defined center in the 3 axes, the value must be provided in degrees and could be a number (it will apply the rotation to the 3 axes) or as an {x, y, z} object. 
 This rotation is applied on top of the rotation provided through loadObj(options).
-and resizes it appropriately if it was instantiated with `units: "meters"`. Can be called before adding object to the map.
+
+<br>
+
+#### setRotationAxis
+```js
+obj.setRotationAxis(xyz)
+```
+
+Rotates the object over one of its bottom corners on z axis, the value must be provided in degrees and could be a number (it will apply the rotation to the 3 axes) or as an {x, y, z} object. 
+This rotation is applied on top of the rotation provided through loadObj(options).
+
+<br>
+
+#### setTranslate
+```js
+obj.setTranslate(lnglat)
+```
+Movesthe object from it's current position adding the `lnglat` coordinates recibed. Don't confuse this method with `obj.setCoords`
+This method must be called after adding object to the map.
+
+<br>
+
+### Object properties
+
+#### boundingBox
+
+```js
+obj.boundingBox : THREE.Box3Helper
+```
+This get/set property receives and return a [`THREE.Box3Helper`](https://threejs.org/docs/#api/en/helpers/BoxHelper) which contains the object in it's initial size. 
+`boundingBox` represents is visible once the object is on MouseOver (yellow) or Selected (green).
+
+By Threebox design `.boundingBox` is hidden for [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) even when it's visible for the camera.
+
+*TODO: In next versions of Threebox, this object material will be configurable. In this versión still predefined in Objects.prototype*
+
+<br>
+
+#### boundingBoxShadow
+
+```js
+obj.boundingBoxShadow : THREE.Box3Helper
+```
+This get/set property receives and return a [`THREE.Box3Helper`](https://threejs.org/docs/#api/en/helpers/BoxHelper) which contains the object in it's initial size but 0 height and projected to the floor of the map independently of its heigh position, so it acts as a shadow of the shape. 
+`boundingBoxShadow` represents is visible once the object is on MouseOver or Selected in black color.
+
+By Threebox design `.boundingBoxShadow` is hidden for [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) even when it's visible for the camera.
+
+*TODO: In next versions of Threebox, this object material will be configurable. In this versión still predefined in Objects.prototype*
+
+<br>
+
+#### visibility
+
+```js
+obj.visibility : boolean
+```
+This get/set property receives and return a boolean value to override the property `visible` of a  [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D.visible), 
+adding also the same visibility value for `obj.label` and `obj.tooltip`
+
+By Threebox design `.boundingBoxShadow` is hidden for [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) even when it's visible for the camera.
+
+*TODO: In next versions of Threebox, this object material will be configurable. In this versión still predefined in Objects.prototype*
+
+<br>
+
+#### wireframe
+
+```js
+obj.wireframe : boolean
+```
+This get/set property receives and return a boolean value to convert an [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D.visible) in wireframes or texture it. 
+
+By Threebox design whenever an object is converted to wireframes, it's also hidden for [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) even when it's visible for the camera.
+
+
+<br>
+
+
+---
+
+
+### Object events
+
+#### SelectedChange
+
+```js
+obj.addEventListener('SelectedChange', onSelectedChange, false)
+```
+This event is fired once an object changes its selection status, it means it will be fired both when an object is selected or unselected.
+The event can be listened at any time once the `tb.loadObj` callback method is being executed.
+An instance of the object that changes is returned in `eventArgs.detail`. 
+
+```js
+map.addLayer({
+	...
+	tb.loadObj(options, function (model) {
+
+		soldier = model.setCoords(origin);
+
+		soldier.addEventListener('SelectedChange', onSelectedChange, false);
+
+		tb.add(soldier);
+	})
+
+	...
+});
+...
+function onSelectedChange(eventArgs) {
+	let selectedObject = eventArgs.detail; //we get the object selected/unselected
+	let selectedValue = selectedObject.selected; //we get if the object is selected after the event
+}
+```
+
+
+<br>
+
+---
+
+
+### Object animations
+
+#### playDefault
+```js
+obj.playDefault(options)
+```
+Plays the default embedded animation of a loaded 3D model.
+
+**options object**
+
+| option | required | default | type   | description                                                                                  |
+|-----------|----------|---------|--------|------------|
+| `duration`    | no       | 1000      | number | Duration of the animation, in milliseconds |
+
+#### playAnimation
+```js
+obj.playAnimation(options)
+```
+Plays one of the embedded animations of a loaded 3D model. The animation index must be set in the attribute `options.animation`
+
+**options object**
+
+| option | required | default | type   | description                                                                                  |
+|-----------|----------|---------|--------|------------|
+| `animation`    | yes       | NA      | number | Index of the animation in the 3D model. If you need to check whats the index of the animation you can get the full array using `obj.animations`.|
+| `duration`    | no       | 1000      | number | Duration of the animation, in milliseconds |
+
 
 #### followPath
 ```js
@@ -365,38 +814,23 @@ Translate object along a specified path. Optional callback function to execute w
 | `duration`    | no       | 1000      | number | Duration to travel the path, in milliseconds |
 | `trackHeading`    | no       | true      | boolean | Rotate the object so that it stays aligned with the direction of travel, throughout the animation |
 
-
+#### stop
 ```js
 obj.stop()
 ```
 
 Stops all of object's current animations.
 
+#### duplicate
 ```js
 obj.duplicate()
 ```
 
 Returns a clone of the object. Greatly improves performance when handling many identical objects, by reusing materials and geometries.
-
 <br>
 
-## Utilities
+- - -
 
-`tb.projectToWorld(lnglat)`
-
-Calculate the corresponding `Vector3` for a given lnglat.
-
-
-`tb.unprojectFromWorld(Vector3)`
-
-Calculate the corresponding lnglat for a given `Vector3`.
-
-
-`tb.queryRenderedFeatures({x: number, y: number})`
-
-Takes an input of `xy` as an object with values representing screen coordinates (as returned by mapboxgl mouse events as `e.point`). Returns an array of threebox objects at that screen position.
-
-<br>
 
 ## Threebox types
 
@@ -453,7 +887,6 @@ Threebox implements many small affordances to make mapping run in *Three.js* qui
 - If you must interact directly with the THREE scene, add all objects to `threebox.world`.
 - `tb.projectToWorld` to convert lnglat to the corresponding `Vector3()`
 
-
-# Performance considerations
+## Performance considerations
 
 - Use `obj.clone()` when adding many identical objects. If your object contains other objects not in the `obj.children` collection, then those objects need to be cloned too.`
