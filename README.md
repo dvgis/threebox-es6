@@ -1,10 +1,30 @@
-# `threebox`
+# `Threebox`
 
 A three.js plugin for Mapbox GL JS, using the custom layer feature. Provides convenient methods to manage objects in lnglat coordinates, and to synchronize the map and scene cameras.
 
 <img alt="threebox" src="docs/gallery.jpg">
 
-### ONLY in this fork
+<br>
+
+- - -
+
+## Documentation
+
+All the [**Threebox Documentation**](/docs/Threebox.md) has been completely updated, including all the methods, properties and events implemented in Threebox and objects, but still *'work in progress'* adding better documented examples and images to illustrate Threebox capabilities.
+- [**Using Threebox**](/docs/Threebox.md#using-threebox)
+- [**Loading a 3D Model**](/docs/Threebox.md#loading-a-3d-model)
+- [**Threebox methods**](/docs/Threebox.md#threebox-methods)
+- [**Object methods**](/docs/Threebox.md#object-methods)
+
+
+<br>
+
+- - -
+
+
+## ONLY in this Threebox fork
+
+<img alt="threebox" src="docs/SoldierAnimation.jpg">
 
 Only in this fork, there is a list of new features implemented on top of the amazing work of [@peterqliu](https://github.com/peterqliu/threebox/):
 - Update to Three.js v114.
@@ -26,22 +46,34 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Optimization of Camera perspective to have Raycast with pixel-precision level.
 - Adjusted positioning for Objects3D to set center and rotation axes by config.
 
-<img alt="threebox" src="docs/SoldierAnimation.jpg">
 
-### Compatibility/Dependencies
+<br>
+
+- - -
+
+
+## Compatibility/Dependencies
 
 - Mapbox v.0.50.0 and later (for custom layer support)
 - Three.r114 (already bundled into the Threebox build). If desired, other versions can be swapped in and rebuilt [here](https://github.com/jscastro76/threebox/blob/master/src/three.js), though compatibility is not guaranteed.
 
-### Getting started
+
+<br>
+
+- - -
+
+## Getting started
 
 Download the bundle from [`dist/threebox.js`](dist/threebox.js) and add include it in a `<script>` tag on your page.
 
 Several introductory examples are [here](https://github.com/jscastro76/threebox/tree/master/examples). To run them, create a `config.js` file with your Mapbox access token, alongside and in the format of [the template](https://github.com/jscastro76/threebox/blob/master/examples/config_template.js).
 
-[Documentation lives here](docs/Threebox.md).
 
-### Contributing
+<br>
+
+- - -
+
+## Contributing
 
 Build the library with `npm run build`, or `npm run dev` to rebuild continuously as you develop. Both commands will output a bundle in `/dist/threebox.js`.
 
@@ -58,6 +90,6 @@ Sample to get a full build from scratch for Visual Studio:
 - execute `.npm [ProjectName] run dev` or `.npm run build
 `
 
-Tests live [here](tests/) -- run `index.html` and check the console for test results.
+Tests live [here](/tests) -- run `index.html` and check the console for test results.
 
 

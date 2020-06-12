@@ -1,3 +1,29 @@
+## 2.0.1
+
+This is the new version created with this [fork]((https://github.com/jscastro76/threebox)) by [@jscastro76](https://github.com/jscastro76) and it's a major update. 
+
+#### Enhancements
+
+- Update to *Three.js* v114.
+- Update to *Mapbox GL* v1.10.0.
+- All the examples updated, and one more example added with new features.
+- Support for multiple format objects (FBX, GLTF/GLB, Collada + OBJ/MTL).
+- Support for CSS2DLabels supporting rich HTML controls through a new LabelManager.
+- Support for tooltips/title browser-like.
+- Support for Objects3D bounding box and floor projection.
+- Support for built-in Raycaster in loaded Objects3D and fill-extrusions together.
+- Support for built-in MouseOver/Mouseout, Selected, Drag&Drop, Drag&Rotate, Wireframe in loadedObjects including events.
+- Support for GeoJson standard features format import and export in different layers.
+- Support for Objects3D embedded animations, and combined animations on AnimationManager (i.e. translate + embedded).
+- Support for multi-floor design of spaces.
+- Support for Non-AABB Non Axes Aligned Bounding Box and real model size. 
+- Support for wireframing on Objects3D, removing them from the raycast.
+- Support for setLayerZoomRange and setLayoutProperty on Custom Layers (not available in Mapbox).
+- Support for full dispose of Mapbox, Three and Threebox resources.
+- Optimization of Camera perspective to have Raycast with pixel-precision level.
+- Adjusted positioning for Objects3D to set center and rotation axes by config.
+
+
 ## 0.3.0
 
 #### Enhancements
