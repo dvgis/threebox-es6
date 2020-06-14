@@ -42,11 +42,11 @@ Objects.prototype = {
 
 	},
 
-	_addMethods: function (obj, staticValues) {
+	_addMethods: function (obj, isStatic) {
 
 		var root = this;
 
-		if (staticValues) {
+		if (isStatic) {
 
 		}
 
@@ -259,7 +259,7 @@ Objects.prototype = {
 			});
 
 			//[jscastro] add CSS2 label method 
-			obj.addLabel = function (HTMLElement, visible, bottomMargin) {
+			obj.addLabel = function (HTMLElement, visible = false, bottomMargin = 0) {
 				if (HTMLElement) {
 					//we add it to the first children to get same boxing and position
 					//obj.children[0].add(obj.drawLabel(text, height));
@@ -465,7 +465,7 @@ Objects.prototype = {
 
 		obj.add = function () {
 			tb.add(obj);
-			if (!staticValues) obj.set({ position: obj.coordinates });
+			if (!isStatic) obj.set({ position: obj.coordinates });
 			return obj;
 		}
 

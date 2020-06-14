@@ -25,6 +25,12 @@ Threebox.prototype = {
 		this.map.repaint = true;
 	},
 
+	/**
+	 * Threebox constructor init method
+	 * @param {mapboxgl.map} map
+	 * @param {WebGLRenderingContext} glContext
+	 * @param {defaultOptions} options
+	 */
 	init: function (map, glContext, options) {
 
 		this.map = map;
@@ -438,6 +444,7 @@ Threebox.prototype = {
 			}
 		}
 	},
+
 	//[jscastro] Custom Layers doesn't work on minzoom and maxzoom attributes, and if the layer is including labels they don't hide either on minzoom
 	setLayerZoomRange: function (layer3d, minZoomLayer, maxZoomLayer) {
 		this.map.setLayerZoomRange(layer3d, minZoomLayer, maxZoomLayer)
@@ -584,7 +591,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '1.0.0',
+	version: '2.0.1',
 
 }
 

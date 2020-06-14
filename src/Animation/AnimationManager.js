@@ -23,7 +23,7 @@ AnimationManager.prototype = {
 		obj.mixer;
 
 		//[jscastro] if the object includes animations
-		if (obj.animations && obj.animations.length) {
+		if (obj.animations && obj.animations.length > 0) {
 
 			obj.hasDefaultAnimation = true;
 
@@ -146,11 +146,13 @@ AnimationManager.prototype = {
 		obj.animationMethod = null;
 
 		//[jscastro] stop animation and the queue
-		obj.stop = function () {
+		obj.stop = function (index) {
 			if (obj.mixer) {
 				obj.isPlaying = false;
 				cancelAnimationFrame(obj.animationMethod);
 			}
+			//TODO: if this is removed, it produces an error in 
+			this.animationQueue = [];
 			return this;
 		}
 
@@ -218,7 +220,7 @@ AnimationManager.prototype = {
 
 		//[jscastro] play default animation
 		obj.playDefault = function (options) {
-			if (obj.mixer) {
+			if (obj.mixer && obj.hasDefaultAnimation) {
 
 				var newParams = {
 					start: Date.now(),
@@ -323,6 +325,7 @@ AnimationManager.prototype = {
 
 				//focus on first item in queue
 				var item = object.animationQueue[i];
+				if (!item) continue;
 				var options = item.parameters;
 
 				// if an animation is past its expiration date, cull it
@@ -343,7 +346,6 @@ AnimationManager.prototype = {
 				if (expiring) {
 					options.expiration = false;
 					if (item.type === 'playDefault') {
-						//object.isPlaying = false;
 						object.stop();
 					} else {
 						if (options.endState) object._setObject(options.endState);
