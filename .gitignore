@@ -4,8 +4,11 @@
 
 /node_modules
 /obj/Debug
+/.vs/
 /.vs/ThreeboxSolution/v16
 /tests/node_modules
 /tests/obj/Debug
 /threebox-new.njsproj
 /server.js
+/ThreeboxSolution.sln
+/ThreeboxSolution/
