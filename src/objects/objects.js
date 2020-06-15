@@ -242,18 +242,20 @@ Objects.prototype = {
 					if (obj.visible != _value) {
 						obj.visible = _value;
 
-						obj.model.traverse(function (c) {
-							if (c.type == "Mesh" || c.type == "SkinnedMesh") {
-								if (_value) {
-									c.layers.enable(0); //this makes the meshes visible for raycast
-								} else {
-									c.layers.disable(0); //this makes the meshes invisible for raycast
+						if (obj.model) {
+							obj.model.traverse(function (c) {
+								if (c.type == "Mesh" || c.type == "SkinnedMesh") {
+									if (_value) {
+										c.layers.enable(0); //this makes the meshes visible for raycast
+									} else {
+										c.layers.disable(0); //this makes the meshes invisible for raycast
+									}
 								}
-							}
-							if (c.type == "LineSegments") {
-								c.layers.disableAll();
-							}
-						});
+								if (c.type == "LineSegments") {
+									c.layers.disableAll();
+								}
+							});
+						}
 					}
 				}
 			});
@@ -413,22 +415,25 @@ Objects.prototype = {
 				//update Matrix and MatrixWorld to avoid issues with transformations not full applied
 				obj.updateMatrix();
 				obj.updateMatrixWorld(true, true);
-				//let's clone the object before manipulate it
-				let dup = obj.clone(true);
+				let bounds;
 				//clone also the model inside it's the one who keeps the real size
-				dup.model = obj.model.clone();
-				//get the size of the model because the object is translated and has boundingBoxShadow
-				let bounds = new THREE.Box3().setFromObject(dup.model);
-				//if the object has parent it's already in the added to world so it's scaled and it could be rotated
-				if (obj.parent) {
-					//first, we return the object to it's original position of rotation, extract rotation and apply inversed
-					let rm = new THREE.Matrix4();
-					let rmi = new THREE.Matrix4();
-					obj.matrix.extractRotation(rm);
-					rm.getInverse(rmi);
-					dup.setRotationFromMatrix(rmi);
-					//now the object inside will give us a NAABB Non-Axes Aligned Bounding Box 
+				if (obj.model) {
+					//let's clone the object before manipulate it
+					let dup = obj.clone(true);
+					dup.model = obj.model.clone();
+					//get the size of the model because the object is translated and has boundingBoxShadow
 					bounds = new THREE.Box3().setFromObject(dup.model);
+					//if the object has parent it's already in the added to world so it's scaled and it could be rotated
+					if (obj.parent) {
+						//first, we return the object to it's original position of rotation, extract rotation and apply inversed
+						let rm = new THREE.Matrix4();
+						let rmi = new THREE.Matrix4();
+						obj.matrix.extractRotation(rm);
+						rm.getInverse(rmi);
+						dup.setRotationFromMatrix(rmi);
+						//now the object inside will give us a NAABB Non-Axes Aligned Bounding Box 
+						bounds = new THREE.Box3().setFromObject(dup.model);
+					}
 				}
 				return bounds;
 			};
@@ -531,6 +536,22 @@ Objects.prototype = {
 			sides: 20,
 			units: 'scene',
 			material: 'MeshBasicMaterial'
+		},
+
+		label: {
+			htmlElement: null,
+			cssClass: " label3D",
+			alwaysVisible: false,
+			bottomMargin: 0,
+			feature: null
+		},
+
+		tooltip: {
+			text: '',
+			htmlElement: 'span',
+			cssClass: 'toolTip text-xs',
+			bottomMargin: 0,
+			feature: null
 		},
 
 		tube: {

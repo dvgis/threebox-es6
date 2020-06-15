@@ -7,11 +7,13 @@ var ThreeboxConstants = require("./utils/constants.js");
 var Objects = require("./objects/objects.js");
 var material = require("./utils/material.js");
 var sphere = require("./objects/sphere.js");
+var label = require("./objects/label.js");
+var tooltip = require("./objects/tooltip.js");
 var loadObj = require("./objects/loadObj.js");
 var Object3D = require("./objects/Object3D.js");
 var line = require("./objects/line.js");
 var tube = require("./objects/tube.js");
-var Label = require("./objects/LabelRenderer.js")
+var LabelRenderer = require("./objects/LabelRenderer.js")
 
 function Threebox(map, glContext, options){
 
@@ -55,7 +57,7 @@ Threebox.prototype = {
 
 
 		this.scene = new THREE.Scene();
-		this.camera = new THREE.PerspectiveCamera(36.86989764584402, map.getCanvas().clientWidth / map.getCanvas().clientHeight, 1, 1e21);
+		this.camera = new THREE.PerspectiveCamera(ThreeboxConstants.FOV_DEGREES, map.getCanvas().clientWidth / map.getCanvas().clientHeight, 1, 1e21);
 		this.camera.layers.enable(1);
 
 		// The CameraSync object will keep the Mapbox and THREE.js camera movements in sync.
@@ -360,6 +362,7 @@ Threebox.prototype = {
 			this.on('mousedown', map.onMouseDown);
 
 		});
+
 	},
 
 	// Objects
@@ -369,6 +372,10 @@ Threebox.prototype = {
 	sphere: sphere,
 
 	line: line,
+
+	label: label,
+
+	tooltip: tooltip,
 
 	tube: function (obj) {
 		return tube(obj, this.world)
@@ -398,6 +405,15 @@ Threebox.prototype = {
 
 	projectedUnitsPerMeter: function (lat) {
 		return this.utils.projectedUnitsPerMeter(lat)
+	},
+
+	//get the center point of a feature
+	getFeatureCenter: function getFeatureCenter(feature, obj, level) {
+		return utils.getFeatureCenter(feature, obj, level);
+	},
+
+	getObjectHeightOnFloor: function (feature, obj, level) {
+		return utils.getObjectHeightOnFloor(feature, obj, level);
 	},
 
 	queryRenderedFeatures: function (point) {
@@ -457,14 +473,7 @@ Threebox.prototype = {
 			let feature = obj.userData.feature;
 			if (feature && feature.layer === layerId) {
 				//TODO: this could be a multidimensional array
-				let location = feature.geometry.coordinates[0][0];
-				let floorHeightMin = (level * feature.properties.levelHeight);
-				//object height is modelSize.z + base_height configured for this object
-				let objectHeight = obj.modelSize.z + feature.properties.base_height;
-				let modelHeightFloor = floorHeightMin + objectHeight;
-				//if height is not yet included as 3rd coordinate, add it, if not just update it
-				(location.length < 3 ? location.push(modelHeightFloor) : location[2] = modelHeightFloor);
-				//position on location with height calculated
+				let location = tb.getFeatureCenter(feature, obj, level);
 				obj.setCoords(location);
 			}
 		});

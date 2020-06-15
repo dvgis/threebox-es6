@@ -154,6 +154,43 @@ var utils = {
 
 	},
 
+	//get the center point of a feature
+	getFeatureCenter: function getFeatureCenter(feature, model, level) {
+		let center = [];
+		let latitude = 0;
+		let longitude = 0;
+		let height = 0;
+		let coordinates = [];
+		//deep clone to avoid modifying the original array
+		coordinates.push(...feature.geometry.coordinates[0]);
+		if (coordinates.length == 1) {
+			center = coordinates[0];
+		}
+		else {
+			//features in mapbox repeat the first coordinates at the end. We remove it.
+			coordinates.splice(-1, 1);
+			coordinates.forEach(function (c) {
+				latitude += c[0];
+				longitude += c[1];
+			});
+			center = [latitude / coordinates.length, longitude / coordinates.length];
+		}
+		height = this.getObjectHeightOnFloor(feature, model, level);
+
+		(center.length < 3 ? center.push(height) : center[2] = height);
+
+		return center;
+	},
+
+	getObjectHeightOnFloor: function (feature, obj, level = feature.properties.level) {
+		let floorHeightMin = (level * feature.properties.levelHeight);
+		//object height is modelSize.z + base_height configured for this object
+		let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - feature.properties.base_height) / 2)
+		let objectHeight = height + feature.properties.base_height;
+		let modelHeightFloor = floorHeightMin + objectHeight;
+		return modelHeightFloor;
+	},
+
 	_flipMaterialSides: function (obj) {
 
 	},

@@ -162,7 +162,6 @@ Here below is the simplest sample to load a 3D model:
 
 - - -
 
-
 ### Threebox Methods
 
 Here is the full list of all the methods exposed by Threebox. 
@@ -271,7 +270,9 @@ map.addLayer({
 });
 ```
 
-After the callback is initiated, the object returned will have the following events already available to listen that enable the UI to behave and react to those. You can add these lines below:
+After the callback is initiated, the object returned will have the following events already 
+available to listen that enable the UI to behave and react to those. 
+You can add these `addEventListener` lines below to `tb.loadObj`:
 
 ```js
 	tb.loadObj(options, function (model) {
@@ -289,7 +290,8 @@ After the callback is initiated, the object returned will have the following eve
 	})
 ```
 
-In this way you'll be able to manage in you UI through a function once these events are fired. See below an example for `onSelectedChange` to use the method [`map.flyTo(options[, eventData])`](https://docs.mapbox.com/mapbox-gl-js/api/map/#map#flyto) from *Mapbox GL*:
+In this way you'll be able to manage in you UI through a function once these events are fired. 
+See below an example for `onSelectedChange` to use the method [`map.flyTo(options[, eventData])`](https://docs.mapbox.com/mapbox-gl-js/api/map/#map#flyto) from *Mapbox GL*:
 
 ```js
 // method to activate/deactivate a UI button.
@@ -467,6 +469,26 @@ Calculate the corresponding `lnglat` for a given [`THREE.Vector3`](https://three
 
 <br>
 
+#### getFeatureCenter 
+```js
+tb.getFeatureCenter(feature, model, level): lnglat
+```
+Calculate the center of a feature geometry coordinates, including the altitude (in meters) for a given [*GeoJson*](https://geojson.org/) feature that can include or not a 3D model loaded and for a given level.
+This method calls internally to `tb.getObjectHeightOnFloor` and can be used for both a Poligon feature for a Fill Extrusion or a Point feature for a 3D model.
+
+<br>
+
+
+#### getObjectHeightOnFloor 
+```js
+tb.getObjectHeightOnFloor(feature, obj, level) : number
+```
+Calculate the altitude (in meters) for a given [*GeoJson*](https://geojson.org/) feature that can include or not a 3D model loaded and for a given level.
+This method can be used for both a Poligon feature for a Fill Extrusion or a Point feature for a 3D model.
+
+<br>
+
+
 #### versions 
 ```js
 tb.version() : string
@@ -548,6 +570,42 @@ Add a sphere to the map. Internally, calls `THREE.Mesh` with a `THREE.SphereGeom
 
 <br>
 
+#### Label
+
+```js
+tb.label(options);
+```
+
+Creates a new HTML Label object that can be positioned through `obj.setCoords(coords)` and then added to Threebox scene through `tb.add(obj)`.
+Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
+
+| option | required | default | type   | description                                                                                  |
+|-----------|----------|---------|--------|-------|
+| `htmlElement`    | yes       | null      | htmlElement | HTMLElement that will be rendered as a `CSS2DObject` |
+| `cssClass`    | no       | " label3D"      | string | CssClass that will be aggregated to manage the styles of the label object. |
+| `alwaysVisible`  | no       | false       | number | Number of width and height segments. The higher the number, the smoother the sphere. |
+| `bottomMargin`     | no       | 0   | int  | If `bottomMargin` is defined in number, it will be added to it's vertical position in `em's` unit. |                                                                            
+
+<br>
+
+#### Tooltip
+
+```js
+tb.tooltip(options);
+```
+
+Creates a new browser-like Tooltip object that can be positioned through `obj.setCoords(coords)` and then added to Threebox scene through `tb.add(obj)`.
+Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
+
+| option | required | default | type   | description                                                                                  |
+|-----------|----------|---------|--------|-------|
+| `text`    | yes       | ""      | string | String that will be used to rendered as a `CSS2DObject` |
+| `htmlElement`    | no      | "span"      | string | HTMLElement name of the object that will be used to render a `CSS2DObject` |
+| `cssClass`    | no       | "toolTip text-xs"      | string | CssClass that will be aggregated to manage the styles of the label object. |
+| `bottomMargin`     | no       | 0   | int  | If `bottomMargin` is defined in number, it will be added to it's vertical position in `em's` unit. |                                                                            
+
+<br>
+
 #### Object3D
 
 ```js
@@ -580,7 +638,7 @@ It uses the DOM [HTMLElement](https://developer.mozilla.org/en-US/docs/Web/API/H
 If `visible` is true, the label will be always visible, otherwise by default its value is false and it's regular behavior is only to be shown on MouseOver.
 If `bottomMargin` is defined in number, it will be added to it's vertical position in `em's` unit.
 Its position is always relative to the object that contains it and rerendered whenever that label is visible.
-Internally this method uses [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
+Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
 
 *TODO: In next versions of Threebox, this object position will be configurable. In this versión it's positioned at the top of the object.*
 
@@ -593,7 +651,7 @@ obj.addTooltip(tooltipText)
 This method creates a browser-like tooltip for the object using the tooltipText. 
 Its position is always relative to the object that contains it and rerendered whenever that label is visible.
 
-Internally this method uses [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
+Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
 
 *TODO: In next versions of Threebox, this object position will be configurable. In this versión it's positioned at the center of the object.*
 
@@ -677,6 +735,10 @@ This method must be called after adding object to the map.
 
 ### Object properties
 
+In all the samples below, the instance of the Threebox object will be always referred as `obj`.
+
+<br>
+
 #### boundingBox
 
 ```js
@@ -737,6 +799,148 @@ By Threebox design whenever an object is converted to wireframes, it's also hidd
 
 ### Object events
 
+In all the samples below, the instance of the Threebox object will be always referred as `obj`
+
+<br>
+
+#### IsPlayingChanged
+
+```js
+obj.addEventListener('IsPlayingChanged', onIsPlayingChanged, false)
+```
+
+This event is fired once an object changes its animation playing status, it means it will be fired both when an object animation starts and stops to play.
+The event can be listened at any time once the `tb.loadObj` callback method is being executed.
+An instance of the object that changes is returned in `eventArgs.detail`. 
+
+```js
+map.addLayer({
+	...
+	tb.loadObj(options, function (model) {
+
+		soldier = model.setCoords(origin);
+
+		soldier.addEventListener('IsPlayingChanged', onIsPlayingChanged, false);
+
+		tb.add(soldier);
+	})
+
+	...
+});
+...
+function onIsPlayingChanged(eventArgs) {
+	if (e.detail.isPlaying) {
+		//do something in the UI such as changing a button state
+	}
+	else {
+		//do something in the UI such as changing a button state
+	}
+}
+```
+
+<br>
+
+#### ObjectDragged
+
+```js
+obj.addEventListener('ObjectDragged', onDraggedObject, false)
+```
+
+This event is fired when an object changes is dragged and dropped in a different position, and only once when `map.once('mouseup'` and  `map.once('mouseout'`. 
+The event can be listened at any time once the `tb.loadObj` callback method is being executed.
+An instance of the object that changes is returned in `eventArgs.detail`, and the action made during the dragging that cound be `"rotate"` if the object has been rotated on its center axis or `"translate"` if the object has been moved to other position . 
+
+```js
+map.addLayer({
+	...
+	tb.loadObj(options, function (model) {
+
+		soldier = model.setCoords(origin);
+
+		soldier.addEventListener('ObjectDragged', onDraggedObject, false);
+
+		tb.add(soldier);
+	})
+
+	...
+});
+...
+function onDraggedObject(eventArgs) {
+	let draggedObject = e.detail.draggedObject; // the object dragged
+	let draggedAction = e.detail.draggedAction; // the action during dragging
+
+	//do something in the UI such as changing a button state or updating the new position and rotation
+}
+```
+
+<br>
+
+
+#### ObjectMouseOver
+
+```js
+obj.addEventListener('ObjectMouseOver', onObjectMouseOver, false)
+```
+
+This event is fired when an object is overed by the mouse pointer.  
+The event can be listened at any time once the `tb.loadObj` callback method is being executed.
+An instance of the object that changes is returned in `eventArgs.detail`. 
+
+```js
+map.addLayer({
+	...
+	tb.loadObj(options, function (model) {
+
+		soldier = model.setCoords(origin);
+
+		soldier.addEventListener('ObjectMouseOver', onObjectMouseOver, false);
+
+		tb.add(soldier);
+	})
+
+	...
+});
+...
+function onObjectMouseOver(eventArgs) {
+	//do something in the UI such as adding help or showing this object attributes
+}
+```
+
+<br>
+
+
+#### ObjectMouseOut
+
+```js
+obj.addEventListener('ObjectMouseOut', onObjectMouseOut, false)
+```
+
+This event is fired when the mouse pointer leaves an object that has been overed.   
+The event can be listened at any time once the `tb.loadObj` callback method is being executed.
+An instance of the object that changes is returned in `eventArgs.detail`. 
+
+```js
+map.addLayer({
+	...
+	tb.loadObj(options, function (model) {
+
+		soldier = model.setCoords(origin);
+
+		soldier.addEventListener('ObjectMouseOut', onObjectMouseOut, false);
+
+		tb.add(soldier);
+	})
+
+	...
+});
+...
+function onObjectMouseOut(eventArgs) {
+	//do something in the UI such as removing help
+}
+```
+
+<br>
+
 #### SelectedChange
 
 ```js
@@ -767,6 +971,42 @@ function onSelectedChange(eventArgs) {
 }
 ```
 
+<br>
+
+#### Wireframed
+
+```js
+obj.addEventListener('Wireframed', onWireframed, false)
+```
+
+This event is fired once an object is changes its wireframe status, it means it will be fired both when an object is wireframed or textured again.
+The event can be listened at any time once the `tb.loadObj` callback method is being executed.
+An instance of the object that changes is returned in `eventArgs.detail`. 
+
+```js
+map.addLayer({
+	...
+	tb.loadObj(options, function (model) {
+
+		soldier = model.setCoords(origin);
+
+		soldier.addEventListener('Wireframed', onWireframed, false);
+
+		tb.add(soldier);
+	})
+
+	...
+});
+...
+function onWireframed(eventArgs) {
+	if (e.detail.wireframe) {
+		//do something in the UI such as changing a button state
+	}
+	else {
+		//do something in the UI such as changing a button state
+	}
+}
+```
 
 <br>
 
@@ -787,6 +1027,9 @@ Plays the default embedded animation of a loaded 3D model.
 |-----------|----------|---------|--------|------------|
 | `duration`    | no       | 1000      | number | Duration of the animation, in milliseconds |
 
+
+<br>
+
 #### playAnimation
 ```js
 obj.playAnimation(options)
@@ -799,6 +1042,9 @@ Plays one of the embedded animations of a loaded 3D model. The animation index m
 |-----------|----------|---------|--------|------------|
 | `animation`    | yes       | NA      | number | Index of the animation in the 3D model. If you need to check whats the index of the animation you can get the full array using `obj.animations`.|
 | `duration`    | no       | 1000      | number | Duration of the animation, in milliseconds |
+
+
+<br>
 
 
 #### followPath
@@ -814,6 +1060,9 @@ Translate object along a specified path. Optional callback function to execute w
 | `duration`    | no       | 1000      | number | Duration to travel the path, in milliseconds |
 | `trackHeading`    | no       | true      | boolean | Rotate the object so that it stays aligned with the direction of travel, throughout the animation |
 
+<br>
+
+
 #### stop
 ```js
 obj.stop()
@@ -821,16 +1070,18 @@ obj.stop()
 
 Stops all of object's current animations.
 
+<br>
+
+
 #### duplicate
 ```js
 obj.duplicate()
 ```
-
 Returns a clone of the object. Greatly improves performance when handling many identical objects, by reusing materials and geometries.
+
 <br>
 
 - - -
-
 
 ## Threebox types
 
@@ -876,8 +1127,11 @@ The three axes are identical to those of `rotationTransform`. However, expressin
 
 Denotes the material used for an object. This can usually be customized further with `color` and `opacity` parameters in the same 
 
-
 Can be expressed as a string to the corresponding material type (e.g. `"MeshPhysicalMaterial"` for `THREE.MeshPhysicalMaterial()`), or a prebuilt THREE material directly.
+
+<br>
+
+- - -
 
 ## Using vanilla *Three.js* in Threebox
 

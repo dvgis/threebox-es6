@@ -71,7 +71,6 @@ function loadObj(options, cb) {
 					break;
 			}
 
-			let oSize = new THREE.Box3().setFromObject(obj).getSize(new THREE.Vector3(0, 0, 0));
 			// [jscastro] options.rotation was wrongly used
 			var r = utils.types.rotation(options.rotation, [0, 0, 0]);
 			var s = utils.types.scale(options.scale, [1, 1, 1]);

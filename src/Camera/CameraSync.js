@@ -36,6 +36,7 @@ function CameraSync(map, camera, world) {
 
 CameraSync.prototype = {
     setupCamera: function () {
+
         const t = this.map.transform;
         const halfFov = this.state.fov / 2;
         const cameraToCenterDistance = 0.5 / Math.tan(halfFov) * t.height;

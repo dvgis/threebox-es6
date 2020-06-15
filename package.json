@@ -1,41 +1,42 @@
 {
-  "name": "threebox",
-  "version": "1.2.0",
-  "description": "A Mapbox GL JS plugin that combines the power of the Three.js 3D library with Mapbox geospatial tools.",
-  "main": "main.js",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jscastro76/threebox.git"
-  },
-  "author": "@peterqliu, @kronick & @jscastro76",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/peterqliu/threebox/issues"
-  },
-  "dev-dependencies": {
-    "tap-prettify": "0.0.2",
-    "tape": "^4.6.3"
-  },
-  "scripts": {
-    "build": "browserify -g ./node_modules/uglifyify exports.js > dist/threebox.min.js",
-    "dev": "watchify exports.js --verbose -o dist/threebox.js",
-    "test": "browserify tests/threebox-tests.js > tests/threebox-tests-bundle.js; echo 'Open tests/threebox-tests.html to run tests in the browser.'",
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "@turf/turf": "^5.1.6",
-    "help": "^3.0.2",
-    "tape": "^4.13.2",
-    "turf": "^3.0.14",
-    "uglifyify": "^5.0.2",
-    "watchify": "^3.11.1"
-  },
-  "homepage": "https://github.com/peterqliu/threebox#readme",
-  "directories": {
-    "doc": "docs",
-    "example": "examples",
-    "test": "tests"
-  },
-  "devDependencies": {},
-  "keywords": []
+    "name": "threebox",
+    "version": "1.2.0",
+    "description": "A Mapbox GL JS plugin that combines the power of the Three.js 3D library with Mapbox geospatial tools.",
+    "main": "main.js",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/jscastro76/threebox.git"
+    },
+    "author": "@peterqliu, @kronick & @jscastro76",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/peterqliu/threebox/issues"
+    },
+    "dev-dependencies": {
+        "tap-prettify": "0.0.2",
+        "tape": "^4.6.3"
+    },
+    "scripts": {
+        "build": "browserify -g ./node_modules/uglifyify exports.js > dist/threebox.min.js",
+        "dev": "watchify exports.js --verbose -o dist/threebox.js",
+        "all": "browserify -g ./node_modules/uglifyify exports.js > dist/threebox.min.js && watchify exports.js --verbose -o dist/threebox.js",
+        "test": "browserify tests/threebox-tests.js > tests/threebox-tests-bundle.js; echo 'Open tests/threebox-tests.html to run tests in the browser.'",
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "@turf/turf": "^5.1.6",
+        "help": "^3.0.2",
+        "tape": "^4.13.2",
+        "turf": "^3.0.14",
+        "uglifyify": "^5.0.2",
+        "watchify": "^3.11.1"
+    },
+    "homepage": "https://github.com/peterqliu/threebox#readme",
+    "directories": {
+        "doc": "docs",
+        "example": "examples",
+        "test": "tests"
+    },
+    "devDependencies": {},
+    "keywords": []
 }

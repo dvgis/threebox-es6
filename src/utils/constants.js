@@ -8,6 +8,7 @@ module.exports = exports = {
     DEG2RAD: Math.PI / 180,
     RAD2DEG: 180 / Math.PI,
     EARTH_CIRCUMFERENCE: 40075000, // In meters
-    FOV: 0.6435011087932844,
+    FOV: 0.6435011087932844, // Math.atan(3/4) radians. If this value is changed, FOV_DEGREES must be calculated
+    FOV_DEGREES: 36.86989764584402, // Math.atan(3/4) in degrees
     TILE_SIZE: 512
 }
