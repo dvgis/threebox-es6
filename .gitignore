@@ -4,6 +4,8 @@
 
 /node_modules
 /obj/Debug
+/obj/
+/bin/
 /.vs/
 /.vs/ThreeboxSolution/v16
 /tests/node_modules
