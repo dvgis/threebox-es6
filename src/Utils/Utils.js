@@ -155,7 +155,7 @@ var utils = {
 	},
 
 	//get the center point of a feature
-	getFeatureCenter: function getFeatureCenter(feature, model, level) {
+	getFeatureCenter: function getFeatureCenter(feature, model, level = 0) {
 		let center = [];
 		let latitude = 0;
 		let longitude = 0;
@@ -182,11 +182,11 @@ var utils = {
 		return center;
 	},
 
-	getObjectHeightOnFloor: function (feature, obj, level = feature.properties.level) {
-		let floorHeightMin = (level * feature.properties.levelHeight);
+	getObjectHeightOnFloor: function (feature, obj, level = feature.properties.level || 0) {
+		let floorHeightMin = (level * (feature.properties.levelHeight || 0));
 		//object height is modelSize.z + base_height configured for this object
-		let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - feature.properties.base_height));
-		let objectHeight = height + feature.properties.base_height;
+		let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - (feature.properties.base_height || 0)));
+		let objectHeight = height + (feature.properties.base_height || 0);
 		let modelHeightFloor = floorHeightMin + objectHeight;
 		return modelHeightFloor;
 	},

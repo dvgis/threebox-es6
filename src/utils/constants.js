@@ -1,6 +1,6 @@
 const WORLD_SIZE = 1024000;
 const MERCATOR_A = 6378137.0;
-const FOV = Math.atan(3 / 4);
+const FOV = Math.atan(3/4);
 
 module.exports = exports = {
     WORLD_SIZE: WORLD_SIZE,

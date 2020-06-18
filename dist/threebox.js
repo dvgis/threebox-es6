@@ -128,6 +128,7 @@ Threebox.prototype = {
 			}
 
 			function unselectFeature(f, map) {
+				if (typeof f.id == 'undefined') return;
 				map.setFeatureState(
 					{ source: f.source, sourceLayer: f.sourceLayer, id: f.id },
 					{ select: false }
@@ -136,7 +137,7 @@ Threebox.prototype = {
 					f.tooltip.visibility = false;
 					tb.remove(f.tooltip);
 				}
-				f = map.queryRenderedFeatures({ layers: [f.layer.id], filter: ["==", ['get', 'key'], f.properties.key] })[0];
+				f = map.queryRenderedFeatures({ layers: [f.layer.id], filter: ["==", ['id'], f.id] })[0];
 				// Dispatch new event f for unselected
 				map.fire('SelectedFeatureChange', { detail: f });
 				f = null;
@@ -212,29 +213,29 @@ Threebox.prototype = {
 						}
 						if (features[0].layer.type == "fill-extrusion") {
 							selectedFeature = features[0];
-							this.setFeatureState(
-								{ source: selectedFeature.source, sourceLayer: selectedFeature.sourceLayer, id: selectedFeature.id },
-								{ select: true }
-							);
-							selectedFeature = this.queryRenderedFeatures({ layers: [selectedFeature.layer.id], filter: ["==", ['get', 'key'], selectedFeature.properties.key] })[0];
+							if (selectedFeature && typeof selectedFeature.id != 'undefined') {
+								this.setFeatureState(
+									{ source: selectedFeature.source, sourceLayer: selectedFeature.sourceLayer, id: selectedFeature.id },
+									{ select: true }
+								);
+								selectedFeature = this.queryRenderedFeatures({ layers: [selectedFeature.layer.id], filter: ["==", ['id'], selectedFeature.id] })[0];
 
-							let coordinates = tb.getFeatureCenter(selectedFeature);
-							let t = tb.tooltip({
-								text: selectedFeature.properties.name,
-								mapboxStyle: true,
-								feature: selectedFeature
-							});
-							t.setCoords(coordinates);
-							tb.add(t);
-							selectedFeature.tooltip = t;
-							selectedFeature.tooltip.tooltip.visible = true;
-							// Dispatch new event SelectedFeature for selected
-							map.fire('SelectedFeatureChange', { detail: selectedFeature });
+								let coordinates = tb.getFeatureCenter(selectedFeature);
+								let t = tb.tooltip({
+									text: selectedFeature.properties.name || selectedFeature.id,
+									mapboxStyle: true,
+									feature: selectedFeature
+								});
+								t.setCoords(coordinates);
+								tb.add(t);
+								selectedFeature.tooltip = t;
+								selectedFeature.tooltip.tooltip.visible = true;
+								// Dispatch new event SelectedFeature for selected
+								map.fire('SelectedFeatureChange', { detail: selectedFeature });
+							}
 						}
-
 					}
 				}
-
 			}
 
 			map.onMouseMove = function (e) {
@@ -299,8 +300,7 @@ Threebox.prototype = {
 					//now let's check the extrusion layer objects
 					let features = this.queryRenderedFeatures(e.point);
 					if (features.length > 0) {
-						this.getCanvasContainer().style.cursor = 'pointer';
-						if (overedFeature) {
+						if (overedFeature && typeof overedFeature.id != 'undefined') {
 							this.setFeatureState(
 								{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
 								{ hover: false }
@@ -308,11 +308,14 @@ Threebox.prototype = {
 						}
 						if (!selectedFeature || selectedFeature.id != features[0].id) {
 							if (features[0].layer.type == "fill-extrusion") {
+								this.getCanvasContainer().style.cursor = 'pointer';
 								overedFeature = features[0];
-								this.setFeatureState(
-									{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
-									{ hover: true }
-								);
+								if (overedFeature && typeof overedFeature.id != 'undefined') {
+									this.setFeatureState(
+										{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
+										{ hover: true }
+									);
+								}
 							}
 						}
 					}
@@ -368,7 +371,7 @@ Threebox.prototype = {
 			map.onMouseOut = function (e) {
 
 				this.getCanvasContainer().style.cursor = 'default';
-				if (overedFeature) {
+				if (overedFeature && typeof overedFeature.id != 'undefined') {
 
 					map.setFeatureState(
 						{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
@@ -807,7 +810,7 @@ var utils = {
 	},
 
 	//get the center point of a feature
-	getFeatureCenter: function getFeatureCenter(feature, model, level) {
+	getFeatureCenter: function getFeatureCenter(feature, model, level = 0) {
 		let center = [];
 		let latitude = 0;
 		let longitude = 0;
@@ -834,11 +837,11 @@ var utils = {
 		return center;
 	},
 
-	getObjectHeightOnFloor: function (feature, obj, level = feature.properties.level) {
-		let floorHeightMin = (level * feature.properties.levelHeight);
+	getObjectHeightOnFloor: function (feature, obj, level = feature.properties.level || 0) {
+		let floorHeightMin = (level * (feature.properties.levelHeight || 0));
 		//object height is modelSize.z + base_height configured for this object
-		let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - feature.properties.base_height));
-		let objectHeight = height + feature.properties.base_height;
+		let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - (feature.properties.base_height || 0)));
+		let objectHeight = height + (feature.properties.base_height || 0);
 		let modelHeightFloor = floorHeightMin + objectHeight;
 		return modelHeightFloor;
 	},
@@ -970,7 +973,7 @@ module.exports = exports = utils
 },{"../three.js":24,"./constants.js":4,"./validate.js":5}],4:[function(require,module,exports){
 const WORLD_SIZE = 1024000;
 const MERCATOR_A = 6378137.0;
-const FOV = Math.atan(3 / 4);
+const FOV = Math.atan(3/4);
 
 module.exports = exports = {
     WORLD_SIZE: WORLD_SIZE,

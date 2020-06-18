@@ -123,6 +123,7 @@ Threebox.prototype = {
 			}
 
 			function unselectFeature(f, map) {
+				if (typeof f.id == 'undefined') return;
 				map.setFeatureState(
 					{ source: f.source, sourceLayer: f.sourceLayer, id: f.id },
 					{ select: false }
@@ -131,7 +132,7 @@ Threebox.prototype = {
 					f.tooltip.visibility = false;
 					tb.remove(f.tooltip);
 				}
-				f = map.queryRenderedFeatures({ layers: [f.layer.id], filter: ["==", ['get', 'key'], f.properties.key] })[0];
+				f = map.queryRenderedFeatures({ layers: [f.layer.id], filter: ["==", ['id'], f.id] })[0];
 				// Dispatch new event f for unselected
 				map.fire('SelectedFeatureChange', { detail: f });
 				f = null;
@@ -207,29 +208,29 @@ Threebox.prototype = {
 						}
 						if (features[0].layer.type == "fill-extrusion") {
 							selectedFeature = features[0];
-							this.setFeatureState(
-								{ source: selectedFeature.source, sourceLayer: selectedFeature.sourceLayer, id: selectedFeature.id },
-								{ select: true }
-							);
-							selectedFeature = this.queryRenderedFeatures({ layers: [selectedFeature.layer.id], filter: ["==", ['get', 'key'], selectedFeature.properties.key] })[0];
+							if (selectedFeature && typeof selectedFeature.id != 'undefined') {
+								this.setFeatureState(
+									{ source: selectedFeature.source, sourceLayer: selectedFeature.sourceLayer, id: selectedFeature.id },
+									{ select: true }
+								);
+								selectedFeature = this.queryRenderedFeatures({ layers: [selectedFeature.layer.id], filter: ["==", ['id'], selectedFeature.id] })[0];
 
-							let coordinates = tb.getFeatureCenter(selectedFeature);
-							let t = tb.tooltip({
-								text: selectedFeature.properties.name,
-								mapboxStyle: true,
-								feature: selectedFeature
-							});
-							t.setCoords(coordinates);
-							tb.add(t);
-							selectedFeature.tooltip = t;
-							selectedFeature.tooltip.tooltip.visible = true;
-							// Dispatch new event SelectedFeature for selected
-							map.fire('SelectedFeatureChange', { detail: selectedFeature });
+								let coordinates = tb.getFeatureCenter(selectedFeature);
+								let t = tb.tooltip({
+									text: selectedFeature.properties.name || selectedFeature.id,
+									mapboxStyle: true,
+									feature: selectedFeature
+								});
+								t.setCoords(coordinates);
+								tb.add(t);
+								selectedFeature.tooltip = t;
+								selectedFeature.tooltip.tooltip.visible = true;
+								// Dispatch new event SelectedFeature for selected
+								map.fire('SelectedFeatureChange', { detail: selectedFeature });
+							}
 						}
-
 					}
 				}
-
 			}
 
 			map.onMouseMove = function (e) {
@@ -294,8 +295,7 @@ Threebox.prototype = {
 					//now let's check the extrusion layer objects
 					let features = this.queryRenderedFeatures(e.point);
 					if (features.length > 0) {
-						this.getCanvasContainer().style.cursor = 'pointer';
-						if (overedFeature) {
+						if (overedFeature && typeof overedFeature.id != 'undefined') {
 							this.setFeatureState(
 								{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
 								{ hover: false }
@@ -303,11 +303,14 @@ Threebox.prototype = {
 						}
 						if (!selectedFeature || selectedFeature.id != features[0].id) {
 							if (features[0].layer.type == "fill-extrusion") {
+								this.getCanvasContainer().style.cursor = 'pointer';
 								overedFeature = features[0];
-								this.setFeatureState(
-									{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
-									{ hover: true }
-								);
+								if (overedFeature && typeof overedFeature.id != 'undefined') {
+									this.setFeatureState(
+										{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
+										{ hover: true }
+									);
+								}
 							}
 						}
 					}
@@ -363,7 +366,7 @@ Threebox.prototype = {
 			map.onMouseOut = function (e) {
 
 				this.getCanvasContainer().style.cursor = 'default';
-				if (overedFeature) {
+				if (overedFeature && typeof overedFeature.id != 'undefined') {
 
 					map.setFeatureState(
 						{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
