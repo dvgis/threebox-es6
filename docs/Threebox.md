@@ -574,7 +574,7 @@ Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](
 | `htmlElement`    | yes       | null      | htmlElement | HTMLElement that will be rendered as a `CSS2DObject` |
 | `cssClass`    | no       | " label3D"      | string | CssClass that will be aggregated to manage the styles of the label object. |
 | `alwaysVisible`  | no       | false       | number | Number of width and height segments. The higher the number, the smoother the sphere. |
-| `bottomMargin`     | no       | 0   | int  | If `bottomMargin` is defined in number, it will be added to it's vertical position in `em's` unit. |                                                                            
+| `topMargin`     | no       | -0.5   | int  | If `topMargin` is defined in number, it will be added to it's vertical position in units, where 1 is the object height. By default a label will be positioned in the vertical middle of the object (`topMargin: -0.5`)|
 | `feature`     | no       | null   | [*GeoJson*](https://geojson.org/) feature  | [*GeoJson*](https://geojson.org/) feature to assign to the tooltip. It'll be used for dynamic positioning |                                                                            
 
 <br>
@@ -592,8 +592,8 @@ Add a sphere to the map. Internally, calls `THREE.Mesh` with a `THREE.SphereGeom
 |-----------|----------|---------|--------|-------|
 | `radius`    | no       | 50      | number | Radius of sphere. |
 | `units`    | no       | scene      | string ("scene" or "meters") | Units with which to interpret `radius`. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
-| sides  | no       | 8       | number | Number of width and height segments. The higher the number, the smoother the sphere. |
-| color     | no       | black   | color  | Color of sphere.                                                                             
+| `sides`  | no       | 8       | number | Number of width and height segments. The higher the number, the smoother the sphere. |
+| `color`     | no       | black   | color  | Color of sphere.                                                                             
 | `material`     | no       | MeshLambertMaterial   | threeMaterial  | [THREE material](https://github.com/mrdoob/three.js/tree/master/src/materials) to use. Can be invoked with a text string, or a predefined material object via THREE itself.|   
 
 <br>
@@ -612,6 +612,7 @@ Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](
 | `text`    | yes       | ""      | string | String that will be used to rendered as a `CSS2DObject` |
 | `cssClass`    | no       | "toolTip text-xs"      | string | CssClass that will be aggregated to manage the styles of the label object. |
 | `mapboxStyle`     | no       | false   | int  | If `mapboxStyle` is true, it applies the same styles the *Mapbox GL* popups. |                                                                            
+| `topMargin`     | no       | 0   | int  | If `topMargin` is defined in number, it will be added to it's vertical position in units, where 1 is the object height. By default a label will be positioned on top of the object (`topMargin: 0`)|                                
 | `feature`     | no       | null   | [*GeoJson*](https://geojson.org/) feature  | [*GeoJson*](https://geojson.org/) feature to assign to the tooltip. It'll be used for dynamic positioning |                                                                            
 
 <br>

@@ -2040,15 +2040,8 @@ function Label(obj) {
 
 	obj = utils._validate(obj, Objects.prototype._defaults.label);
 
-	let div = document.createElement('div');
-	div.className += obj.cssClass;
-	// [jscastro] create a div [TODO] analize if must be moved
-	if (typeof (obj.htmlElement) == 'string') {
-		div.innerHTML = obj.htmlElement;
-	} else {
-		div.innerHTML = obj.htmlElement.outerHTML;
-	}
-	//if (obj.bottomMargin) div.style.marginTop = '-' + obj.bottomMargin + 'em';
+	let div = Objects.prototype.drawLabelHTML(obj.htmlElement, obj.cssClass);
+
 	let label = new CSS2D.CSS2DObject(div);
 	label.visible = obj.alwaysVisible;
 	label.alwaysVisible = obj.alwaysVisible;
@@ -15948,10 +15941,9 @@ Objects.prototype = {
 				if (obj.userData.units === 'meters') {
 					var s = utils.projectedUnitsPerMeter(lnglat[1]);
 					if (!s) { s = 1; };
-					s = Number(s.toFixed(7));
+					s = Number(s.toFixed(7)); //this precision level is to avoid deviations on the size of the same object  
 					if (typeof s === 'number') obj.scale.set(s, s, s);
-					else obj.scale.set(s.x, s.y, s.z);
-					//initialize the object size and it will rescale the rest
+					else obj.scale.set(s.x, s.y, s.z); 	//initialize the object size and it will rescale the rest
 				}
 
 				// CSS2DObjects could bring an specific vertical positioning to correct in units
@@ -16145,30 +16137,20 @@ Objects.prototype = {
 			});
 
 			//[jscastro] add CSS2 label method 
-			obj.addLabel = function (HTMLElement, visible = false, bottomMargin = 0) {
+			obj.addLabel = function (HTMLElement, visible = false) {
 				if (HTMLElement) {
 					//we add it to the first children to get same boxing and position
 					//obj.children[0].add(obj.drawLabel(text, height));
-					obj.children[0].add(obj.drawLabelHTML(HTMLElement, obj.modelHeight, visible, bottomMargin));
+					obj.children[0].add(obj.drawLabelHTML(HTMLElement, visible));
 				}
 			}
 
 			//[jscastro] draw label method can be invoked separately
-			obj.drawLabelHTML = function (HTMLElement, height, visible, bottomMargin) {
+			obj.drawLabelHTML = function (HTMLElement, visible = false) {
+				let div = root.drawLabelHTML(HTMLElement, Objects.prototype._defaults.label.cssClass);
 				let size = obj.getSize();
-				let div = document.createElement('div');
-				div.className += ' label3D';
-				// [jscastro] create a div [TODO] analize if must be moved
-				if (typeof (HTMLElement) == 'string') {
-					div.innerHTML = HTMLElement;
-				} else {
-					div.innerHTML = HTMLElement.outerHTML;
-				}
-				div.style.marginTop = '-' + bottomMargin + 'em';
 				obj.label = new CSS2D.CSS2DObject(div);
-				let p = obj.userData.feature.properties;
-				let labelHeight = (p.label ? height / p.label : 0) + (height / 10); //if label correction adjust + 10%
-				obj.label.position.set(-size.x / 2, -size.y / 2, -size.z / 2);//height + labelHeight);
+				obj.label.position.set(-size.x / 2, -size.y / 2, -size.z / 2);
 				obj.label.visible = visible;
 				obj.label.alwaysVisible = visible;
 
@@ -16419,11 +16401,25 @@ Objects.prototype = {
 			}
 			else {
 				divToolTip = document.createElement('span');
-				divToolTip.className = 'toolTip text-xs';
+				divToolTip.className = this._defaults.tooltip.cssClass;
 				divToolTip.innerHTML = tooltipText;
 			}
 			return divToolTip;
 		}
+	},
+
+	//[jscastro] draw label method can be invoked separately
+	drawLabelHTML: function (HTMLElement, cssClass) {
+		let div = document.createElement('div');
+		div.className += cssClass;
+		// [jscastro] create a div [TODO] analize if must be moved
+		if (typeof (HTMLElement) == 'string') {
+			div.innerHTML = HTMLElement;
+		} else {
+			div.innerHTML = HTMLElement.outerHTML;
+		}
+		//div.style.marginTop = '-' + bottomMargin + 'em';
+		return div;
 	},
 
 	_defaults: {

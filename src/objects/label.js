@@ -6,15 +6,8 @@ function Label(obj) {
 
 	obj = utils._validate(obj, Objects.prototype._defaults.label);
 
-	let div = document.createElement('div');
-	div.className += obj.cssClass;
-	// [jscastro] create a div [TODO] analize if must be moved
-	if (typeof (obj.htmlElement) == 'string') {
-		div.innerHTML = obj.htmlElement;
-	} else {
-		div.innerHTML = obj.htmlElement.outerHTML;
-	}
-	//if (obj.bottomMargin) div.style.marginTop = '-' + obj.bottomMargin + 'em';
+	let div = Objects.prototype.drawLabelHTML(obj.htmlElement, obj.cssClass);
+
 	let label = new CSS2D.CSS2DObject(div);
 	label.visible = obj.alwaysVisible;
 	label.alwaysVisible = obj.alwaysVisible;
