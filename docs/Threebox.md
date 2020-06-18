@@ -642,12 +642,11 @@ In all the samples below, the instance of the Threebox object will be always ref
 
 #### addLabel
 ```js
-obj.addLabel(HTMLElement [, visible] [, bottomMargin])
+obj.addLabel(HTMLElement [, visible])
 
 ```
 It uses the DOM [HTMLElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement) received to paint it on screen in a relative position to the object that contains it. 
 If `visible` is true, the label will be always visible, otherwise by default its value is false and it's regular behavior is only to be shown on MouseOver.
-If `bottomMargin` is defined in number, it will be added to it's vertical position in `em's` unit.
 Its position is always relative to the object that contains it and rerendered whenever that label is visible.
 Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
 

@@ -1,5 +1,6 @@
 const WORLD_SIZE = 1024000;
 const MERCATOR_A = 6378137.0;
+const FOV = Math.atan(3 / 4);
 
 module.exports = exports = {
     WORLD_SIZE: WORLD_SIZE,
@@ -8,7 +9,7 @@ module.exports = exports = {
     DEG2RAD: Math.PI / 180,
     RAD2DEG: 180 / Math.PI,
     EARTH_CIRCUMFERENCE: 40075000, // In meters
-    FOV: 0.6435011087932844, // Math.atan(3/4) radians. If this value is changed, FOV_DEGREES must be calculated
-    FOV_DEGREES: 36.86989764584402, // Math.atan(3/4) in degrees
+    FOV: FOV, // Math.atan(3/4) radians. If this value is changed, FOV_DEGREES must be calculated
+    FOV_DEGREES: FOV * 360 / (Math.PI * 2), // Math.atan(3/4) in degrees
     TILE_SIZE: 512
 }

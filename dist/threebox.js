@@ -129,7 +129,7 @@ Threebox.prototype = {
 
 			function unselectFeature(f, map) {
 				map.setFeatureState(
-					{ source: f.source, id: f.id },
+					{ source: f.source, sourceLayer: f.sourceLayer, id: f.id },
 					{ select: false }
 				);
 				if (f.tooltip) {
@@ -213,7 +213,7 @@ Threebox.prototype = {
 						if (features[0].layer.type == "fill-extrusion") {
 							selectedFeature = features[0];
 							this.setFeatureState(
-								{ source: selectedFeature.source, id: selectedFeature.id },
+								{ source: selectedFeature.source, sourceLayer: selectedFeature.sourceLayer, id: selectedFeature.id },
 								{ select: true }
 							);
 							selectedFeature = this.queryRenderedFeatures({ layers: [selectedFeature.layer.id], filter: ["==", ['get', 'key'], selectedFeature.properties.key] })[0];
@@ -302,7 +302,7 @@ Threebox.prototype = {
 						this.getCanvasContainer().style.cursor = 'pointer';
 						if (overedFeature) {
 							this.setFeatureState(
-								{ source: overedFeature.source, id: overedFeature.id },
+								{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
 								{ hover: false }
 							);
 						}
@@ -310,7 +310,7 @@ Threebox.prototype = {
 							if (features[0].layer.type == "fill-extrusion") {
 								overedFeature = features[0];
 								this.setFeatureState(
-									{ source: overedFeature.source, id: overedFeature.id },
+									{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
 									{ hover: true }
 								);
 							}
@@ -371,7 +371,7 @@ Threebox.prototype = {
 				if (overedFeature) {
 
 					map.setFeatureState(
-						{ source: overedFeature.source, id: overedFeature.id },
+						{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
 						{ hover: false }
 					);
 
@@ -970,6 +970,7 @@ module.exports = exports = utils
 },{"../three.js":24,"./constants.js":4,"./validate.js":5}],4:[function(require,module,exports){
 const WORLD_SIZE = 1024000;
 const MERCATOR_A = 6378137.0;
+const FOV = Math.atan(3 / 4);
 
 module.exports = exports = {
     WORLD_SIZE: WORLD_SIZE,
@@ -978,8 +979,8 @@ module.exports = exports = {
     DEG2RAD: Math.PI / 180,
     RAD2DEG: 180 / Math.PI,
     EARTH_CIRCUMFERENCE: 40075000, // In meters
-    FOV: 0.6435011087932844, // Math.atan(3/4) radians. If this value is changed, FOV_DEGREES must be calculated
-    FOV_DEGREES: 36.86989764584402, // Math.atan(3/4) in degrees
+    FOV: FOV, // Math.atan(3/4) radians. If this value is changed, FOV_DEGREES must be calculated
+    FOV_DEGREES: FOV * 360 / (Math.PI * 2), // Math.atan(3/4) in degrees
     TILE_SIZE: 512
 }
 },{}],5:[function(require,module,exports){

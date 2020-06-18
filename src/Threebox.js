@@ -124,7 +124,7 @@ Threebox.prototype = {
 
 			function unselectFeature(f, map) {
 				map.setFeatureState(
-					{ source: f.source, id: f.id },
+					{ source: f.source, sourceLayer: f.sourceLayer, id: f.id },
 					{ select: false }
 				);
 				if (f.tooltip) {
@@ -208,7 +208,7 @@ Threebox.prototype = {
 						if (features[0].layer.type == "fill-extrusion") {
 							selectedFeature = features[0];
 							this.setFeatureState(
-								{ source: selectedFeature.source, id: selectedFeature.id },
+								{ source: selectedFeature.source, sourceLayer: selectedFeature.sourceLayer, id: selectedFeature.id },
 								{ select: true }
 							);
 							selectedFeature = this.queryRenderedFeatures({ layers: [selectedFeature.layer.id], filter: ["==", ['get', 'key'], selectedFeature.properties.key] })[0];
@@ -297,7 +297,7 @@ Threebox.prototype = {
 						this.getCanvasContainer().style.cursor = 'pointer';
 						if (overedFeature) {
 							this.setFeatureState(
-								{ source: overedFeature.source, id: overedFeature.id },
+								{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
 								{ hover: false }
 							);
 						}
@@ -305,7 +305,7 @@ Threebox.prototype = {
 							if (features[0].layer.type == "fill-extrusion") {
 								overedFeature = features[0];
 								this.setFeatureState(
-									{ source: overedFeature.source, id: overedFeature.id },
+									{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
 									{ hover: true }
 								);
 							}
@@ -366,7 +366,7 @@ Threebox.prototype = {
 				if (overedFeature) {
 
 					map.setFeatureState(
-						{ source: overedFeature.source, id: overedFeature.id },
+						{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
 						{ hover: false }
 					);
 

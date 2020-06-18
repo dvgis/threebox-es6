@@ -33,6 +33,9 @@
     <Content Include="examples\models\Soldier.glb" />
     <Content Include="examples\models\Truck.mtl" />
     <Content Include="examples\models\Truck.obj" />
+    <Content Include="examples\alignmentTest.html">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="examples\plugins\jquery.min.js" />
     <Content Include="LICENSE.txt" />
     <Content Include="package-lock.json" />
