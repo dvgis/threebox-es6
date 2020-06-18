@@ -14,7 +14,7 @@ function Label(obj) {
 	} else {
 		div.innerHTML = obj.htmlElement.outerHTML;
 	}
-	if (obj.bottomMargin) div.style.marginTop = '-' + obj.bottomMargin + 'em';
+	//if (obj.bottomMargin) div.style.marginTop = '-' + obj.bottomMargin + 'em';
 	let label = new CSS2D.CSS2DObject(div);
 	label.visible = obj.alwaysVisible;
 	label.alwaysVisible = obj.alwaysVisible;
@@ -22,6 +22,7 @@ function Label(obj) {
 	var userScaleGroup = Objects.prototype._makeGroup(label, obj);
 	Objects.prototype._addMethods(userScaleGroup);
 	userScaleGroup.label = label;
+	userScaleGroup.visibility = obj.alwaysVisible;
 
 	return userScaleGroup;
 }

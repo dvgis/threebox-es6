@@ -7,15 +7,14 @@ function Tooltip(obj) {
 	obj = utils._validate(obj, Objects.prototype._defaults.tooltip);
 
 	if (obj.text) {
-		let span = document.createElement(obj.htmlElement);
-		span.className += obj.cssClass;
-		span.innerHTML = obj.text;
 
-		let tooltip = new CSS2D.CSS2DObject(span);
-		tooltip.visible = obj.alwaysVisible;
+		let divToolTip = Objects.prototype.drawTooltip(obj.text, obj.mapboxStyle);
 
+		let tooltip = new CSS2D.CSS2DObject(divToolTip);
+		tooltip.visible = false;
 		var userScaleGroup = Objects.prototype._makeGroup(tooltip, obj);
 		Objects.prototype._addMethods(userScaleGroup);
+		userScaleGroup.tooltip = tooltip;
 
 		return userScaleGroup;
 	}

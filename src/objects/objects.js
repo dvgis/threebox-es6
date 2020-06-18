@@ -75,6 +75,11 @@ Objects.prototype = {
 					//initialize the object size and it will rescale the rest
 				}
 
+				// CSS2DObjects could bring an specific vertical positioning to correct in units
+				if (obj.userData.topMargin && obj.userData.feature) {
+					lnglat[2] += (obj.userData.feature.properties.height - obj.userData.feature.properties.base_height) * obj.userData.topMargin;
+				}
+
 				obj.coordinates = lnglat;
 				obj.set({ position: lnglat });
 				//Each time the object is positioned, set modelHeight property and project the floor
@@ -291,17 +296,14 @@ Objects.prototype = {
 				return obj.label;
 			}
 
-			//[jscastro] add label method 
-			obj.addTooltip = function (tooltipText) {
+			//[jscastro] add tooltip method 
+			obj.addTooltip = function (tooltipText, mapboxStyle = false) {
 				if (tooltipText) {
-					let span = document.createElement('span');
-					span.className = 'toolTip text-xs';
-					span.innerHTML = tooltipText;
+					let divToolTip = root.drawTooltip(tooltipText, mapboxStyle);
 					let size = obj.getSize();
-
-					obj.tooltip = new CSS2D.CSS2DObject(span);
-					obj.tooltip.position.set(-size.x / 2, -size.y / 2, 0);
-					obj.tooltip.visible = false;
+					obj.tooltip = new CSS2D.CSS2DObject(divToolTip); 
+					obj.tooltip.position.set(-size.x / 2, -size.y / 2, 0); //top-centered
+					obj.tooltip.visible = false; //only visible on mouseover or selected
 					//we add it to the first children to get same boxing and position
 					obj.children[0].add(obj.tooltip);
 				}
@@ -516,6 +518,35 @@ Objects.prototype = {
 
 	animationManager: new AnimationManager,
 
+	//[jscastro] add tooltip method 
+	drawTooltip : function (tooltipText, mapboxStyle = false) {
+		if (tooltipText) {
+			let divToolTip;
+			if (mapboxStyle) {
+				let divContent = document.createElement('div');
+				divContent.className = 'mapboxgl-popup-content';
+				let strong = document.createElement('strong');
+				strong.innerHTML = tooltipText;
+				divContent.appendChild(strong);
+				let tip = document.createElement('div');
+				tip.className = 'mapboxgl-popup-tip';
+				let div = document.createElement('div');
+				div.className = 'marker mapboxgl-popup-anchor-bottom';
+				div.appendChild(tip);
+				div.appendChild(divContent);
+				divToolTip = document.createElement('div');
+				divToolTip.className += 'label3D';
+				divToolTip.appendChild(div);
+			}
+			else {
+				divToolTip = document.createElement('span');
+				divToolTip.className = 'toolTip text-xs';
+				divToolTip.innerHTML = tooltipText;
+			}
+			return divToolTip;
+		}
+	},
+
 	_defaults: {
 		materials: {
 			boxNormalMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xff0000) }),
@@ -542,15 +573,15 @@ Objects.prototype = {
 			htmlElement: null,
 			cssClass: " label3D",
 			alwaysVisible: false,
-			bottomMargin: 0,
+			topMargin: -0.5,
 			feature: null
 		},
 
 		tooltip: {
 			text: '',
-			htmlElement: 'span',
 			cssClass: 'toolTip text-xs',
-			bottomMargin: 0,
+			mapboxStyle: false,
+			topMargin: 0,
 			feature: null
 		},
 

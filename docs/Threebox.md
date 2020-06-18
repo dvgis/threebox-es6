@@ -209,6 +209,27 @@ This method finds the parent Object3D in the Threebox scene by a mesh. This meth
 
 <br>
 
+
+#### getFeatureCenter 
+```js
+tb.getFeatureCenter(feature, model, level): lnglat
+```
+Calculate the center of a feature geometry coordinates, including the altitude (in meters) for a given [*GeoJson*](https://geojson.org/) feature that can include or not a 3D model loaded and for a given level.
+This method calls internally to `tb.getObjectHeightOnFloor` and can be used for both a Poligon feature for a Fill Extrusion or a Point feature for a 3D model.
+
+<br>
+
+
+#### getObjectHeightOnFloor 
+```js
+tb.getObjectHeightOnFloor(feature, obj, level) : number
+```
+Calculate the altitude (in meters) for a given [*GeoJson*](https://geojson.org/) feature that can include or not a 3D model loaded and for a given level.
+This method can be used for both a Poligon feature for a Fill Extrusion or a Point feature for a 3D model.
+
+<br>
+
+
 #### loadObj
 ```js
 tb.loadObj(options, callback(obj));
@@ -410,7 +431,8 @@ method to remove an object from Threebox scene and the `tb.world.children` array
 ```js
 tb.setLayerHeigthProperty(layerId, level) 
 ```
-method to set the height of all the objects in a level. this only works if the objects have a geojson feature
+method to set the height of all the objects in a level. 
+This method only works if the objects have a [*GeoJson*](https://geojson.org/) feature, and a `level` attribute among its properties.
 
 <br>
 
@@ -469,26 +491,6 @@ Calculate the corresponding `lnglat` for a given [`THREE.Vector3`](https://three
 
 <br>
 
-#### getFeatureCenter 
-```js
-tb.getFeatureCenter(feature, model, level): lnglat
-```
-Calculate the center of a feature geometry coordinates, including the altitude (in meters) for a given [*GeoJson*](https://geojson.org/) feature that can include or not a 3D model loaded and for a given level.
-This method calls internally to `tb.getObjectHeightOnFloor` and can be used for both a Poligon feature for a Fill Extrusion or a Point feature for a 3D model.
-
-<br>
-
-
-#### getObjectHeightOnFloor 
-```js
-tb.getObjectHeightOnFloor(feature, obj, level) : number
-```
-Calculate the altitude (in meters) for a given [*GeoJson*](https://geojson.org/) feature that can include or not a 3D model loaded and for a given level.
-This method can be used for both a Poligon feature for a Fill Extrusion or a Point feature for a 3D model.
-
-<br>
-
-
 #### versions 
 ```js
 tb.version() : string
@@ -501,11 +503,18 @@ This will return the version of Threebox
 
 ## Objects
 
-Threebox offers convenience functions to construct meshes of various *Three.js* meshes, as well asl . Under the hood, they invoke a subclass of [THREE.Object3D](https://threejs.org/docs/#api/en/core/Object3D). 
+Threebox offers convenience functions to construct meshes of various *Three.js* meshes, as well as 3D models. 
+Under the hood, they invoke a subclass of [THREE.Object3D](https://threejs.org/docs/#api/en/core/Object3D). 
 
-Objects in Threebox fall under two broad varieties. *Static objects* don't move or change once they're placed, and used usually to display background or geographical features. They may have complex internal geometry, which are expressed primarily in lnglat coordinates. 
+Objects in Threebox fall under two broad varieties. *Static objects* don't move or change once they're placed, 
+and used usually to display background or geographical features. They may have complex internal geometry, which 
+are expressed primarily in lnglat coordinates. 
 
-In contrast, *dynamic objects* can move around the map, positioned by a single lnglat point. Their internal geometries are produced mainly in local scene units, whether through external obj files, or these convenience methods below.
+In contrast, *dynamic objects* can move around the map, positioned by a single lnglat point. 
+Their internal geometries are produced mainly in local scene units, whether through external obj files, or these convenience 
+methods below.
+
+<br>
 
 ### Static objects
 
@@ -551,6 +560,25 @@ Extrude a tube along a specific lineGeometry, with an equilateral polygon as cro
 
 ### Dynamic objects
 
+#### Label
+
+```js
+tb.label(options);
+```
+
+Creates a new HTML Label object that can be positioned through `obj.setCoords(coords)` and then added to Threebox scene through `tb.add(obj)`.
+Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
+
+| option | required | default | type   | description                                                                                  |
+|-----------|----------|---------|--------|-------|
+| `htmlElement`    | yes       | null      | htmlElement | HTMLElement that will be rendered as a `CSS2DObject` |
+| `cssClass`    | no       | " label3D"      | string | CssClass that will be aggregated to manage the styles of the label object. |
+| `alwaysVisible`  | no       | false       | number | Number of width and height segments. The higher the number, the smoother the sphere. |
+| `bottomMargin`     | no       | 0   | int  | If `bottomMargin` is defined in number, it will be added to it's vertical position in `em's` unit. |                                                                            
+| `feature`     | no       | null   | [*GeoJson*](https://geojson.org/) feature  | [*GeoJson*](https://geojson.org/) feature to assign to the tooltip. It'll be used for dynamic positioning |                                                                            
+
+<br>
+
 #### Sphere
 
 ```js
@@ -570,24 +598,6 @@ Add a sphere to the map. Internally, calls `THREE.Mesh` with a `THREE.SphereGeom
 
 <br>
 
-#### Label
-
-```js
-tb.label(options);
-```
-
-Creates a new HTML Label object that can be positioned through `obj.setCoords(coords)` and then added to Threebox scene through `tb.add(obj)`.
-Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
-
-| option | required | default | type   | description                                                                                  |
-|-----------|----------|---------|--------|-------|
-| `htmlElement`    | yes       | null      | htmlElement | HTMLElement that will be rendered as a `CSS2DObject` |
-| `cssClass`    | no       | " label3D"      | string | CssClass that will be aggregated to manage the styles of the label object. |
-| `alwaysVisible`  | no       | false       | number | Number of width and height segments. The higher the number, the smoother the sphere. |
-| `bottomMargin`     | no       | 0   | int  | If `bottomMargin` is defined in number, it will be added to it's vertical position in `em's` unit. |                                                                            
-
-<br>
-
 #### Tooltip
 
 ```js
@@ -595,14 +605,14 @@ tb.tooltip(options);
 ```
 
 Creates a new browser-like Tooltip object that can be positioned through `obj.setCoords(coords)` and then added to Threebox scene through `tb.add(obj)`.
-Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
+Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.tooltip` property.
 
 | option | required | default | type   | description                                                                                  |
 |-----------|----------|---------|--------|-------|
 | `text`    | yes       | ""      | string | String that will be used to rendered as a `CSS2DObject` |
-| `htmlElement`    | no      | "span"      | string | HTMLElement name of the object that will be used to render a `CSS2DObject` |
 | `cssClass`    | no       | "toolTip text-xs"      | string | CssClass that will be aggregated to manage the styles of the label object. |
-| `bottomMargin`     | no       | 0   | int  | If `bottomMargin` is defined in number, it will be added to it's vertical position in `em's` unit. |                                                                            
+| `mapboxStyle`     | no       | false   | int  | If `mapboxStyle` is true, it applies the same styles the *Mapbox GL* popups. |                                                                            
+| `feature`     | no       | null   | [*GeoJson*](https://geojson.org/) feature  | [*GeoJson*](https://geojson.org/) feature to assign to the tooltip. It'll be used for dynamic positioning |                                                                            
 
 <br>
 
@@ -646,9 +656,10 @@ Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](
 
 #### addTooltip
 ```js
-obj.addTooltip(tooltipText)
+obj.addTooltip(tooltipText [, mapboxSyle])
 ```
 This method creates a browser-like tooltip for the object using the tooltipText. 
+If `mapboxStyle` is true, it applies the same styles the *Mapbox GL* popups.
 Its position is always relative to the object that contains it and rerendered whenever that label is visible.
 
 Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
@@ -973,6 +984,58 @@ function onSelectedChange(eventArgs) {
 
 <br>
 
+#### SelectedFeature
+
+```js
+map.on('SelectedFeature', onSelectedFeature)
+```
+This event is fired by Threebox usign the same pattern of mapbox the `feature-state` `select` and `hover` 
+**TODO**
+once an object changes its selection status, it means it will be fired both when an object is selected or unselected.
+The event can be listened at any time once the `tb.loadObj` callback method is being executed.
+An instance of the object that changes is returned in `eventArgs.detail`. 
+
+```js
+map.addLayer({
+	'id': 'room-extrusion',
+	'type': 'fill-extrusion',
+	'source': 'floorplan',
+	'paint': {
+	// See the Mapbox Style Specification for details on data expressions.
+	// https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions
+ 
+	// Get the fill-extrusion-color from the source 'color' property.
+	'fill-extrusion-color':
+		[
+			'case',
+			['boolean', ['feature-state', 'select'], false],
+			'#ffff00',
+			['boolean', ['feature-state', 'hover'], false],
+			'#0000ff',
+			['get', 'color']
+		],
+ 
+	// Get fill-extrusion-height from the source 'height' property.
+	'fill-extrusion-height': ['get', 'height'],
+ 
+	// Get fill-extrusion-base from the source 'base_height' property.
+	'fill-extrusion-base': ['get', 'base_height'],
+ 
+	// Make extrusions slightly opaque for see through indoor walls.
+	'fill-extrusion-opacity': 0.5
+}
+});
+//selected extrusion feature event
+map.on('SelectedFeature', onSelectedFeature);
+...
+function onSelectedFeature(eventArgs) {
+	let selectedObject = eventArgs.detail; //we get the object selected/unselected
+	let selectedValue = selectedObject.selected; //we get if the object is selected after the event
+}
+```
+
+<br>
+
 #### Wireframed
 
 ```js
@@ -1087,9 +1150,9 @@ Returns a clone of the object. Greatly improves performance when handling many i
 
 <b>pointGeometry</b> `[longitude, latitude(, meters altitude)]`
 
-An array of 2-3 numbers representing longitude, latitude, and optionally altitude (in meters). When altitude is omitted, it is assumed to be 0. When populating this from a GeoJSON Point, this array can be accessed at `point.geometry.coordinates`.  
+An array of 2-3 numbers representing longitude, latitude, and optionally altitude (in meters). When altitude is omitted, it is assumed to be 0. When populating this from a [*GeoJson*](https://geojson.org/) Point, this array can be accessed at `point.geometry.coordinates`.  
 
-While altitude is not standardized in the GeoJSON specification, Threebox will accept it as such to position objects along the z-axis.   
+While altitude is not standardized in the [*GeoJson*](https://geojson.org/) specification, Threebox will accept it as such to position objects along the z-axis.   
 
 <br>
 
@@ -1097,7 +1160,7 @@ While altitude is not standardized in the GeoJSON specification, Threebox will a
 
 `[pointGeometry, pointGeometry ... pointGeometry]`
 
-An array of at least two lnglat's, forming a line. When populating this from a GeoJSON Linestring, this array can be accessed at `linestring.geometry.coordinates`. 
+An array of at least two lnglat's, forming a line. When populating this from a [*GeoJson*](https://geojson.org/) Linestring, this array can be accessed at `linestring.geometry.coordinates`. 
 
 <br>
 

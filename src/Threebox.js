@@ -122,6 +122,29 @@ Threebox.prototype = {
 				);
 			}
 
+			function unselectFeature(f, map) {
+				map.setFeatureState(
+					{ source: f.source, id: f.id },
+					{ select: false }
+				);
+				if (f.tooltip) {
+					f.tooltip.visibility = false;
+					tb.remove(f.tooltip);
+				}
+				f = map.queryRenderedFeatures({ layers: [f.layer.id], filter: ["==", ['get', 'key'], f.properties.key] })[0];
+				// Dispatch new event f for unselected
+				map.fire('SelectedFeatureChange', { detail: f });
+				f = null;
+
+			}
+
+			function unselectObject(o) {
+				//deselect, reset and return
+				o.selected = false;
+				o = null;
+			}
+
+
 			map.onContextMenu = function (e) {
 				alert('contextMenu');
 			}
@@ -137,13 +160,9 @@ Threebox.prototype = {
 					let nearestObject = Threebox.prototype.findParent3DObject(intersects[0]);
 
 					if (nearestObject) {
-						//if selected extrusion, unselect
+						//if extrusion object selected, unselect
 						if (selectedFeature) {
-							this.setFeatureState(
-								{ source: selectedFeature.source, id: selectedFeature.id },
-								{ select: false }
-							);
-							selectedFeature = null;
+							unselectFeature(selectedFeature, this);
 						}
 						//if not selected yet, select it
 						if (!selectedObject) {
@@ -158,8 +177,7 @@ Threebox.prototype = {
 
 						} else if (selectedObject.uuid == nearestObject.uuid) {
 							//deselect, reset and return
-							selectedObject.selected = false;
-							selectedObject = null;
+							unselectObject(selectedObject);
 							return;
 						}
 
@@ -180,31 +198,33 @@ Threebox.prototype = {
 
 						//if 3D object selected, unselect
 						if (selectedObject) {
-							//deselect, reset and return
-							selectedObject.selected = false;
-							selectedObject = null;
+							unselectObject(selectedObject);
 						}
 
-						if (features.length > 0) {
+						//if extrusion object selected, unselect
+						if (selectedFeature) {
+							unselectFeature(selectedFeature, this);
+						}
+						if (features[0].layer.type == "fill-extrusion") {
+							selectedFeature = features[0];
+							this.setFeatureState(
+								{ source: selectedFeature.source, id: selectedFeature.id },
+								{ select: true }
+							);
+							selectedFeature = this.queryRenderedFeatures({ layers: [selectedFeature.layer.id], filter: ["==", ['get', 'key'], selectedFeature.properties.key] })[0];
 
-							if (selectedFeature) {
-								this.setFeatureState(
-									{ source: selectedFeature.source, id: selectedFeature.id },
-									{ select: false }
-								);
-							}
-							if (features[0].layer.type == "fill-extrusion") {
-								selectedFeature = features[0];
-								this.setFeatureState(
-									{ source: selectedFeature.source, id: selectedFeature.id },
-									{ select: true }
-								);
-								// Dispatch new event SelectedFeature
-								map.fire('SelectedFeature', { detail: selectedFeature });
-							}
-
-
-
+							let coordinates = tb.getFeatureCenter(selectedFeature);
+							let t = tb.tooltip({
+								text: selectedFeature.properties.name,
+								mapboxStyle: true,
+								feature: selectedFeature
+							});
+							t.setCoords(coordinates);
+							tb.add(t);
+							selectedFeature.tooltip = t;
+							selectedFeature.tooltip.tooltip.visible = true;
+							// Dispatch new event SelectedFeature for selected
+							map.fire('SelectedFeatureChange', { detail: selectedFeature });
 						}
 
 					}
@@ -463,26 +483,39 @@ Threebox.prototype = {
 
 	//[jscastro] Custom Layers doesn't work on minzoom and maxzoom attributes, and if the layer is including labels they don't hide either on minzoom
 	setLayerZoomRange: function (layer3d, minZoomLayer, maxZoomLayer) {
-		this.map.setLayerZoomRange(layer3d, minZoomLayer, maxZoomLayer)
-		this.setLabelZoomRange(minZoomLayer, maxZoomLayer);
+		if (this.map.getLayer(layer3d)) {
+			this.map.setLayerZoomRange(layer3d, minZoomLayer, maxZoomLayer)
+			this.setLabelZoomRange(minZoomLayer, maxZoomLayer);
+		}
 	},
 
 	//[jscastro] method to set the height of all the objects in a level. this only works if the objects have a geojson feature
 	setLayerHeigthProperty: function (layerId, level) {
-		this.world.children.forEach(function (obj) {
-			let feature = obj.userData.feature;
-			if (feature && feature.layer === layerId) {
-				//TODO: this could be a multidimensional array
-				let location = tb.getFeatureCenter(feature, obj, level);
-				obj.setCoords(location);
-			}
-		});
+		let layer = this.map.getLayer(layerId);
+		if (!layer) return;
+		if (layer.type == "fill-extrusion") {
+			let data = this.map.getStyle().sources[layer.source].data;
+			let features = data.features;
+			features.forEach(function (f) {
+				f.properties.level = level;
+			});
+			//we change the level on the source
+			this.map.getSource(layer.source).setData(data);
+		} else if (layer.type == "custom") {
+			this.world.children.forEach(function (obj) {
+				let feature = obj.userData.feature;
+				if (feature && feature.layer === layerId) {
+					//TODO: this could be a multidimensional array
+					let location = tb.getFeatureCenter(feature, obj, level);
+					obj.setCoords(location);
+				}
+			});
+		}
 	},
 
 	//[jscastro] method to toggle Layer visibility
 	toggleLayer: function (layerId, visible) {
-		let layer = this.map.getLayer(layerId);
-		if (layer) {
+		if (this.map.getLayer(layerId)) {
 			//call
 			this.setLayoutProperty(layerId, 'visibility', (visible ? 'visible' : 'none'))
 		};

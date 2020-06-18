@@ -20,7 +20,7 @@ This is the new version created with this [fork]((https://github.com/jscastro76/
 - Support for wireframing on Objects3D, removing them from the raycast.
 - Support for setLayerZoomRange and setLayoutProperty on Custom Layers (not available in Mapbox).
 - Support for full dispose of Mapbox, Three and Threebox resources.
-- Optimization of Camera perspective to have Raycast with pixel-precision level, and better furthest and nearest distance.
+- Optimization of Camera perspective to have Raycast with pixel-precision level.
 - Adjusted positioning for Objects3D to set center and rotation axes by config.
 
 

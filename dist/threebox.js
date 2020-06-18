@@ -127,6 +127,29 @@ Threebox.prototype = {
 				);
 			}
 
+			function unselectFeature(f, map) {
+				map.setFeatureState(
+					{ source: f.source, id: f.id },
+					{ select: false }
+				);
+				if (f.tooltip) {
+					f.tooltip.visibility = false;
+					tb.remove(f.tooltip);
+				}
+				f = map.queryRenderedFeatures({ layers: [f.layer.id], filter: ["==", ['get', 'key'], f.properties.key] })[0];
+				// Dispatch new event f for unselected
+				map.fire('SelectedFeatureChange', { detail: f });
+				f = null;
+
+			}
+
+			function unselectObject(o) {
+				//deselect, reset and return
+				o.selected = false;
+				o = null;
+			}
+
+
 			map.onContextMenu = function (e) {
 				alert('contextMenu');
 			}
@@ -142,13 +165,9 @@ Threebox.prototype = {
 					let nearestObject = Threebox.prototype.findParent3DObject(intersects[0]);
 
 					if (nearestObject) {
-						//if selected extrusion, unselect
+						//if extrusion object selected, unselect
 						if (selectedFeature) {
-							this.setFeatureState(
-								{ source: selectedFeature.source, id: selectedFeature.id },
-								{ select: false }
-							);
-							selectedFeature = null;
+							unselectFeature(selectedFeature, this);
 						}
 						//if not selected yet, select it
 						if (!selectedObject) {
@@ -163,8 +182,7 @@ Threebox.prototype = {
 
 						} else if (selectedObject.uuid == nearestObject.uuid) {
 							//deselect, reset and return
-							selectedObject.selected = false;
-							selectedObject = null;
+							unselectObject(selectedObject);
 							return;
 						}
 
@@ -185,31 +203,33 @@ Threebox.prototype = {
 
 						//if 3D object selected, unselect
 						if (selectedObject) {
-							//deselect, reset and return
-							selectedObject.selected = false;
-							selectedObject = null;
+							unselectObject(selectedObject);
 						}
 
-						if (features.length > 0) {
+						//if extrusion object selected, unselect
+						if (selectedFeature) {
+							unselectFeature(selectedFeature, this);
+						}
+						if (features[0].layer.type == "fill-extrusion") {
+							selectedFeature = features[0];
+							this.setFeatureState(
+								{ source: selectedFeature.source, id: selectedFeature.id },
+								{ select: true }
+							);
+							selectedFeature = this.queryRenderedFeatures({ layers: [selectedFeature.layer.id], filter: ["==", ['get', 'key'], selectedFeature.properties.key] })[0];
 
-							if (selectedFeature) {
-								this.setFeatureState(
-									{ source: selectedFeature.source, id: selectedFeature.id },
-									{ select: false }
-								);
-							}
-							if (features[0].layer.type == "fill-extrusion") {
-								selectedFeature = features[0];
-								this.setFeatureState(
-									{ source: selectedFeature.source, id: selectedFeature.id },
-									{ select: true }
-								);
-								// Dispatch new event SelectedFeature
-								map.fire('SelectedFeature', { detail: selectedFeature });
-							}
-
-
-
+							let coordinates = tb.getFeatureCenter(selectedFeature);
+							let t = tb.tooltip({
+								text: selectedFeature.properties.name,
+								mapboxStyle: true,
+								feature: selectedFeature
+							});
+							t.setCoords(coordinates);
+							tb.add(t);
+							selectedFeature.tooltip = t;
+							selectedFeature.tooltip.tooltip.visible = true;
+							// Dispatch new event SelectedFeature for selected
+							map.fire('SelectedFeatureChange', { detail: selectedFeature });
 						}
 
 					}
@@ -468,26 +488,39 @@ Threebox.prototype = {
 
 	//[jscastro] Custom Layers doesn't work on minzoom and maxzoom attributes, and if the layer is including labels they don't hide either on minzoom
 	setLayerZoomRange: function (layer3d, minZoomLayer, maxZoomLayer) {
-		this.map.setLayerZoomRange(layer3d, minZoomLayer, maxZoomLayer)
-		this.setLabelZoomRange(minZoomLayer, maxZoomLayer);
+		if (this.map.getLayer(layer3d)) {
+			this.map.setLayerZoomRange(layer3d, minZoomLayer, maxZoomLayer)
+			this.setLabelZoomRange(minZoomLayer, maxZoomLayer);
+		}
 	},
 
 	//[jscastro] method to set the height of all the objects in a level. this only works if the objects have a geojson feature
 	setLayerHeigthProperty: function (layerId, level) {
-		this.world.children.forEach(function (obj) {
-			let feature = obj.userData.feature;
-			if (feature && feature.layer === layerId) {
-				//TODO: this could be a multidimensional array
-				let location = tb.getFeatureCenter(feature, obj, level);
-				obj.setCoords(location);
-			}
-		});
+		let layer = this.map.getLayer(layerId);
+		if (!layer) return;
+		if (layer.type == "fill-extrusion") {
+			let data = this.map.getStyle().sources[layer.source].data;
+			let features = data.features;
+			features.forEach(function (f) {
+				f.properties.level = level;
+			});
+			//we change the level on the source
+			this.map.getSource(layer.source).setData(data);
+		} else if (layer.type == "custom") {
+			this.world.children.forEach(function (obj) {
+				let feature = obj.userData.feature;
+				if (feature && feature.layer === layerId) {
+					//TODO: this could be a multidimensional array
+					let location = tb.getFeatureCenter(feature, obj, level);
+					obj.setCoords(location);
+				}
+			});
+		}
 	},
 
 	//[jscastro] method to toggle Layer visibility
 	toggleLayer: function (layerId, visible) {
-		let layer = this.map.getLayer(layerId);
-		if (layer) {
+		if (this.map.getLayer(layerId)) {
 			//call
 			this.setLayoutProperty(layerId, 'visibility', (visible ? 'visible' : 'none'))
 		};
@@ -804,7 +837,7 @@ var utils = {
 	getObjectHeightOnFloor: function (feature, obj, level = feature.properties.level) {
 		let floorHeightMin = (level * feature.properties.levelHeight);
 		//object height is modelSize.z + base_height configured for this object
-		let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - feature.properties.base_height) / 2)
+		let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - feature.properties.base_height));
 		let objectHeight = height + feature.properties.base_height;
 		let modelHeightFloor = floorHeightMin + objectHeight;
 		return modelHeightFloor;
@@ -2015,7 +2048,7 @@ function Label(obj) {
 	} else {
 		div.innerHTML = obj.htmlElement.outerHTML;
 	}
-	if (obj.bottomMargin) div.style.marginTop = '-' + obj.bottomMargin + 'em';
+	//if (obj.bottomMargin) div.style.marginTop = '-' + obj.bottomMargin + 'em';
 	let label = new CSS2D.CSS2DObject(div);
 	label.visible = obj.alwaysVisible;
 	label.alwaysVisible = obj.alwaysVisible;
@@ -2023,6 +2056,7 @@ function Label(obj) {
 	var userScaleGroup = Objects.prototype._makeGroup(label, obj);
 	Objects.prototype._addMethods(userScaleGroup);
 	userScaleGroup.label = label;
+	userScaleGroup.visibility = obj.alwaysVisible;
 
 	return userScaleGroup;
 }
@@ -15920,6 +15954,11 @@ Objects.prototype = {
 					//initialize the object size and it will rescale the rest
 				}
 
+				// CSS2DObjects could bring an specific vertical positioning to correct in units
+				if (obj.userData.topMargin && obj.userData.feature) {
+					lnglat[2] += (obj.userData.feature.properties.height - obj.userData.feature.properties.base_height) * obj.userData.topMargin;
+				}
+
 				obj.coordinates = lnglat;
 				obj.set({ position: lnglat });
 				//Each time the object is positioned, set modelHeight property and project the floor
@@ -16136,17 +16175,14 @@ Objects.prototype = {
 				return obj.label;
 			}
 
-			//[jscastro] add label method 
-			obj.addTooltip = function (tooltipText) {
+			//[jscastro] add tooltip method 
+			obj.addTooltip = function (tooltipText, mapboxStyle = false) {
 				if (tooltipText) {
-					let span = document.createElement('span');
-					span.className = 'toolTip text-xs';
-					span.innerHTML = tooltipText;
+					let divToolTip = root.drawTooltip(tooltipText, mapboxStyle);
 					let size = obj.getSize();
-
-					obj.tooltip = new CSS2D.CSS2DObject(span);
-					obj.tooltip.position.set(-size.x / 2, -size.y / 2, 0);
-					obj.tooltip.visible = false;
+					obj.tooltip = new CSS2D.CSS2DObject(divToolTip); 
+					obj.tooltip.position.set(-size.x / 2, -size.y / 2, 0); //top-centered
+					obj.tooltip.visible = false; //only visible on mouseover or selected
 					//we add it to the first children to get same boxing and position
 					obj.children[0].add(obj.tooltip);
 				}
@@ -16361,6 +16397,35 @@ Objects.prototype = {
 
 	animationManager: new AnimationManager,
 
+	//[jscastro] add tooltip method 
+	drawTooltip : function (tooltipText, mapboxStyle = false) {
+		if (tooltipText) {
+			let divToolTip;
+			if (mapboxStyle) {
+				let divContent = document.createElement('div');
+				divContent.className = 'mapboxgl-popup-content';
+				let strong = document.createElement('strong');
+				strong.innerHTML = tooltipText;
+				divContent.appendChild(strong);
+				let tip = document.createElement('div');
+				tip.className = 'mapboxgl-popup-tip';
+				let div = document.createElement('div');
+				div.className = 'marker mapboxgl-popup-anchor-bottom';
+				div.appendChild(tip);
+				div.appendChild(divContent);
+				divToolTip = document.createElement('div');
+				divToolTip.className += 'label3D';
+				divToolTip.appendChild(div);
+			}
+			else {
+				divToolTip = document.createElement('span');
+				divToolTip.className = 'toolTip text-xs';
+				divToolTip.innerHTML = tooltipText;
+			}
+			return divToolTip;
+		}
+	},
+
 	_defaults: {
 		materials: {
 			boxNormalMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xff0000) }),
@@ -16387,15 +16452,15 @@ Objects.prototype = {
 			htmlElement: null,
 			cssClass: " label3D",
 			alwaysVisible: false,
-			bottomMargin: 0,
+			topMargin: -0.5,
 			feature: null
 		},
 
 		tooltip: {
 			text: '',
-			htmlElement: 'span',
 			cssClass: 'toolTip text-xs',
-			bottomMargin: 0,
+			mapboxStyle: false,
+			topMargin: 0,
 			feature: null
 		},
 
@@ -16469,15 +16534,14 @@ function Tooltip(obj) {
 	obj = utils._validate(obj, Objects.prototype._defaults.tooltip);
 
 	if (obj.text) {
-		let span = document.createElement(obj.htmlElement);
-		span.className += obj.cssClass;
-		span.innerHTML = obj.text;
 
-		let tooltip = new CSS2D.CSS2DObject(span);
-		tooltip.visible = obj.alwaysVisible;
+		let divToolTip = Objects.prototype.drawTooltip(obj.text, obj.mapboxStyle);
 
+		let tooltip = new CSS2D.CSS2DObject(divToolTip);
+		tooltip.visible = false;
 		var userScaleGroup = Objects.prototype._makeGroup(tooltip, obj);
 		Objects.prototype._addMethods(userScaleGroup);
+		userScaleGroup.tooltip = tooltip;
 
 		return userScaleGroup;
 	}

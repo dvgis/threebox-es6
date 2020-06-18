@@ -185,7 +185,7 @@ var utils = {
 	getObjectHeightOnFloor: function (feature, obj, level = feature.properties.level) {
 		let floorHeightMin = (level * feature.properties.levelHeight);
 		//object height is modelSize.z + base_height configured for this object
-		let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - feature.properties.base_height) / 2)
+		let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - feature.properties.base_height));
 		let objectHeight = height + feature.properties.base_height;
 		let modelHeightFloor = floorHeightMin + objectHeight;
 		return modelHeightFloor;
