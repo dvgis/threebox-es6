@@ -135,16 +135,15 @@ Threebox.prototype = {
 				f = map.queryRenderedFeatures({ layers: [f.layer.id], filter: ["==", ['id'], f.id] })[0];
 				// Dispatch new event f for unselected
 				map.fire('SelectedFeatureChange', { detail: f });
-				f = null;
+				selectedFeature = null;
 
 			}
 
 			function unselectObject(o) {
 				//deselect, reset and return
 				o.selected = false;
-				o = null;
+				selectedObject = null;
 			}
-
 
 			map.onContextMenu = function (e) {
 				alert('contextMenu');
