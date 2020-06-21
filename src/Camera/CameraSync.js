@@ -38,6 +38,8 @@ CameraSync.prototype = {
     setupCamera: function () {
 
         const t = this.map.transform;
+        this.camera.aspect = t.width / t.height; //bug fixed, if aspect is not reset raycast will fail on map resize
+        this.camera.updateProjectionMatrix();
         const halfFov = this.state.fov / 2;
         const cameraToCenterDistance = 0.5 / Math.tan(halfFov) * t.height;
         const maxPitch = t._maxPitch * Math.PI / 180;
