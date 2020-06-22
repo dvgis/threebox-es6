@@ -155,7 +155,7 @@ var utils = {
 	},
 
 	//get the center point of a feature
-	getFeatureCenter: function getFeatureCenter(feature, model, level = 0) {
+	getFeatureCenter: function getFeatureCenter(feature, model, level) {
 		let center = [];
 		let latitude = 0;
 		let longitude = 0;

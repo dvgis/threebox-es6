@@ -128,14 +128,25 @@ Threebox.prototype = {
 					{ source: f.source, sourceLayer: f.sourceLayer, id: f.id },
 					{ select: false }
 				);
-				if (f.tooltip) {
-					f.tooltip.visibility = false;
-					tb.remove(f.tooltip);
-				}
+
+				removeTooltip(f, map);
 				f = map.queryRenderedFeatures({ layers: [f.layer.id], filter: ["==", ['id'], f.id] })[0];
 				// Dispatch new event f for unselected
-				map.fire('SelectedFeatureChange', { detail: f });
+				if (f) map.fire('SelectedFeatureChange', { detail: f });
 				selectedFeature = null;
+
+			}
+
+			function selectFeature(f, map) {
+				selectedFeature = f;
+				map.setFeatureState(
+					{ source: selectedFeature.source, sourceLayer: selectedFeature.sourceLayer, id: selectedFeature.id },
+					{ select: true }
+				);
+				selectedFeature = map.queryRenderedFeatures({ layers: [selectedFeature.layer.id], filter: ["==", ['id'], selectedFeature.id] })[0];
+				addTooltip(selectedFeature, map)
+				// Dispatch new event SelectedFeature for selected
+				map.fire('SelectedFeatureChange', { detail: selectedFeature });
 
 			}
 
@@ -143,6 +154,27 @@ Threebox.prototype = {
 				//deselect, reset and return
 				o.selected = false;
 				selectedObject = null;
+			}
+
+			function addTooltip(f, map) {
+				let coordinates = map.tb.getFeatureCenter(f);
+				let t = map.tb.tooltip({
+					text: f.properties.name || f.id,
+					mapboxStyle: true,
+					feature: f
+				});
+				t.setCoords(coordinates);
+				map.tb.add(t);
+				f.tooltip = t;
+				f.tooltip.tooltip.visible = true;
+			}
+
+			function removeTooltip(f, map) {
+				if (f.tooltip) {
+					f.tooltip.visibility = false;
+					map.tb.remove(f.tooltip);
+					f.tooltip = null;
+				}
 			}
 
 			map.onContextMenu = function (e) {
@@ -196,37 +228,28 @@ Threebox.prototype = {
 					//now let's check the extrusion layer objects
 					if (features.length > 0) {
 
-						//if 3D object selected, unselect
-						if (selectedObject) {
-							unselectObject(selectedObject);
-						}
+						if (features[0] && typeof features[0].id != 'undefined' && features[0].layer.type == "fill-extrusion") {
 
-						//if extrusion object selected, unselect
-						if (selectedFeature) {
-							unselectFeature(selectedFeature, this);
-						}
-						if (features[0].layer.type == "fill-extrusion") {
-							selectedFeature = features[0];
-							if (selectedFeature && typeof selectedFeature.id != 'undefined') {
-								this.setFeatureState(
-									{ source: selectedFeature.source, sourceLayer: selectedFeature.sourceLayer, id: selectedFeature.id },
-									{ select: true }
-								);
-								selectedFeature = this.queryRenderedFeatures({ layers: [selectedFeature.layer.id], filter: ["==", ['id'], selectedFeature.id] })[0];
-
-								let coordinates = tb.getFeatureCenter(selectedFeature);
-								let t = tb.tooltip({
-									text: selectedFeature.properties.name || selectedFeature.id,
-									mapboxStyle: true,
-									feature: selectedFeature
-								});
-								t.setCoords(coordinates);
-								tb.add(t);
-								selectedFeature.tooltip = t;
-								selectedFeature.tooltip.tooltip.visible = true;
-								// Dispatch new event SelectedFeature for selected
-								map.fire('SelectedFeatureChange', { detail: selectedFeature });
+							//if 3D object selected, unselect
+							if (selectedObject) {
+								unselectObject(selectedObject);
 							}
+
+							//if not selected yet, select it
+							if (!selectedFeature) {
+								selectFeature(features[0], this)
+							}
+							else if (selectedFeature.id != features[0].id) {
+								//it's a different feature, restore the previous and select the new one
+								unselectFeature(selectedFeature, this);
+								selectFeature(features[0], this)
+
+							} else if (selectedFeature.id == features[0].id) {
+								//deselect, reset and return
+								unselectFeature(selectedFeature, this);
+								return;
+							}
+
 						}
 					}
 				}
@@ -300,9 +323,9 @@ Threebox.prototype = {
 								{ hover: false }
 							);
 						}
-						if (!selectedFeature || selectedFeature.id != features[0].id) {
-							if (features[0].layer.type == "fill-extrusion") {
-								this.getCanvasContainer().style.cursor = 'pointer';
+						if (features[0].layer.type == "fill-extrusion") {
+							this.getCanvasContainer().style.cursor = 'pointer';
+							if (!selectedFeature || selectedFeature.id != features[0].id) {
 								overedFeature = features[0];
 								if (overedFeature && typeof overedFeature.id != 'undefined') {
 									this.setFeatureState(
@@ -508,7 +531,7 @@ Threebox.prototype = {
 				let feature = obj.userData.feature;
 				if (feature && feature.layer === layerId) {
 					//TODO: this could be a multidimensional array
-					let location = tb.getFeatureCenter(feature, obj, level);
+					let location = this.tb.getFeatureCenter(feature, obj, level);
 					obj.setCoords(location);
 				}
 			});
