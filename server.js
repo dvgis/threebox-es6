@@ -3,7 +3,7 @@ var http = require('http');
 var url = require('url');
 var fs = require('fs');
 var path = require('path');
-var baseDirectory = "C:\\Users\\jscastro\\Documents\\GitHub\\Threebox";   
+var baseDirectory = "."; //add here your base directory path for resources loading
 var port = process.env.PORT || 1337;
 var counter = 0;
 

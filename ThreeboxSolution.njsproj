@@ -56,6 +56,7 @@
     <Content Include="examples\raycaster.html" />
     <Content Include="examples\tube.html" />
     <Content Include="examples\config_template.js" />
+    <Content Include="server.js" />
     <Content Include="src\objects\label.js" />
     <Content Include="src\objects\LabelRenderer.js" />
     <Content Include="src\objects\tooltip.js" />
