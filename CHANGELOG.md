@@ -2,7 +2,7 @@
 
 Minor versíon by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
-#### Enhancements
+#### :sparkles: Enhancements
 
 - New example added for alignment test check.
 - Label and Tooltip are now dynamic objects in Threebox.
@@ -14,7 +14,7 @@ Minor versíon by [@jscastro76](https://github.com/jscastro76), some enhancements
 - Refactoring of HTML creation for Label and Tooltip
 - Server.js script added for server execution.
 
-#### Bug fixes
+#### :beetle: Bug fixes
 - Bug fixed, Camera aspect ratio was not properly updated on map resize.
 - Bug fixed on unselect Object and unselect Feature, now both work the same
 - Bug fixed to support default fill-extrusion layers using composite and building data.
@@ -27,7 +27,7 @@ Minor versíon by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 This is the new version created with this [fork]((https://github.com/jscastro76/threebox)) by [@jscastro76](https://github.com/jscastro76) and it's a major update. 
 
-#### Enhancements
+#### :sparkles: Enhancements
 
 - Update to *Three.js* v114.
 - Update to *Mapbox GL* v1.10.0.
