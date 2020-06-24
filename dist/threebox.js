@@ -663,7 +663,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.1',
+	version: '2.0.2',
 
 }
 
@@ -925,6 +925,10 @@ var utils = {
 		var clone = {};
 		for (key in original) clone[key] = original[key];
 		return clone;
+	},
+
+	clamp: function(n, min, max) {
+		return Math.min(max, Math.max(min, n));
 	},
 
 	// retrieve object parameters from an options object
@@ -1605,11 +1609,13 @@ CameraSync.prototype = {
         this.camera.aspect = t.width / t.height; //bug fixed, if aspect is not reset raycast will fail on map resize
         this.camera.updateProjectionMatrix();
         const halfFov = this.state.fov / 2;
+        const offset = { x: t.width / 2, y: t.height / 2 };//t.centerOffset;
         const cameraToCenterDistance = 0.5 / Math.tan(halfFov) * t.height;
         const maxPitch = t._maxPitch * Math.PI / 180;
         const acuteAngle = Math.PI / 2 - maxPitch;
 
         this.state.cameraToCenterDistance = cameraToCenterDistance;
+        this.state.offset = offset;
         this.state.cameraTranslateZ = new THREE.Matrix4().makeTranslation(0, 0, cameraToCenterDistance);
         this.state.maxFurthestDistance = cameraToCenterDistance * 0.95 * (Math.cos(acuteAngle) * Math.sin(halfFov) / Math.sin(Math.max(0.01, Math.min(Math.PI - 0.01, acuteAngle - halfFov))) + 1);
 
@@ -1625,9 +1631,9 @@ CameraSync.prototype = {
         // Furthest distance optimized by @satorbs
         // https://github.com/satorbs/threebox/blob/master/src/Camera/CameraSync.js
         const t = this.map.transform;
-        const halfFov = this.state.fov / 2;
         const groundAngle = Math.PI / 2 + t._pitch;
-        const topHalfSurfaceDistance = Math.sin(halfFov) * this.state.cameraToCenterDistance / Math.sin(Math.max(0.01, Math.min(Math.PI - 0.01, Math.PI - groundAngle - halfFov)));
+        const fovAboveCenter = this.state.fov * (0.5 + this.state.offset.y / t.height);
+        const topHalfSurfaceDistance = Math.sin(fovAboveCenter) * this.state.cameraToCenterDistance / Math.sin(utils.clamp(Math.PI - groundAngle - fovAboveCenter, 0.01, Math.PI - 0.01));
 
         // Calculate z distance of the farthest fragment that should be rendered.
         const furthestDistance = Math.cos(Math.PI / 2 - t._pitch) * topHalfSurfaceDistance + this.state.cameraToCenterDistance;
@@ -1637,7 +1643,7 @@ CameraSync.prototype = {
 
         // someday @ansis set further near plane to fix precision for deckgl,so we should fix it to use mapbox-gl v1.3+ correctly
         // https://github.com/mapbox/mapbox-gl-js/commit/5cf6e5f523611bea61dae155db19a7cb19eb825c#diff-5dddfe9d7b5b4413ee54284bc1f7966d
-        const nearZ = t.height / 50;
+        const nearZ = (t.height / 50);
 
         this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, t.width / t.height, nearZ, farZ);
 
@@ -16081,7 +16087,7 @@ Objects.prototype = {
 				let boxGrid = new THREE.Group();
 				boxGrid.name = "BoxGrid";
 				boxGrid.updateMatrixWorld(true);
-				let boxModel = new THREE.Box3Helper(bb, new THREE.Color(0xff0000));
+				let boxModel = new THREE.Box3Helper(bb, Objects.prototype._defaults.colors.yellow);
 				boxModel.name = "BoxModel";
 				boxGrid.add(boxModel);
 				boxModel.layers.disable(0); // it makes the object invisible for the raycaster
@@ -16091,7 +16097,7 @@ Objects.prototype = {
 				let bb2 = bb.clone();
 				//we make the second box flat and at the floor height level
 				bb2.max.z = bb2.min.z;
-				let boxShadow = new THREE.Box3Helper(bb2, new THREE.Color(0x000000));
+				let boxShadow = new THREE.Box3Helper(bb2, Objects.prototype._defaults.colors.black);
 				boxShadow.name = "BoxShadow";
 
 				boxGrid.add(boxShadow);
@@ -16451,6 +16457,13 @@ Objects.prototype = {
 	},
 
 	_defaults: {
+		colors: {
+			red: new THREE.Color(0xff0000),
+			yellow: new THREE.Color(0xffff00),
+			green: new THREE.Color(0x00ff00),
+			black: new THREE.Color(0x000000)
+		},
+
 		materials: {
 			boxNormalMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xff0000) }),
 			boxOverMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xffff00) }),
