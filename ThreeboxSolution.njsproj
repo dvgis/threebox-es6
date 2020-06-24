@@ -24,6 +24,7 @@
     <Content Include=".gitignore" />
     <Content Include=".npmrc" />
     <Content Include="docs\AnimationVideo.gif" />
+    <Content Include="docs\Depth.gif" />
     <Content Include="docs\LabelsOnHeight.gif" />
     <Content Include="docs\soldieranimation.jpg" />
     <Content Include="docs\Wireframes.gif" />
