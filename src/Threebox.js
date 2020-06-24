@@ -658,7 +658,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.1',
+	version: '2.0.2',
 
 }
 

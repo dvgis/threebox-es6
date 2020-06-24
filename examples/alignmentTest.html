@@ -1,160 +1,141 @@
-﻿<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-	<meta charset="utf-8" />
-	<title>Extrude polygons for 3D indoor mapping</title>
-	<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+	<title>Alignment Test</title>
 	<script src="../dist/threebox.js" type="text/javascript"></script>
 	<script src="config.js"></script>
 	<script src="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.js"></script>
 	<link href="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.css" rel="stylesheet" />
 
 	<style>
-		body {
+		body, html {
+			width: 100%;
+			height: 100%;
 			margin: 0;
-			padding: 0;
+			background: black;
 		}
 
 		#map {
-			position: absolute;
-			top: 0;
-			bottom: 0;
 			width: 100%;
+			height: 100%;
 		}
 	</style>
 </head>
 <body>
+	<div id='map' class='map'>
+		<script>
 
+			// This example downloads a soldier model from an external OBJ/MTL file, adds it to the map, and drives it around via paths fetched from the Mapbox Directions API
 
-    <div id="map"></div>
+			if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
 
+			mapboxgl.accessToken = config.accessToken;
 
-    <script>
+			var origin = [-87.61694, 41.866];
 
-		// This example downloads a soldier model from an external OBJ/MTL file, adds it to the map, and drives it around via paths fetched from the Mapbox Directions API
-
-		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
-
-		var map = new mapboxgl.Map({
-			container: 'map',
-			style: 'mapbox://styles/mapbox/streets-v11',
-			//center: [-87.61694, 41.86625],
-			center: [-87.61694, 41.866],
-			zoom: 18,
-			pitch: 40,
-			bearing: 20,
-			antialias: true
-		});
-
-
-
-
-
-		var opis = {
-			"features": [
-
-
-				{
-					"type": "Feature",
-					"properties": {
-						"level": 1,
-						"name": "outer-walls",
-						"base_height": 0,
-						"height": 40,
-						"color": "grey"
-					},
-					"geometry": {
-						"coordinates": [
-							[
-								[-87.618087, 41.86666], [-87.618087, 41.866674], [-87.618319, 41.866674], [-87.618298, 41.865757], [-87.618326, 41.865756], [-87.618347, 41.866693], [-87.618068, 41.866696], [-87.618067, 41.866675], [-87.61741, 41.866684], [-87.617416, 41.86680], [-87.617247, 41.866803], [-87.617246, 41.866866], [-87.616846, 41.866868], [-87.616848, 41.866807], [-87.61669, 41.866811], [-87.616693, 41.866693], [-87.615992, 41.866701], [-87.615992, 41.866729], [-87.615703, 41.866733], [-87.615689, 41.866377], [-87.615412, 41.866382], [-87.615411, 41.866122], [-87.615689, 41.866119], [-87.615682, 41.865781], [-87.615966, 41.865779], [-87.615969, 41.865798], [-87.616669, 41.865794], [-87.616663, 41.865662], [-87.6168, 41.865661], [-87.616796, 41.865571], [-87.61726, 41.865559], [-87.617258, 41.865654], [-87.617388, 41.865652], [-87.617395, 41.865778], [-87.618045, 41.865773], [-87.618044, 41.865742], [-87.618325, 41.865739], [-87.618326, 41.865758], [-87.61807, 41.865761], [-87.61807, 41.865789], [-87.617356, 41.8658], [-87.617356, 41.865672], [-87.617218, 41.865677], [-87.617215, 41.86559], [-87.616822, 41.865595], [-87.616827, 41.86568], [-87.616694, 41.865681], [-87.616697, 41.865813], [-87.615939, 41.865824], [-87.615937, 41.8658], [-87.615706, 41.865802], [-87.615713, 41.866143], [-87.615441, 41.86615], [-87.61545, 41.866357], [-87.615724, 41.866353], [-87.615733, 41.866712], [-87.615959, 41.86671], [-87.615959, 41.866688], [-87.616719, 41.866672], [-87.61672, 41.866791], [-87.616869, 41.86679], [-87.616868, 41.86685], [-87.617223, 41.866847], [-87.617227, 41.866786], [-87.617387, 41.866785], [-87.617383, 41.86667], [-87.618087, 41.86666]
-							]
-						],
-						"type": "Polygon"
-					},
-					"id": "ef6512f46485e27963c248bcc945c3db"
-				}
-			],
-			"type": "FeatureCollection"
-		}
-
-
-
-
-		var lineGeometry1 = [[-87.61726, 41.865559, 0], [-87.61726, 41.865559, 80]];
-
-
-
-
-
-		map.on('load', function () {
-			map.addSource('floorplan', {
-				// GeoJSON Data source used in vector tiles, documented at
-				// https://gist.github.com/ryanbaumann/a7d970386ce59d11c16278b90dde094d
-				'type': 'geojson',
-				'data': opis
-				//                'https://docs.mapbox.com/mapbox-gl-js/assets/indoor-3d-map.geojson'
+			var map = new mapboxgl.Map({
+				container: 'map',
+				style: 'mapbox://styles/mapbox/streets-v11',
+				//center: [-87.61694, 41.86625],
+				center: origin,
+				zoom: 18,
+				pitch: 40,
+				bearing: 20,
+				antialias: true
 			});
 
-
-			map.addLayer({
-				'id': 'room-extrusion',
-				'type': 'fill-extrusion',
-				'source': 'floorplan',
-				'paint': {
-					// See the Mapbox Style Specification for details on data expressions.
-					// https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions
-
-					// Get the fill-extrusion-color from the source 'color' property.
-					'fill-extrusion-color': ['get', 'color'],
-
-					// Get fill-extrusion-height from the source 'height' property.
-					'fill-extrusion-height': ['get', 'height'],
-
-					// Get fill-extrusion-base from the source 'base_height' property.
-					'fill-extrusion-base': ['get', 'base_height'],
-
-					// Make extrusions slightly opaque for see through indoor walls.
-					'fill-extrusion-opacity': 0.5
-				}
-			});
-
-			map.addLayer({
-				id: 'custom_layerx',
-				type: 'custom',
-				renderingMode: '3d',
-				onAdd: function (map, mbxContext) {
-
-					window.tb = new Threebox(
-						map,
-						mbxContext,
-						{ defaultLights: true }
-					);
-
-					var tubeOptions = {
-						geometry: lineGeometry1,
-						radius: .01,
-						sides: 8,
-						units: "meters",
-						material: 'MeshPhysicalMaterial',
-						color: '#00ffff'
+			var opis = {
+				"features": [
+					{
+						"type": "Feature",
+						"properties": {
+							"level": 1,
+							"name": "outer-walls",
+							"base_height": 0,
+							"height": 40,
+							"color": "grey"
+						},
+						"geometry": {
+							"coordinates": [
+								[
+									[-87.618087, 41.86666], [-87.618087, 41.866674], [-87.618319, 41.866674], [-87.618298, 41.865757], [-87.618326, 41.865756], [-87.618347, 41.866693], [-87.618068, 41.866696], [-87.618067, 41.866675], [-87.61741, 41.866684], [-87.617416, 41.86680], [-87.617247, 41.866803], [-87.617246, 41.866866], [-87.616846, 41.866868], [-87.616848, 41.866807], [-87.61669, 41.866811], [-87.616693, 41.866693], [-87.615992, 41.866701], [-87.615992, 41.866729], [-87.615703, 41.866733], [-87.615689, 41.866377], [-87.615412, 41.866382], [-87.615411, 41.866122], [-87.615689, 41.866119], [-87.615682, 41.865781], [-87.615966, 41.865779], [-87.615969, 41.865798], [-87.616669, 41.865794], [-87.616663, 41.865662], [-87.6168, 41.865661], [-87.616796, 41.865571], [-87.61726, 41.865559], [-87.617258, 41.865654], [-87.617388, 41.865652], [-87.617395, 41.865778], [-87.618045, 41.865773], [-87.618044, 41.865742], [-87.618325, 41.865739], [-87.618326, 41.865758], [-87.61807, 41.865761], [-87.61807, 41.865789], [-87.617356, 41.8658], [-87.617356, 41.865672], [-87.617218, 41.865677], [-87.617215, 41.86559], [-87.616822, 41.865595], [-87.616827, 41.86568], [-87.616694, 41.865681], [-87.616697, 41.865813], [-87.615939, 41.865824], [-87.615937, 41.8658], [-87.615706, 41.865802], [-87.615713, 41.866143], [-87.615441, 41.86615], [-87.61545, 41.866357], [-87.615724, 41.866353], [-87.615733, 41.866712], [-87.615959, 41.86671], [-87.615959, 41.866688], [-87.616719, 41.866672], [-87.61672, 41.866791], [-87.616869, 41.86679], [-87.616868, 41.86685], [-87.617223, 41.866847], [-87.617227, 41.866786], [-87.617387, 41.866785], [-87.617383, 41.86667], [-87.618087, 41.86666]
+								]
+							],
+							"type": "Polygon"
+						},
+						"id": "ef6512f46485e27963c248bcc945c3db"
 					}
+				],
+				"type": "FeatureCollection"
+			}
 
-					tube = tb.tube(tubeOptions);
-					//tube.material.wireframe = true
-					tb.add(tube);
+			var lineGeometry1 = [[-87.61726, 41.865559, 0], [-87.61726, 41.865559, 80]];
 
-				},
+			map.on('style.load', function () {
 
-				render: function (gl, matrix) {
-					tb.update();
-				}
-			}, 'room-extrusion');
+				map.addSource('floorplan', {
+					// GeoJSON Data source used in vector tiles, documented at
+					// https://gist.github.com/ryanbaumann/a7d970386ce59d11c16278b90dde094d
+					'type': 'geojson',
+					'data': opis
+					//                'https://docs.mapbox.com/mapbox-gl-js/assets/indoor-3d-map.geojson'
+				});
+
+				map.addLayer({
+					'id': 'room-extrusion',
+					'type': 'fill-extrusion',
+					'source': 'floorplan',
+					'paint': {
+						// See the Mapbox Style Specification for details on data expressions.
+						// https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions
+
+						// Get the fill-extrusion-color from the source 'color' property.
+						'fill-extrusion-color': ['get', 'color'],
+
+						// Get fill-extrusion-height from the source 'height' property.
+						'fill-extrusion-height': ['get', 'height'],
+
+						// Get fill-extrusion-base from the source 'base_height' property.
+						'fill-extrusion-base': ['get', 'base_height'],
+
+						// Make extrusions slightly opaque for see through indoor walls.
+						'fill-extrusion-opacity': 0.5
+					}
+				});
+
+				map.addLayer({
+					id: 'custom_layerx',
+					type: 'custom',
+					renderingMode: '3d',
+					onAdd: function (map, mbxContext) {
+
+						window.tb = new Threebox(
+							map,
+							mbxContext,
+							{ defaultLights: true }
+						);
+
+						var tubeOptions = {
+							geometry: lineGeometry1,
+							radius: .01,
+							sides: 12,
+							units: "meters",
+							material: 'MeshPhysicalMaterial',
+							color: '#00ffff'
+						}
+
+						tube = tb.tube(tubeOptions);
+						//tube.material.wireframe = true
+						tb.add(tube);
+
+					},
+					render: function (gl, matrix) {
+						tb.update();
+					}
+				}, 'room-extrusion');
+			})
 
 
-
-
-		});
-    </script>
-
+		</script>
 </body>
 </html>

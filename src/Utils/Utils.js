@@ -250,6 +250,10 @@ var utils = {
 		return clone;
 	},
 
+	clamp: function(n, min, max) {
+		return Math.min(max, Math.max(min, n));
+	},
+
 	// retrieve object parameters from an options object
 
 	types: {

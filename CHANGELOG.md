@@ -1,3 +1,28 @@
+## 2.0.2
+
+Minor versíon by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### Enhancements
+
+- New example added for alignment test check.
+- Label and Tooltip are now dynamic objects in Threebox.
+- Label and Tooltip objects support extrusions and include Altitude.
+- Label and Tooltip calculate by default the center of the object.
+- Tooltip has now a new param to match Mapbox styles
+- obj.modelHeight is not anymore needed as a param to create a Label at obj.drawLabelHTML
+- obj.addLabel does not need anymore bottomMargin cab be changed by styles through cssClass parameter
+- Refactoring of HTML creation for Label and Tooltip
+- Server.js script added for server execution.
+
+#### Bug fixes
+- Bug fixed, Camera aspect ratio was not properly updated on map resize.
+- Bug fixed on unselect Object and unselect Feature, now both work the same
+- Bug fixed to support default fill-extrusion layers using composite and building data.
+
+<br>
+
+- - - 
+
 ## 2.0.1
 
 This is the new version created with this [fork]((https://github.com/jscastro76/threebox)) by [@jscastro76](https://github.com/jscastro76) and it's a major update. 
@@ -23,6 +48,9 @@ This is the new version created with this [fork]((https://github.com/jscastro76/
 - Optimization of Camera perspective to have Raycast with pixel-precision level.
 - Adjusted positioning for Objects3D to set center and rotation axes by config.
 
+<br>
+
+- - - 
 
 ## 0.3.0
 

@@ -181,7 +181,7 @@ Objects.prototype = {
 				let boxGrid = new THREE.Group();
 				boxGrid.name = "BoxGrid";
 				boxGrid.updateMatrixWorld(true);
-				let boxModel = new THREE.Box3Helper(bb, new THREE.Color(0xff0000));
+				let boxModel = new THREE.Box3Helper(bb, Objects.prototype._defaults.colors.yellow);
 				boxModel.name = "BoxModel";
 				boxGrid.add(boxModel);
 				boxModel.layers.disable(0); // it makes the object invisible for the raycaster
@@ -191,7 +191,7 @@ Objects.prototype = {
 				let bb2 = bb.clone();
 				//we make the second box flat and at the floor height level
 				bb2.max.z = bb2.min.z;
-				let boxShadow = new THREE.Box3Helper(bb2, new THREE.Color(0x000000));
+				let boxShadow = new THREE.Box3Helper(bb2, Objects.prototype._defaults.colors.black);
 				boxShadow.name = "BoxShadow";
 
 				boxGrid.add(boxShadow);
@@ -551,6 +551,13 @@ Objects.prototype = {
 	},
 
 	_defaults: {
+		colors: {
+			red: new THREE.Color(0xff0000),
+			yellow: new THREE.Color(0xffff00),
+			green: new THREE.Color(0x00ff00),
+			black: new THREE.Color(0x000000)
+		},
+
 		materials: {
 			boxNormalMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xff0000) }),
 			boxOverMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xffff00) }),

@@ -23,6 +23,8 @@
   <ItemGroup>
     <Content Include=".gitignore" />
     <Content Include=".npmrc" />
+    <Content Include="docs\AnimationVideo.gif" />
+    <Content Include="docs\LabelsOnHeight.gif" />
     <Content Include="docs\soldieranimation.jpg" />
     <Content Include="examples\animation.html" />
     <Content Include="examples\css\fontawesome.js" />

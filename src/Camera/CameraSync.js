@@ -41,11 +41,13 @@ CameraSync.prototype = {
         this.camera.aspect = t.width / t.height; //bug fixed, if aspect is not reset raycast will fail on map resize
         this.camera.updateProjectionMatrix();
         const halfFov = this.state.fov / 2;
+        const offset = { x: t.width / 2, y: t.height / 2 };//t.centerOffset;
         const cameraToCenterDistance = 0.5 / Math.tan(halfFov) * t.height;
         const maxPitch = t._maxPitch * Math.PI / 180;
         const acuteAngle = Math.PI / 2 - maxPitch;
 
         this.state.cameraToCenterDistance = cameraToCenterDistance;
+        this.state.offset = offset;
         this.state.cameraTranslateZ = new THREE.Matrix4().makeTranslation(0, 0, cameraToCenterDistance);
         this.state.maxFurthestDistance = cameraToCenterDistance * 0.95 * (Math.cos(acuteAngle) * Math.sin(halfFov) / Math.sin(Math.max(0.01, Math.min(Math.PI - 0.01, acuteAngle - halfFov))) + 1);
 
@@ -61,9 +63,9 @@ CameraSync.prototype = {
         // Furthest distance optimized by @satorbs
         // https://github.com/satorbs/threebox/blob/master/src/Camera/CameraSync.js
         const t = this.map.transform;
-        const halfFov = this.state.fov / 2;
         const groundAngle = Math.PI / 2 + t._pitch;
-        const topHalfSurfaceDistance = Math.sin(halfFov) * this.state.cameraToCenterDistance / Math.sin(Math.max(0.01, Math.min(Math.PI - 0.01, Math.PI - groundAngle - halfFov)));
+        const fovAboveCenter = this.state.fov * (0.5 + this.state.offset.y / t.height);
+        const topHalfSurfaceDistance = Math.sin(fovAboveCenter) * this.state.cameraToCenterDistance / Math.sin(utils.clamp(Math.PI - groundAngle - fovAboveCenter, 0.01, Math.PI - 0.01));
 
         // Calculate z distance of the farthest fragment that should be rendered.
         const furthestDistance = Math.cos(Math.PI / 2 - t._pitch) * topHalfSurfaceDistance + this.state.cameraToCenterDistance;
@@ -73,7 +75,7 @@ CameraSync.prototype = {
 
         // someday @ansis set further near plane to fix precision for deckgl,so we should fix it to use mapbox-gl v1.3+ correctly
         // https://github.com/mapbox/mapbox-gl-js/commit/5cf6e5f523611bea61dae155db19a7cb19eb825c#diff-5dddfe9d7b5b4413ee54284bc1f7966d
-        const nearZ = t.height / 50;
+        const nearZ = (t.height / 50);
 
         this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, t.width / t.height, nearZ, farZ);
 

@@ -8,31 +8,21 @@ A three.js plugin for Mapbox GL JS, using the custom layer feature. Provides con
 
 - - -
 
-## Documentation
-
-All the [**Threebox Documentation**](/docs/Threebox.md) has been completely updated, including all the methods, properties and events implemented in Threebox and objects, but still *'work in progress'* adding better documented examples and images to illustrate Threebox capabilities.
-- [**Using Threebox**](/docs/Threebox.md#using-threebox)
-- [**Loading a 3D Model**](/docs/Threebox.md#loading-a-3d-model)
-- [**Threebox methods**](/docs/Threebox.md#threebox-methods)
-- [**Object methods**](/docs/Threebox.md#object-methods)
-
-
-<br>
-
-- - -
-
-
 ## ONLY in this Threebox fork
 
-<img alt="threebox" src="docs/SoldierAnimation.jpg">
+<div style="width:100%;height:250px;display:block">
+	<img alt="threebox" src="./docs/AnimationVideo.gif" height="250"><img alt="threebox" src="./docs/LabelsOnHeight.gif" height="250">
+</div>
+
+<br>
 
 Only in this fork, there is a list of new features implemented on top of the amazing work of [@peterqliu](https://github.com/peterqliu/threebox/):
 - Update to Three.js v114.
 - Update to Mapbox v1.10.0.
-- All the examples updated, and one more example added with new features.
+- All the examples updated, and two more examples added with new features.
 - Support for multiple format objects (FBX, GLTF/GLB, Collada + OBJ/MTL).
-- Support for CSS2DLabels supporting rich HTML controls through a new LabelManager.
-- Support for tooltips/title browser-like.
+- Support for CSS2D Labels supporting rich HTML controls through a new LabelManager.
+- Support for tooltips/title browser-like and mapbox-like.
 - Support for Objects3D bounding box and floor projection.
 - Support for built-in Raycaster in loaded Objects3D and fill-extrusions together.
 - Support for built-in MouseOver/Mouseout, Selected, Drag&Drop, Drag&Rotate, Wireframe in loadedObjects including events.
@@ -43,14 +33,25 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Support for wireframing on Objects3D, removing them from the raycast.
 - Support for setLayerZoomRange and setLayoutProperty on Custom Layers (not available in Mapbox).
 - Support for full dispose of Mapbox, Three and Threebox resources.
-- Optimization of Camera perspective to have Raycast with pixel-precision level, and better furthest and nearest distance.
+- Optimization of Camera perspective to have Raycast with pixel-precision level.
 - Adjusted positioning for Objects3D to set center and rotation axes by config.
-
 
 <br>
 
 - - -
 
+## Documentation
+<img alt="threebox" src="docs/SoldierAnimation.jpg">
+
+All the [**Threebox Documentation**](/docs/Threebox.md) has been completely updated, including all the methods, properties and events implemented in Threebox and objects, but still *'work in progress'* adding better documented examples and images to illustrate Threebox capabilities.
+- [**Using Threebox**](/docs/Threebox.md#using-threebox)
+- [**Loading a 3D Model**](/docs/Threebox.md#loading-a-3d-model)
+- [**Threebox methods**](/docs/Threebox.md#threebox-methods)
+- [**Object methods**](/docs/Threebox.md#object-methods)
+
+<br>
+
+- - -
 
 ## Compatibility/Dependencies
 
@@ -75,7 +76,8 @@ Several introductory examples are [here](https://github.com/jscastro76/threebox/
 
 ## Contributing
 
-Build the library with `npm run build`, or `npm run dev` to rebuild continuously as you develop. Both commands will output a bundle in `/dist/threebox.js`.
+Build the library with `npm run build`, or `npm run dev` to rebuild continuously as you develop. 
+Both commands will output a bundle in `/dist/threebox.js`.
 
 ### Sample to build the project in Visual Studio
 Sample to get a full build from scratch for Visual Studio:
@@ -90,6 +92,6 @@ Sample to get a full build from scratch for Visual Studio:
 - execute `.npm [ProjectName] run dev` or `.npm run build
 `
 
-Tests live [here](/tests) -- run `index.html` and check the console for test results.
+Tests live [here](/tests) -- run `threebox-tests.html` and check the console for test results.
 
 
