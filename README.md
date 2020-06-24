@@ -10,9 +10,10 @@ A three.js plugin for Mapbox GL JS, using the custom layer feature. Provides con
 
 ## ONLY in this Threebox fork
 
-<div style="width:100%;height:250px;display:block">
-	<img alt="threebox" src="./docs/AnimationVideo.gif" height="250"><img alt="threebox" src="./docs/LabelsOnHeight.gif" height="250">
-</div>
+|Models built-in & custom animations |MouseOver/Mouseout, Selected, Drag&Drop, Drag&Rotate, Wireframe |Tooltips using altitude
+|---------|-----------------------|-----------
+|<img alt="threebox" src="./docs/AnimationVideo.gif" height="170">|<img alt="threebox" src="./docs/Wireframes.gif" height="170">|<img alt="threebox" src="./docs/LabelsOnHeight.gif" height="170">|
+
 
 <br>
 

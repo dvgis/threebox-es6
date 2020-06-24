@@ -26,6 +26,7 @@
     <Content Include="docs\AnimationVideo.gif" />
     <Content Include="docs\LabelsOnHeight.gif" />
     <Content Include="docs\soldieranimation.jpg" />
+    <Content Include="docs\Wireframes.gif" />
     <Content Include="examples\animation.html" />
     <Content Include="examples\css\fontawesome.js" />
     <Content Include="examples\css\free-fa-solid-900.woff2" />
