@@ -15,6 +15,8 @@ function loadObj(options, cb) {
 
 	if (options === undefined) return console.error("Invalid options provided to loadObj()");
 
+	options = utils._validate(options, Objects.prototype._defaults.loadObj);
+
 	this.loaded = false;
 	//console.time('loadObj Start ');
 	const modelComplete = (m) => {
@@ -89,15 +91,18 @@ function loadObj(options, cb) {
 			Objects.prototype._addMethods(userScaleGroup);
 
 			//[jscastro] if the object options have an adjustment to center the 3D Object
-			let adj = options.adjustment;
-			if (adj) {
+			let center = options.adjustment;
+			if (center) {
 				let size = userScaleGroup.getSize();
-				obj.position.set(size.x * adj.x, size.y * adj.y, size.z * adj.z)
+				obj.position.set(size.x * center.x, size.y * center.y, size.z * center.z)
 			}
 
 			// [jscastro] after adding methods create the bounding box at userScaleGroup but add it to its children for positioning
 			let boxGrid = userScaleGroup.drawBoundingBox();
 			projScaleGroup.add(boxGrid);
+
+			//[jscastro] we add by default a tooltip that can be override later or hide it with threebox `enableTooltips`
+			userScaleGroup.addTooltip(userScaleGroup.uuid, true, center);
 
 			cb(userScaleGroup);
 

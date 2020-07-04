@@ -5,6 +5,7 @@
     <script src="config.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.css" rel="stylesheet" />
+    <link href="./css/threebox.css" rel="stylesheet" />
     <style>
         body, html {
             width: 100%;
@@ -25,76 +26,86 @@
 
         // this example demonstrates the use of duplicate(), to replicate a sphere many times with minimal performance implications. Also shows the distortion effects of mercator: despite their appearance, all spheres have a radius of 500km, at an altitude of 2000km.
 
-        if(!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
-        
+        if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
+
         mapboxgl.accessToken = config.accessToken;
 
+        var origin = [-0, 6.5, 10];
+
         var map = new mapboxgl.Map({
-          container: 'map',
-          style: 'mapbox://styles/mapbox/light-v9',
-          zoom: 0,
-          pitch: 45,
-          bearing: 45
+            container: 'map',
+            style: 'mapbox://styles/mapbox/dark-v9', //'/Styles/empty-v9.json', //
+            center: origin,
+            zoom: 0,
+            pitch: 47,
+            heading: 56,
+            hash: true
         });
 
+        // we can add Threebox to mapbox to add built-in mouseover/mouseout and click behaviors
+        window.tb = new Threebox(
+            map,
+            map.getCanvas().getContext('webgl'),
+            {
+                defaultLights: true,
+                enableSelectingFeatures: true, //change this to false to disable fill-extrusion features selection
+                enableSelectingObjects: true, //change this to false to disable 3D objects selection
+                enableDraggingObjects: true, //change this to false to disable 3D objects drag & move once selected
+                enableRotatingObjects: true, //change this to false to disable 3D objects rotation once selected
+                enableTooltips: true // change this to false to disable default tooltips on fill-extrusion and 3D models
+            }
+        );
 
-        map.on('style.load', function() {
+        var active = false
+        map.on('style.load', function () {
 
             map.addLayer({
                 id: 'custom_layer',
                 type: 'custom',
-                onAdd: function(map, mbxContext){
-
-                    window.tb = new Threebox(
-                        map, 
-                        mbxContext,
-                        {defaultLights: true}
-                    );
+                renderingMode: '3d',
+                onAdd: function (map, mbxContext) {
 
                     // generate 100 points around the world, at random locations but the same altitude
                     var randomPoints = [];
 
-                    for (var i = 0; i < 100; i++){
+                    for (var i = 0; i < 100; i++) {
 
                         var point = [
-                            360 * (Math.random()-0.5), 
-                            160 * (Math.random()-0.5),
+                            360 * (Math.random() - 0.5),
+                            160 * (Math.random() - 0.5),
                             2000000
                         ]
-                        
+
                         randomPoints.push(point);
                     }
 
-                    // build a template sphere sized in meters, such that it will appear to scale with its local surroundings
-                    sphereTemplate = tb.sphere(
-                        {
-                            radius: 500000,
-                            units: 'meters',
-                            sides: 120,
-                            color: 'purple',
-                            material: 'MeshPhysicalMaterial'
-                        }
-                    )
-
                     // for best performance, clone the template sphere for each point in randomPoint
+                    randomPoints.forEach(function (pt) {
 
-                    randomPoints.forEach(function(pt){
-
-                        newSphere = sphereTemplate
-                            .duplicate()
-                            .setCoords(pt);
+                        let newSphere = tb.sphere(
+                            {
+                                radius: 200000,
+                                units: 'meters',
+                                sides: 120,
+                                color: 'purple',
+                                material: 'MeshToonMaterial',
+								adjustment: { x: -0.5, y: -0.5, z: 0.5 }
+                            }
+                        ).setCoords(pt);
 
                         tb.add(newSphere);
 
                     })
 
                 },
-                
-                render: function(gl, matrix){
+
+                render: function (gl, matrix) {
                     tb.update();
                 }
             });
+
         });
 
     </script>
 </body>
+</html>

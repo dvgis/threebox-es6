@@ -14,7 +14,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <LastActiveSolutionConfig>Debug|Any CPU</LastActiveSolutionConfig>
     <StartWebBrowser>True</StartWebBrowser>
-    <LaunchUrl>/examples/animation.html</LaunchUrl>
+    <LaunchUrl>/examples/raycaster.html</LaunchUrl>
     <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
     <NodejsPort>8080</NodejsPort>
   </PropertyGroup>
@@ -28,12 +28,14 @@
     <Content Include="docs\LabelsOnHeight.gif" />
     <Content Include="docs\soldieranimation.jpg" />
     <Content Include="docs\Wireframes.gif" />
+    <Content Include="examples\3Dbuildings.html" />
     <Content Include="examples\animation.html" />
     <Content Include="examples\css\fontawesome.js" />
     <Content Include="examples\css\free-fa-solid-900.woff2" />
     <Content Include="examples\css\free-v4-font-face-min.css" />
     <Content Include="examples\css\free-v4-shims.min.css" />
     <Content Include="examples\css\free.min.css" />
+    <Content Include="examples\css\threebox.css" />
     <Content Include="examples\models\Soldier.glb" />
     <Content Include="examples\models\Truck.mtl" />
     <Content Include="examples\models\Truck.obj" />

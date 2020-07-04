@@ -163,11 +163,12 @@ var utils = {
 		let coordinates = [];
 		//deep clone to avoid modifying the original array
 		coordinates.push(...feature.geometry.coordinates[0]);
-		if (coordinates.length == 1) {
+		if (feature.geometry.type === "Point") {
 			center = coordinates[0];
 		}
 		else {
 			//features in mapbox repeat the first coordinates at the end. We remove it.
+			if (feature.geometry.type === "MultiPolygon") coordinates = coordinates[0];
 			coordinates.splice(-1, 1);
 			coordinates.forEach(function (c) {
 				latitude += c[0];
@@ -184,9 +185,11 @@ var utils = {
 
 	getObjectHeightOnFloor: function (feature, obj, level = feature.properties.level || 0) {
 		let floorHeightMin = (level * (feature.properties.levelHeight || 0));
-		//object height is modelSize.z + base_height configured for this object
-		let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - (feature.properties.base_height || 0)));
-		let objectHeight = height + (feature.properties.base_height || 0);
+		//object height is modelSize.z + base_height or min_height configured for this object
+		let base = (feature.properties.base_height || feature.properties.min_height || 0);
+		//let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - base));
+		let height = ((obj && obj.model) ? 0 : (feature.properties.height - base));
+		let objectHeight = height + base;
 		let modelHeightFloor = floorHeightMin + objectHeight;
 		return modelHeightFloor;
 	},

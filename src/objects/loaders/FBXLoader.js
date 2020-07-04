@@ -1,3 +1,6 @@
+const THREE = require('../../three.js');
+const Zlib = require('../Zlib.Inflate.js');
+
 /**
  * @author Kyle-Larson https://github.com/Kyle-Larson
  * @author Takahiro https://github.com/takahirox
@@ -17,8 +20,6 @@
  * 	Binary format specification:
  *		https://code.blender.org/2013/08/fbx-binary-file-format-specification/
  */
-const THREE = require('../../three.js');
-const Zlib = require('../Zlib.Inflate.js');
 
 
 THREE.FBXLoader = (function () {
@@ -53,15 +54,19 @@ THREE.FBXLoader = (function () {
 
 					onLoad(scope.parse(buffer, path));
 
-				} catch (error) {
+				} catch (e) {
 
-					setTimeout(function () {
+					if (onError) {
 
-						if (onError) onError(error);
+						onError(e);
 
-						scope.manager.itemError(url);
+					} else {
 
-					}, 0);
+						console.error(e);
+
+					}
+
+					scope.manager.itemError(url);
 
 				}
 
@@ -490,6 +495,7 @@ THREE.FBXLoader = (function () {
 				parameters.bumpScale = materialNode.BumpFactor.value;
 
 			}
+
 			if (materialNode.Diffuse) {
 
 				parameters.color = new THREE.Color().fromArray(materialNode.Diffuse.value);
@@ -2493,6 +2499,13 @@ THREE.FBXLoader = (function () {
 
 										var rawModel = fbxTree.Objects.Model[modelID.toString()];
 
+										if (rawModel === undefined) {
+
+											console.warn('THREE.FBXLoader: Encountered a unused curve.', child);
+											return;
+
+										}
+
 										var node = {
 
 											modelName: rawModel.attrName ? THREE.PropertyBinding.sanitizeNodeName(rawModel.attrName) : '',
@@ -2691,12 +2704,14 @@ THREE.FBXLoader = (function () {
 				curves.x.values = curves.x.values.map(THREE.MathUtils.degToRad);
 
 			}
+
 			if (curves.y !== undefined) {
 
 				this.interpolateRotations(curves.y);
 				curves.y.values = curves.y.values.map(THREE.MathUtils.degToRad);
 
 			}
+
 			if (curves.z !== undefined) {
 
 				this.interpolateRotations(curves.z);
@@ -3869,12 +3884,14 @@ THREE.FBXLoader = (function () {
 
 		var versionRegExp = /FBXVersion: (\d+)/;
 		var match = text.match(versionRegExp);
+
 		if (match) {
 
 			var version = parseInt(match[1]);
 			return version;
 
 		}
+
 		throw new Error('THREE.FBXLoader: Cannot find the version number for the file given.');
 
 	}
@@ -4082,7 +4099,7 @@ THREE.FBXLoader = (function () {
 
 	function append(a, b) {
 
-		for (var i = 0, j = a.length, l = b.length; i < l; i++ , j++) {
+		for (var i = 0, j = a.length, l = b.length; i < l; i++, j++) {
 
 			a[j] = b[i];
 
@@ -4092,7 +4109,7 @@ THREE.FBXLoader = (function () {
 
 	function slice(a, b, from, to) {
 
-		for (var i = from, j = 0; i < to; i++ , j++) {
+		for (var i = from, j = 0; i < to; i++, j++) {
 
 			a[j] = b[i];
 

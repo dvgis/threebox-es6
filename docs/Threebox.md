@@ -28,6 +28,11 @@ Sets up a threebox scene inside a [*Mapbox GL* custom layer's onAdd function](ht
 |-----------|----------|---------|--------|----------------------------------------------------------------------------------------------|
 | `defaultLights`    | no       | false      | boolean | Whether to add some default lighting to the scene. If no lighting added, most objects in the scene will render as black |
 | `passiveRendering`     | no       | true   | boolean  | Color of line. Unlike other Threebox objects, this color will render on screen precisely as specified, regardless of scene lighting |
+| `enableSelectingFeatures`     | no       | false   | boolean  | Enables the Mouseover and Selection of fill-extrusion features. This will fire the event `SelectedFeatureChange` |
+| `enableSelectingObjects`     | no       | false   | boolean  | Enables the Mouseover and Selection of 3D objects. This will fire the event `SelectedChange`|
+| `enableDraggingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'translate'`|
+| `enableRotatingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'rotate'`|
+| `enableToltips`     | no       | false   | boolean  | Enables the default tooltips on fill-extrusion features and 3D Objects`|
 
 The setup will require to call recursively to `tb.update();` to render the Threebox scene. This 
 [CustomLayerInterface#render](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface#render)
@@ -585,16 +590,16 @@ Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](
 tb.sphere(options);
 ```
 
-Add a sphere to the map. Internally, calls `THREE.Mesh` with a `THREE.SphereGeometry`.
-
+Add a sphere to the map. Internally, calls `THREE.Mesh` with a `THREE.SphereGeometry`, and also to `Object3D(options)` to convert it in a dynamic object.
 
 | option | required | default | type   | description                                                                                  |
 |-----------|----------|---------|--------|-------|
 | `radius`    | no       | 50      | number | Radius of sphere. |
-| `units`    | no       | scene      | string ("scene" or "meters") | Units with which to interpret `radius`. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
+| `units`    | no       | `scene`      | string ("scene" or "meters") | Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
 | `sides`  | no       | 8       | number | Number of width and height segments. The higher the number, the smoother the sphere. |
 | `color`     | no       | black   | color  | Color of sphere.                                                                             
 | `material`     | no       | MeshLambertMaterial   | threeMaterial  | [THREE material](https://github.com/mrdoob/three.js/tree/master/src/materials) to use. Can be invoked with a text string, or a predefined material object via THREE itself.|   
+| `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
 
 <br>
 
@@ -620,14 +625,18 @@ Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](
 #### Object3D
 
 ```js
-tb.Object3D(obj)
+tb.Object3D(options)
 ```
 
-Add a `THREE.Object3D` instantiated elsewhere in *Three.js*, to empower it with Threebox methods below. Unnecessary for objects instantiated with any methods above.
+Add any geometry as [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D) or [`THREE.Mesh`](https://threejs.org/docs/index.html#api/en/objects/Mesh) instantiated elsewhere in *Three.js*, to empower it with Threebox methods below. Unnecessary for 3d models instantiated with `tb.loadObj` above.
 
 | option | required | default | type   | description                                                                                  |
 |-----------|----------|---------|--------|------------|
-| `units`    | no       | scene      | string ("scene" or "meters") | Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
+| `obj`    | yes       | null      | [`THREE.Mesh`](https://threejs.org/docs/index.html#api/en/objects/Mesh) | Object to be enriched with this method adding new attributes. |
+| `units`    | no       | `scene`      | string ("scene" or "meters") | Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
+| `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
+
+This method enriches the Object in the same way is done at 3D Models through `tb.loadObj`.
 
 <br>
 
@@ -656,10 +665,12 @@ Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](
 
 #### addTooltip
 ```js
-obj.addTooltip(tooltipText [, mapboxSyle])
+obj.addTooltip(tooltipText [, mapboxSyle = false, center = { x: 0, y: 0, z: 0 }])
 ```
 This method creates a browser-like tooltip for the object using the tooltipText. 
 If `mapboxStyle` is true, it applies the same styles the *Mapbox GL* popups.
+`center` defines the object center of position and rotation that in 3D objects is defined through `options.adjustment` param. As the tooltip is 
+calculated based on the center of the object, this value will change the position of the object.
 Its position is always relative to the object that contains it and rerendered whenever that label is visible.
 
 Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.

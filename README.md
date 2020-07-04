@@ -20,10 +20,10 @@ A three.js plugin for Mapbox GL JS, using the custom layer feature. Provides con
 
 <br>
 
-Only in this fork, there is a list of new features implemented on top of the amazing work of [@peterqliu](https://github.com/peterqliu/threebox/):
-- Update to Three.js v114.
+Only in this fork, there is a list of new features implemented on top of the amazing work from [@peterqliu](https://github.com/peterqliu/threebox/):
+- Update to Three.js v117.
 - Update to Mapbox v1.10.0.
-- All the examples updated, and two more examples added with new features.
+- All the [examples](https://github.com/jscastro76/threebox/tree/master/examples) updated, and 3 more examples added with new features.
 - Support for multiple format objects (FBX, GLTF/GLB, Collada + OBJ/MTL).
 - Support for CSS2D Labels supporting rich HTML controls through a new LabelManager.
 - Support for tooltips/title browser-like and mapbox-like.
@@ -39,6 +39,7 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Support for full dispose of Mapbox, Three and Threebox resources.
 - Optimization of Camera perspective to have Raycast with pixel-precision level.
 - Adjusted positioning for Objects3D to set center and rotation axes by config.
+- Check out [v2.03 change log](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#203) for more detail.
 
 <br>
 

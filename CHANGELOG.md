@@ -1,6 +1,38 @@
+## 2.0.3
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+
+- Update *Three.js* to v117 (WARNING: v118 breaks compatibility)
+- Update *ColladaLoader.js*, *FBXLoader.js*, *GLTFLoader.js*, *MTLLoader.js* and *OBJLoader.js* to v.118
+- Change in `obj.setCoords` method to use `min_height` value from default fill-extrusions coming from composite-building data.
+- Change in `getObjectHeightOnFloor` to change use of `model.modelHeight` cosidering always `height=0` use `min_height` value from default fill-extrusions coming from composite-building data.
+- Added `enableSelectingFeatures` to `Threebox` object default options, this allows to activate built-in raycasting over custom or default composite layer fill-extrusions. 
+- Added `enableSelectingObjects` to `Threebox` object default options, this allows to activate built-in raycasting over Threebox 3D objects.  
+- Added `enableDraggingObjects` to `Threebox` object default options, this allows to drag&drop Threebox 3D objects when selected to move them. 
+- Added `enableRotatingObjects` to `Threebox` object default options, this allows to drag&drop Threebox 3D objects when selected to rotate them. 
+- Added `enableTooltips` to `Threebox` object default options, this creates default tooltips on Objects3D and fill-extrusions.
+- Added default tooltips to 3D objects and fill-extrusion features that can be overriden, so far always top centered.
+- Added a new example *3Dbuildings.html* showing the built-in raycast behavior and tooltips on top of the 3D Buildings fill-extrusions composite layer.
+- Updated samples *raycaster.html*, *mercator.html*, *animation.html*, *mercator.html*, *basic.html*, *logistics.html*.
+- Refactored `sphere` and `Object3D` including now `.tooltip` `.boundingBox` and `.boundingBoxShadow` and behave like 3D models loaded through `tb.loadObj`
+- Refactored `t.loadObj` to validate options format.
+- Added `toolbox.css` that supports generic styles for tooltips mapbox-like.
+
+#### :beetle: Bug fixes
+
+- Bug fixed in `THREE.MTLLoader` with url undefined. (Pending decouple MTLLoader unless it's a `.obj` model)
+- Bug fixed in `addTooltip(f, map)` method when a fill-extrusion has no name or id.
+- Bug fixed in `Utils.getFeatureCenter` that was not considering geoJson `MultiPolygon` type.
+
+<br>
+
+- - - 
+
 ## 2.0.2
 
-Minor versíon by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
 #### :sparkles: Enhancements
 

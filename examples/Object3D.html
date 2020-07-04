@@ -25,7 +25,7 @@
     if(!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
     
     mapboxgl.accessToken = config.accessToken;
-    var origin = [-122.4340, 37.7353, 15000];
+    var origin = [-122.4340, 37.7353, 0];
 
     var map = new mapboxgl.Map({
       container: 'map',
@@ -60,7 +60,7 @@ map.on('style.load', function() {
 
             var cube = new THREE.Mesh(geometry, redMaterial);
 
-            cube = tb.Object3D({obj: cube})
+			cube = tb.Object3D({ obj: cube, adjustment: { x: -0.5, y: -0.5, z: 0.5 }})
                 .setCoords(origin)
 
             tb.add(cube)

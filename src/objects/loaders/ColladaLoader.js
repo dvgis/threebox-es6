@@ -1,9 +1,9 @@
+const THREE = require('../../three.js');
+
 /**
  * @author mrdoob / http://mrdoob.com/
  * @author Mugen87 / https://github.com/Mugen87
  */
-
-const THREE = require('../../three.js');
 
 THREE.ColladaLoader = function (manager) {
 
@@ -25,7 +25,25 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 		loader.setPath(scope.path);
 		loader.load(url, function (text) {
 
-			onLoad(scope.parse(text, path));
+			try {
+
+				onLoad(scope.parse(text, path));
+
+			} catch (e) {
+
+				if (onError) {
+
+					onError(e);
+
+				} else {
+
+					console.error(e);
+
+				}
+
+				scope.manager.itemError(url);
+
+			}
 
 		}, onProgress, onError);
 
@@ -219,6 +237,8 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 				channels: {}
 			};
 
+			var hasChildren = false;
+
 			for (var i = 0, l = xml.childNodes.length; i < l; i++) {
 
 				var child = xml.childNodes[i];
@@ -244,6 +264,12 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 						data.channels[id] = parseAnimationChannel(child);
 						break;
 
+					case 'animation':
+						// hierarchy of related animations
+						parseAnimation(child);
+						hasChildren = true;
+						break;
+
 					default:
 						console.log(child);
 
@@ -251,7 +277,13 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 
 			}
 
-			library.animations[xml.getAttribute('id')] = data;
+			if (hasChildren === false) {
+
+				// since 'id' attributes can be optional, it's necessary to generate a UUID for unqiue assignment
+
+				library.animations[xml.getAttribute('id') || THREE.MathUtils.generateUUID()] = data;
+
+			}
 
 		}
 
@@ -2059,6 +2091,7 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 							data.stride = parseInt(accessor.getAttribute('stride'));
 
 						}
+
 						break;
 
 				}
@@ -2331,6 +2364,7 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 											}
 
 										}
+
 										break;
 
 									case 'NORMAL':
@@ -2359,6 +2393,7 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 								}
 
 							}
+
 							break;
 
 						case 'NORMAL':
@@ -2910,7 +2945,7 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 
 				if (targetElement) {
 
-					// get the parent of the transfrom element
+					// get the parent of the transform element
 
 					var parentVisualElement = targetElement.parentElement;
 
@@ -3558,12 +3593,7 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 
 			}
 
-			if (object.name === '') {
-
-				object.name = (type === 'JOINT') ? data.sid : data.name;
-
-			}
-
+			object.name = (type === 'JOINT') ? data.sid : data.name;
 			object.matrix.copy(matrix);
 			object.matrix.decompose(object.position, object.quaternion, object.scale);
 
@@ -3667,6 +3697,7 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 							object = new THREE.Mesh(geometry.data, material);
 
 						}
+
 						break;
 
 				}

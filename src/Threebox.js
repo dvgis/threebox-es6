@@ -55,9 +55,9 @@ Threebox.prototype = {
 		// [jscastro] set labelRendered
 		this.labelRenderer = new LabelRenderer(this.map);
 
-
 		this.scene = new THREE.Scene();
 		this.camera = new THREE.PerspectiveCamera(ThreeboxConstants.FOV_DEGREES, map.getCanvas().clientWidth / map.getCanvas().clientHeight, 1, 1e21);
+		this.camera.layers.enable(0);
 		this.camera.layers.enable(1);
 
 		// The CameraSync object will keep the Mapbox and THREE.js camera movements in sync.
@@ -73,12 +73,17 @@ Threebox.prototype = {
 
 		//raycaster for mouse events
 		this.raycaster = new THREE.Raycaster();
+		this.raycaster.layers.set(0);
 		//this.raycaster.params.Points.threshold = 100;
 
 		// apply starter options
-
 		this.options = utils._validate(options || {}, defaultOptions);
 		if (this.options.defaultLights) this.defaultLights();
+		if (this.options.enableSelectingFeatures) this.enableSelectingFeatures = this.options.enableSelectingFeatures; 
+		if (this.options.enableSelectingObjects) this.enableSelectingObjects = this.options.enableSelectingObjects; 
+		if (this.options.enableDraggingObjects) this.enableDraggingObjects = this.options.enableDraggingObjects; 
+		if (this.options.enableRotatingObjects) this.enableRotatingObjects = this.options.enableRotatingObjects; 
+		if (this.options.enableTooltips) this.enableTooltips = this.options.enableTooltips; 
 
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
@@ -150,6 +155,18 @@ Threebox.prototype = {
 
 			}
 
+			function unoverFeature(f, map) {
+				if (overedFeature && typeof overedFeature != 'undefined' && overedFeature.id != f) {
+					map.setFeatureState(
+						{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
+						{ hover: false }
+					);
+					removeTooltip(overedFeature, map);
+					overedFeature = null;
+				}
+			}
+
+
 			function unselectObject(o) {
 				//deselect, reset and return
 				o.selected = false;
@@ -157,9 +174,10 @@ Threebox.prototype = {
 			}
 
 			function addTooltip(f, map) {
+				if (!map.tb.enableTooltips) return; 
 				let coordinates = map.tb.getFeatureCenter(f);
 				let t = map.tb.tooltip({
-					text: f.properties.name || f.id,
+					text: f.properties.name || f.id || f.type,
 					mapboxStyle: true,
 					feature: f
 				});
@@ -183,12 +201,16 @@ Threebox.prototype = {
 
 			// onclick function
 			map.onClick = function (e) {
-				let intersectionExists, intersects;
-				//raycast only if we are in a custom layer, for other layers go to the else, this avoids duplicated calls to raycaster
-				intersects = this.tb.queryRenderedFeatures(e.point);
+				let intersectionExists
+				let intersects = [];
+				if (map.tb.enableSelectingObjects) {
+					//raycast only if we are in a custom layer, for other layers go to the else, this avoids duplicated calls to raycaster
+					intersects = this.tb.queryRenderedFeatures(e.point);
+				}
 				intersectionExists = typeof intersects[0] == 'object';
 				// if intersect exists, highlight it
 				if (intersectionExists) {
+
 					let nearestObject = Threebox.prototype.findParent3DObject(intersects[0]);
 
 					if (nearestObject) {
@@ -222,13 +244,14 @@ Threebox.prototype = {
 					}
 				}
 				else {
-
-					var features = this.queryRenderedFeatures(e.point)
-
+					let features = [];
+					if (map.tb.enableSelectingFeatures) {
+						features = this.queryRenderedFeatures(e.point);
+					}
 					//now let's check the extrusion layer objects
 					if (features.length > 0) {
 
-						if (features[0] && typeof features[0].id != 'undefined' && features[0].layer.type == "fill-extrusion") {
+						if (features[0].layer.type == 'fill-extrusion' && typeof features[0].id != 'undefined') {
 
 							//if 3D object selected, unselect
 							if (selectedObject) {
@@ -262,6 +285,8 @@ Threebox.prototype = {
 				this.getCanvasContainer().style.cursor = 'default';
 				//check if being rotated
 				if (e.originalEvent.altKey && draggedObject) {
+
+					if (!map.tb.enableRotatingObjects) return;
 					draggedAction = 'rotate';
 					// Set a UI indicator for dragging.
 					this.getCanvasContainer().style.cursor = 'move';
@@ -279,6 +304,8 @@ Threebox.prototype = {
 
 				//check if being moved
 				if (e.originalEvent.shiftKey && draggedObject) {
+					if (!map.tb.enableDraggingObjects) return;
+
 					draggedAction = 'translate';
 					// Set a UI indicator for dragging.
 					this.getCanvasContainer().style.cursor = 'move';
@@ -289,16 +316,20 @@ Threebox.prototype = {
 					return;
 				}
 
-				let intersectionExists, intersects;
+				let intersectionExists
+				let intersects = [];
 
-				// calculate objects intersecting the picking ray
-				intersects = this.tb.queryRenderedFeatures(e.point);
+				if (map.tb.enableSelectingObjects) {
+					// calculate objects intersecting the picking ray
+					intersects = this.tb.queryRenderedFeatures(e.point);
+				}
 				intersectionExists = typeof intersects[0] == 'object';
 
 				// if intersect exists, highlight it, if not check the extrusion layer
 				if (intersectionExists) {
 					let nearestObject = Threebox.prototype.findParent3DObject(intersects[0]);
 					if (nearestObject) {
+						unoverFeature(overedFeature, this);
 						this.getCanvasContainer().style.cursor = 'pointer';
 						if (!selectedObject || nearestObject.uuid != selectedObject.uuid) {
 							if (overedObject) {
@@ -311,28 +342,29 @@ Threebox.prototype = {
 						this.repaint = true;
 						e.preventDefault();
 					}
-				} else {
+				}
+				else {
 					//clean the object overed
 					if (overedObject) { overedObject.over = false; overedObject = null; }
 					//now let's check the extrusion layer objects
-					let features = this.queryRenderedFeatures(e.point);
+					let features = [];
+					if (map.tb.enableSelectingFeatures) {
+						features = this.queryRenderedFeatures(e.point);
+					}
 					if (features.length > 0) {
-						if (overedFeature && typeof overedFeature.id != 'undefined') {
-							this.setFeatureState(
-								{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
-								{ hover: false }
-							);
-						}
-						if (features[0].layer.type == "fill-extrusion") {
-							this.getCanvasContainer().style.cursor = 'pointer';
-							if (!selectedFeature || selectedFeature.id != features[0].id) {
+						unoverFeature(features[0], this);
+
+						if (features[0].layer.type == 'fill-extrusion' && typeof features[0].id != 'undefined') {
+							if ((!selectedFeature || selectedFeature.id != features[0].id)) {
+								this.getCanvasContainer().style.cursor = 'pointer';
 								overedFeature = features[0];
-								if (overedFeature && typeof overedFeature.id != 'undefined') {
-									this.setFeatureState(
-										{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
-										{ hover: true }
-									);
-								}
+								this.setFeatureState(
+									{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
+									{ hover: true }
+								);
+								overedFeature = map.queryRenderedFeatures({ layers: [overedFeature.layer.id], filter: ["==", ['id'], overedFeature.id] })[0];
+								addTooltip(overedFeature, this);
+
 							}
 						}
 					}
@@ -386,17 +418,14 @@ Threebox.prototype = {
 			}
 
 			map.onMouseOut = function (e) {
-
-				this.getCanvasContainer().style.cursor = 'default';
-				if (overedFeature && typeof overedFeature.id != 'undefined') {
-
-					map.setFeatureState(
-						{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
-						{ hover: false }
-					);
-
+				if (overedFeature) {
+					let features = this.queryRenderedFeatures(e.point);
+					if (features.length > 0 && overedFeature.id != features[0].id) {
+						this.getCanvasContainer().style.cursor = 'default';
+						//only unover when new feature is another
+						unoverFeature(features[0], this);
+					}
 				}
-				overedFeature = null;
 			}
 
 			//listener to the events
@@ -463,7 +492,7 @@ Threebox.prototype = {
 
 	queryRenderedFeatures: function (point) {
 
-		var mouse = new THREE.Vector2();
+		let mouse = new THREE.Vector2();
 
 		// // scale mouse pixel position to a percentage of the screen's width and height
 		mouse.x = (point.x / this.map.transform.width) * 2 - 1;
@@ -472,7 +501,7 @@ Threebox.prototype = {
 		this.raycaster.setFromCamera(mouse, this.camera);
 
 		// calculate objects intersecting the picking ray
-		var intersects = this.raycaster.intersectObjects(this.world.children, true);
+		let intersects = this.raycaster.intersectObjects(this.world.children, true);
 
 		return intersects
 	},
@@ -572,6 +601,8 @@ Threebox.prototype = {
 	},
 
 	add: function (obj) {
+		//[jscastro] remove the tooltip if not enabled
+		if (!this.enableTooltips && obj.tooltip) { obj.tooltip.visibility = false };
 		this.world.add(obj);
 	},
 
@@ -582,6 +613,7 @@ Threebox.prototype = {
 		this.world.remove(obj);
 	},
 
+	//[jscastro] method to fully dispose the resources, watch out is you call this without navigating to other page
 	dispose: async function () {
 
 		console.log(window.tb.memory());
@@ -658,13 +690,19 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.2',
+	version: '2.0.3',
 
 }
 
 var defaultOptions = {
     defaultLights: false,
-    passiveRendering: true
+	passiveRendering: true,
+	enableSelectingFeatures: false,
+	enableSelectingObjects: false,
+	enableDraggingObjects: false,
+	enableRotatingObjects: false,
+	enableTooltips: false
+
 }
 module.exports = exports = Threebox;
 

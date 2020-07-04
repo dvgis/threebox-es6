@@ -76,7 +76,7 @@ Objects.prototype = {
 
 				// CSS2DObjects could bring an specific vertical positioning to correct in units
 				if (obj.userData.topMargin && obj.userData.feature) {
-					lnglat[2] += (obj.userData.feature.properties.height - obj.userData.feature.properties.base_height) * obj.userData.topMargin;
+					lnglat[2] += (obj.userData.feature.properties.height - (obj.userData.feature.properties.base_height || obj.userData.feature.properties.min_height || 0)) * obj.userData.topMargin;
 				}
 
 				obj.coordinates = lnglat;
@@ -286,12 +286,13 @@ Objects.prototype = {
 			}
 
 			//[jscastro] add tooltip method 
-			obj.addTooltip = function (tooltipText, mapboxStyle = false) {
+			obj.addTooltip = function (tooltipText, mapboxStyle = false, center = { x: 0, y: 0, z: 0 }) {
 				if (tooltipText) {
 					let divToolTip = root.drawTooltip(tooltipText, mapboxStyle);
 					let size = obj.getSize();
-					obj.tooltip = new CSS2D.CSS2DObject(divToolTip); 
-					obj.tooltip.position.set(-size.x / 2, -size.y / 2, 0); //top-centered
+					if (obj.tooltip) { obj.tooltip.remove; obj.tooltip = null; }
+					obj.tooltip = new CSS2D.CSS2DObject(divToolTip);
+					obj.tooltip.position.set((size.x * center.x), (size.y * center.y), size.z); //top-centered
 					obj.tooltip.visible = false; //only visible on mouseover or selected
 					//we add it to the first children to get same boxing and position
 					obj.children[0].add(obj.tooltip);
@@ -473,6 +474,7 @@ Objects.prototype = {
 		obj.duplicate = function () {
 			var dupe = obj.clone();
 			dupe.userData = obj.userData;
+			if (obj.model) { dupe.model = obj.model.clone(); }
 			root._addMethods(dupe);
 			return dupe
 		}
@@ -576,7 +578,8 @@ Objects.prototype = {
 			radius: 1,
 			sides: 20,
 			units: 'scene',
-			material: 'MeshBasicMaterial'
+			material: 'MeshBasicMaterial',
+			adjustment: { x: 0, y: 0, z: 0}
 		},
 
 		label: {
@@ -612,19 +615,19 @@ Objects.prototype = {
 		},
 
 		loadObj: {
-			type: '',
+			type: null,
 			obj: null,
-			bin: null,
 			units: 'scene',
 			scale: 1,
 			rotation: 0,
 			defaultAnimation: 0,
-			feature: null
+			adjustment: { x: 0, y: 0, z: 0 }
 		},
 
 		Object3D: {
 			obj: null,
-			units: 'scene'
+			units: 'scene',
+			adjustment: { x: 0, y: 0, z: 0 }
 		}
 	},
 
