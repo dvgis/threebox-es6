@@ -2,7 +2,573 @@
 window.Threebox = require('./src/Threebox.js'),
 window.THREE = require('./src/three.js')
 
-},{"./src/Threebox.js":2,"./src/three.js":24}],2:[function(require,module,exports){
+},{"./src/Threebox.js":7,"./src/three.js":31}],2:[function(require,module,exports){
+const THREE = require('../three.js');
+const AfterimageShader = require('../shaders/AfterimageShader.js');
+
+/**
+ * @author HypnosNova / https://www.threejs.org.cn/gallery/
+ */
+
+THREE.AfterimagePass = function (damp) {
+
+	THREE.Pass.call(this);
+
+	if (THREE.AfterimageShader === undefined)
+		console.error("THREE.AfterimagePass relies on THREE.AfterimageShader");
+
+	this.shader = THREE.AfterimageShader;
+
+	this.uniforms = THREE.UniformsUtils.clone(this.shader.uniforms);
+
+	this.uniforms["damp"].value = damp !== undefined ? damp : 0.96;
+
+	this.textureComp = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
+
+		minFilter: THREE.LinearFilter,
+		magFilter: THREE.NearestFilter,
+		format: THREE.RGBAFormat
+
+	});
+
+	this.textureOld = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
+
+		minFilter: THREE.LinearFilter,
+		magFilter: THREE.NearestFilter,
+		format: THREE.RGBAFormat
+
+	});
+
+	this.shaderMaterial = new THREE.ShaderMaterial({
+
+		uniforms: this.uniforms,
+		vertexShader: this.shader.vertexShader,
+		fragmentShader: this.shader.fragmentShader
+
+	});
+
+	this.compFsQuad = new THREE.Pass.FullScreenQuad(this.shaderMaterial);
+
+	var material = new THREE.MeshBasicMaterial();
+	this.copyFsQuad = new THREE.Pass.FullScreenQuad(material);
+
+};
+
+THREE.AfterimagePass.prototype = Object.assign(Object.create(THREE.Pass.prototype), {
+
+	constructor: THREE.AfterimagePass,
+
+	render: function (renderer, writeBuffer, readBuffer) {
+
+		this.uniforms["tOld"].value = this.textureOld.texture;
+		this.uniforms["tNew"].value = readBuffer.texture;
+
+		renderer.setRenderTarget(this.textureComp);
+		this.compFsQuad.render(renderer);
+
+		this.copyFsQuad.material.map = this.textureComp.texture;
+
+		if (this.renderToScreen) {
+
+			renderer.setRenderTarget(null);
+			this.copyFsQuad.render(renderer);
+
+		} else {
+
+			renderer.setRenderTarget(writeBuffer);
+
+			if (this.clear) renderer.clear();
+
+			this.copyFsQuad.render(renderer);
+
+		}
+
+		// Swap buffers.
+		var temp = this.textureOld;
+		this.textureOld = this.textureComp;
+		this.textureComp = temp;
+		// Now textureOld contains the latest image, ready for the next frame.
+
+	},
+
+	setSize: function (width, height) {
+
+		this.textureComp.setSize(width, height);
+		this.textureOld.setSize(width, height);
+
+	}
+
+});
+module.exports = exports = { 'THREE.AfterimagePass': THREE.AfterimagePass };
+},{"../shaders/AfterimageShader.js":29,"../three.js":31}],3:[function(require,module,exports){
+const THREE = require('../three.js');
+const ShaderPass = require('./ShaderPass.js');
+const CopyShader = require("../shaders/CopyShader.js");
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ */
+
+THREE.EffectComposer = function (renderer, renderTarget) {
+
+	this.renderer = renderer;
+
+	if (renderTarget === undefined) {
+
+		var parameters = {
+			minFilter: THREE.LinearFilter,
+			magFilter: THREE.LinearFilter,
+			format: THREE.RGBAFormat,
+			stencilBuffer: false
+		};
+
+		var size = renderer.getSize(new THREE.Vector2());
+		this._pixelRatio = renderer.getPixelRatio();
+		this._width = size.width;
+		this._height = size.height;
+
+		renderTarget = new THREE.WebGLRenderTarget(this._width * this._pixelRatio, this._height * this._pixelRatio, parameters);
+		renderTarget.texture.name = 'EffectComposer.rt1';
+
+	} else {
+
+		this._pixelRatio = 1;
+		this._width = renderTarget.width;
+		this._height = renderTarget.height;
+
+	}
+
+	this.renderTarget1 = renderTarget;
+	this.renderTarget2 = renderTarget.clone();
+	this.renderTarget2.texture.name = 'EffectComposer.rt2';
+
+	this.writeBuffer = this.renderTarget1;
+	this.readBuffer = this.renderTarget2;
+
+	this.renderToScreen = true;
+
+	this.passes = [];
+
+	// dependencies
+
+	if (CopyShader === undefined) {
+
+		console.error('THREE.EffectComposer relies on THREE.CopyShader');
+
+	}
+
+	if (ShaderPass === undefined) {
+
+		console.error('THREE.EffectComposer relies on THREE.ShaderPass');
+
+	}
+
+	this.copyPass = new ShaderPass(CopyShader);
+
+	this.clock = new THREE.Clock();
+
+};
+
+Object.assign(THREE.EffectComposer.prototype, {
+
+	swapBuffers: function () {
+
+		var tmp = this.readBuffer;
+		this.readBuffer = this.writeBuffer;
+		this.writeBuffer = tmp;
+
+	},
+
+	addPass: function (pass) {
+
+		this.passes.push(pass);
+		pass.setSize(this._width * this._pixelRatio, this._height * this._pixelRatio);
+
+	},
+
+	insertPass: function (pass, index) {
+
+		this.passes.splice(index, 0, pass);
+		pass.setSize(this._width * this._pixelRatio, this._height * this._pixelRatio);
+
+	},
+
+	isLastEnabledPass: function (passIndex) {
+
+		for (var i = passIndex + 1; i < this.passes.length; i++) {
+
+			if (this.passes[i].enabled) {
+
+				return false;
+
+			}
+
+		}
+
+		return true;
+
+	},
+
+	render: function (deltaTime) {
+
+		// deltaTime value is in seconds
+
+		if (deltaTime === undefined) {
+
+			deltaTime = this.clock.getDelta();
+
+		}
+
+		var currentRenderTarget = this.renderer.getRenderTarget();
+
+		var maskActive = false;
+
+		var pass, i, il = this.passes.length;
+
+		for (i = 0; i < il; i++) {
+
+			pass = this.passes[i];
+
+			if (pass.enabled === false) continue;
+
+			pass.renderToScreen = (this.renderToScreen && this.isLastEnabledPass(i));
+			pass.render(this.renderer, this.writeBuffer, this.readBuffer, deltaTime, maskActive);
+
+			if (pass.needsSwap) {
+
+				if (maskActive) {
+
+					var context = this.renderer.getContext();
+					var stencil = this.renderer.state.buffers.stencil;
+
+					//context.stencilFunc( context.NOTEQUAL, 1, 0xffffffff );
+					stencil.setFunc(context.NOTEQUAL, 1, 0xffffffff);
+
+					this.copyPass.render(this.renderer, this.writeBuffer, this.readBuffer, deltaTime);
+
+					//context.stencilFunc( context.EQUAL, 1, 0xffffffff );
+					stencil.setFunc(context.EQUAL, 1, 0xffffffff);
+
+				}
+
+				this.swapBuffers();
+
+			}
+
+			if (THREE.MaskPass !== undefined) {
+
+				if (pass instanceof THREE.MaskPass) {
+
+					maskActive = true;
+
+				} else if (pass instanceof THREE.ClearMaskPass) {
+
+					maskActive = false;
+
+				}
+
+			}
+
+		}
+
+		this.renderer.setRenderTarget(currentRenderTarget);
+
+	},
+
+	reset: function (renderTarget) {
+
+		if (renderTarget === undefined) {
+
+			var size = this.renderer.getSize(new THREE.Vector2());
+			this._pixelRatio = this.renderer.getPixelRatio();
+			this._width = size.width;
+			this._height = size.height;
+
+			renderTarget = this.renderTarget1.clone();
+			renderTarget.setSize(this._width * this._pixelRatio, this._height * this._pixelRatio);
+
+		}
+
+		this.renderTarget1.dispose();
+		this.renderTarget2.dispose();
+		this.renderTarget1 = renderTarget;
+		this.renderTarget2 = renderTarget.clone();
+
+		this.writeBuffer = this.renderTarget1;
+		this.readBuffer = this.renderTarget2;
+
+	},
+
+	setSize: function (width, height) {
+
+		this._width = width;
+		this._height = height;
+
+		var effectiveWidth = this._width * this._pixelRatio;
+		var effectiveHeight = this._height * this._pixelRatio;
+
+		this.renderTarget1.setSize(effectiveWidth, effectiveHeight);
+		this.renderTarget2.setSize(effectiveWidth, effectiveHeight);
+
+		for (var i = 0; i < this.passes.length; i++) {
+
+			this.passes[i].setSize(effectiveWidth, effectiveHeight);
+
+		}
+
+	},
+
+	setPixelRatio: function (pixelRatio) {
+
+		this._pixelRatio = pixelRatio;
+
+		this.setSize(this._width, this._height);
+
+	}
+
+});
+
+
+module.exports = exports = { 'THREE.EffectComposer': THREE.EffectComposer };
+
+
+},{"../shaders/CopyShader.js":30,"../three.js":31,"./ShaderPass.js":6}],4:[function(require,module,exports){
+const THREE = require('../three.js');
+
+THREE.Pass = function () {
+
+	// if set to true, the pass is processed by the composer
+	this.enabled = true;
+
+	// if set to true, the pass indicates to swap read and write buffer after rendering
+	this.needsSwap = true;
+
+	// if set to true, the pass clears its buffer before rendering
+	this.clear = false;
+
+	// if set to true, the result of the pass is rendered to screen. This is set automatically by EffectComposer.
+	this.renderToScreen = false;
+
+};
+
+Object.assign(THREE.Pass.prototype, {
+
+	setSize: function ( /* width, height */) { },
+
+	render: function ( /* renderer, writeBuffer, readBuffer, deltaTime, maskActive */) {
+
+		console.error('THREE.Pass: .render() must be implemented in derived pass.');
+
+	}
+
+});
+
+// Helper for passes that need to fill the viewport with a single quad.
+THREE.Pass.FullScreenQuad = (function () {
+
+	var camera = new THREE.OrthographicCamera(- 1, 1, 1, - 1, 0, 1);
+	var geometry = new THREE.PlaneBufferGeometry(2, 2);
+
+	var FullScreenQuad = function (material) {
+
+		this._mesh = new THREE.Mesh(geometry, material);
+
+	};
+
+	Object.defineProperty(FullScreenQuad.prototype, 'material', {
+
+		get: function () {
+
+			return this._mesh.material;
+
+		},
+
+		set: function (value) {
+
+			this._mesh.material = value;
+
+		}
+
+	});
+
+	Object.assign(FullScreenQuad.prototype, {
+
+		dispose: function () {
+
+			this._mesh.geometry.dispose();
+
+		},
+
+		render: function (renderer) {
+
+			renderer.render(this._mesh, camera);
+
+		}
+
+	});
+
+	return FullScreenQuad;
+
+})();
+
+module.exports = exports = { 'THREE.Pass': THREE.Pass };
+},{"../three.js":31}],5:[function(require,module,exports){
+const THREE = require('../three.js');
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ */
+
+THREE.RenderPass = function (scene, camera, overrideMaterial, clearColor, clearAlpha) {
+
+	THREE.Pass.call(this);
+
+	this.scene = scene;
+	this.camera = camera;
+
+	this.overrideMaterial = overrideMaterial;
+
+	this.clearColor = clearColor;
+	this.clearAlpha = (clearAlpha !== undefined) ? clearAlpha : 0;
+
+	this.clear = false;
+	this.clearDepth = false;
+	this.needsSwap = false;
+
+};
+
+THREE.RenderPass.prototype = Object.assign(Object.create(THREE.Pass.prototype), {
+
+	constructor: THREE.RenderPass,
+
+	render: function (renderer, writeBuffer, readBuffer /*, deltaTime, maskActive */) {
+
+		var oldAutoClear = renderer.autoClear;
+		renderer.autoClear = false;
+
+		var oldClearColor, oldClearAlpha, oldOverrideMaterial;
+
+		if (this.overrideMaterial !== undefined) {
+
+			oldOverrideMaterial = this.scene.overrideMaterial;
+
+			this.scene.overrideMaterial = this.overrideMaterial;
+
+		}
+
+		if (this.clearColor) {
+
+			oldClearColor = renderer.getClearColor().getHex();
+			oldClearAlpha = renderer.getClearAlpha();
+
+			renderer.setClearColor(this.clearColor, this.clearAlpha);
+
+		}
+
+		if (this.clearDepth) {
+
+			renderer.clearDepth();
+
+		}
+
+		renderer.setRenderTarget(this.renderToScreen ? null : readBuffer);
+
+		// TODO: Avoid using autoClear properties, see https://github.com/mrdoob/three.js/pull/15571#issuecomment-465669600
+		if (this.clear) renderer.clear(renderer.autoClearColor, renderer.autoClearDepth, renderer.autoClearStencil);
+		renderer.state.reset();
+		renderer.render(this.scene, this.camera);
+
+		if (this.clearColor) {
+
+			renderer.setClearColor(oldClearColor, oldClearAlpha);
+
+		}
+
+		if (this.overrideMaterial !== undefined) {
+
+			this.scene.overrideMaterial = oldOverrideMaterial;
+
+		}
+
+		renderer.autoClear = oldAutoClear;
+
+	}
+
+});
+
+module.exports = exports = { 'THREE.RenderPass': THREE.RenderPass };
+},{"../three.js":31}],6:[function(require,module,exports){
+const THREE = require('../three.js');
+const Pass = require('./Pass.js');
+/**
+ * @author alteredq / http://alteredqualia.com/
+ */
+
+THREE.ShaderPass = function (shader, textureID) {
+
+	THREE.Pass.call(this);
+
+	this.textureID = (textureID !== undefined) ? textureID : "tDiffuse";
+
+	if (shader instanceof THREE.ShaderMaterial) {
+
+		this.uniforms = shader.uniforms;
+
+		this.material = shader;
+
+	} else if (shader) {
+
+		this.uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+
+		this.material = new THREE.ShaderMaterial({
+
+			defines: Object.assign({}, shader.defines),
+			uniforms: this.uniforms,
+			vertexShader: shader.vertexShader,
+			fragmentShader: shader.fragmentShader
+
+		});
+
+	}
+
+	this.fsQuad = new THREE.Pass.FullScreenQuad(this.material);
+
+};
+
+THREE.ShaderPass.prototype = Object.assign(Object.create(THREE.Pass.prototype), {
+
+	constructor: THREE.ShaderPass,
+
+	render: function (renderer, writeBuffer, readBuffer /*, deltaTime, maskActive */) {
+
+		if (this.uniforms[this.textureID]) {
+
+			this.uniforms[this.textureID].value = readBuffer.texture;
+
+		}
+
+		this.fsQuad.material = this.material;
+
+		if (this.renderToScreen) {
+
+			renderer.setRenderTarget(null);
+			this.fsQuad.render(renderer);
+
+		} else {
+
+			renderer.setRenderTarget(writeBuffer);
+			// TODO: Avoid using autoClear properties, see https://github.com/mrdoob/three.js/pull/15571#issuecomment-465669600
+			if (this.clear) renderer.clear(renderer.autoClearColor, renderer.autoClearDepth, renderer.autoClearStencil);
+			this.fsQuad.render(renderer);
+
+		}
+
+	}
+
+});
+
+module.exports = exports = THREE.ShaderPass;
+},{"../three.js":31,"./Pass.js":4}],7:[function(require,module,exports){
 var THREE = require("./three.js");
 var CameraSync = require("./camera/CameraSync.js");
 var utils = require("./utils/utils.js");
@@ -18,7 +584,17 @@ var loadObj = require("./objects/loadObj.js");
 var Object3D = require("./objects/Object3D.js");
 var line = require("./objects/line.js");
 var tube = require("./objects/tube.js");
-var LabelRenderer = require("./objects/LabelRenderer.js")
+var LabelRenderer = require("./objects/LabelRenderer.js");
+var EffectComposer = require("./Postprocessing/EffectComposer.js");
+var RenderPass = require("./Postprocessing/RenderPass.js");
+var AfterimagePass = require("./Postprocessing/AfterimagePass.js");
+//var UnrealBloomPass = require("./Postprocessing/UnrealBloomPass.js");
+//var ShaderPass = require("./Postprocessing/ShaderPass.js");
+//var FXAAShader = require("./Shaders/FXAAShader.js");
+//var OutlinePass = require("./Postprocessing/OutlinePass.js");
+//var OutlineEffect = require("./Postprocessing/OutlineEffect.js");
+//var HorizontalBlurShader = require("./Shaders/HorizontalBlurShader.js");
+//var CopyShader = require("./Shaders/CopyShader.js");
 
 function Threebox(map, glContext, options){
 
@@ -75,6 +651,24 @@ Threebox.prototype = {
 		this.objectsCache = [];
 
 		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
+
+		//[jscastro] Create a RenderPass that will replace go through EffectComposer
+		this.originalRenderer = this.renderer;
+		this.renderScene = new THREE.RenderPass(this.scene, this.camera);
+		this.renderer = new THREE.EffectComposer(this.renderer);
+		this.composer.addPass(this.renderScene);
+
+		if (this.options.afterimagePass) {
+			this.aip = new THREE.AfterimagePass();
+			this.aip.renderToScreen = false;
+			this.aip._realRender = this.aip.render;
+			this.aip.render = function (renderer) {
+				renderer.setRenderTarget(this.textureComp);
+				renderer.clear();
+				this._realRender.apply(this, arguments);
+			}
+			this.composer.addPass(this.aip);
+		}
 
 		//raycaster for mouse events
 		this.raycaster = new THREE.Raycaster();
@@ -442,6 +1036,10 @@ Threebox.prototype = {
 
 		});
 
+		var _this = this;
+		this.map.on('resize', function () {
+				_this.renderer.setSize(this.getCanvas().clientWidth, this.getCanvas().clientHeight);
+			})
 	},
 
 	// Objects
@@ -594,10 +1192,9 @@ Threebox.prototype = {
 		// Update any animations
 		this.objects.animationManager.update(timestamp);
 
-		this.renderer.state.reset();
-
 		// Render the scene and repaint the map
-		this.renderer.render(this.scene, this.camera);
+		//this.renderer.state.reset();
+		this.composer.render(this.scene, this.camera);
 
 		// [jscastro] Render any label
 		this.labelRenderer.render(this.scene, this.camera);
@@ -695,7 +1292,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.3',
+	version: '2.0.4',
 
 }
 
@@ -706,13 +1303,16 @@ var defaultOptions = {
 	enableSelectingObjects: false,
 	enableDraggingObjects: false,
 	enableRotatingObjects: false,
-	enableTooltips: false
+	enableTooltips: false,
+	outlinePass: false,
+	afterimagePass: false,
+	unrealBloomPass: false
 
 }
 module.exports = exports = Threebox;
 
 
-},{"./animation/AnimationManager.js":6,"./camera/CameraSync.js":7,"./objects/LabelRenderer.js":9,"./objects/Object3D.js":10,"./objects/label.js":12,"./objects/line.js":13,"./objects/loadObj.js":14,"./objects/objects.js":20,"./objects/sphere.js":21,"./objects/tooltip.js":22,"./objects/tube.js":23,"./three.js":24,"./utils/constants.js":25,"./utils/material.js":26,"./utils/utils.js":27}],3:[function(require,module,exports){
+},{"./Postprocessing/AfterimagePass.js":2,"./Postprocessing/EffectComposer.js":3,"./Postprocessing/RenderPass.js":5,"./animation/AnimationManager.js":11,"./camera/CameraSync.js":12,"./objects/LabelRenderer.js":14,"./objects/Object3D.js":15,"./objects/label.js":17,"./objects/line.js":18,"./objects/loadObj.js":19,"./objects/objects.js":25,"./objects/sphere.js":26,"./objects/tooltip.js":27,"./objects/tube.js":28,"./three.js":31,"./utils/constants.js":32,"./utils/material.js":33,"./utils/utils.js":34}],8:[function(require,module,exports){
 var THREE = require("../three.js");
 var Constants = require("./constants.js");
 var validate = require("./validate.js");
@@ -1037,7 +1637,7 @@ var utils = {
 }
 
 module.exports = exports = utils
-},{"../three.js":24,"./constants.js":4,"./validate.js":5}],4:[function(require,module,exports){
+},{"../three.js":31,"./constants.js":9,"./validate.js":10}],9:[function(require,module,exports){
 const WORLD_SIZE = 1024000;
 const MERCATOR_A = 6378137.0;
 const FOV = Math.atan(3/4);
@@ -1053,7 +1653,7 @@ module.exports = exports = {
     FOV_DEGREES: FOV * 360 / (Math.PI * 2), // Math.atan(3/4) in degrees
     TILE_SIZE: 512
 }
-},{}],5:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 // Type validator
 
 function Validate(){
@@ -1169,7 +1769,7 @@ Validate.prototype = {
 
 
 module.exports = exports = Validate;
-},{}],6:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 const THREE = require('../three.js');
 var threebox = require('../Threebox.js');
 var utils = require("../utils/utils.js");
@@ -1606,7 +2206,7 @@ const defaults = {
     }
 }
 module.exports = exports = AnimationManager;
-},{"../Threebox.js":2,"../three.js":24,"../utils/utils.js":27,"../utils/validate.js":28}],7:[function(require,module,exports){
+},{"../Threebox.js":7,"../three.js":31,"../utils/utils.js":34,"../utils/validate.js":35}],12:[function(require,module,exports){
 var THREE = require("../three.js");
 var utils = require("../Utils/Utils.js");
 var ThreeboxConstants = require("../Utils/constants.js");
@@ -1730,7 +2330,7 @@ CameraSync.prototype = {
 }
 
 module.exports = exports = CameraSync;
-},{"../Utils/Utils.js":3,"../Utils/constants.js":4,"../three.js":24}],8:[function(require,module,exports){
+},{"../Utils/Utils.js":8,"../Utils/constants.js":9,"../three.js":31}],13:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -1960,7 +2560,7 @@ THREE.CSS2DRenderer = function () {
 module.exports = exports = { CSS2DRenderer: THREE.CSS2DRenderer, CSS2DObject: THREE.CSS2DObject };
 
 
-},{"../three.js":24}],9:[function(require,module,exports){
+},{"../three.js":31}],14:[function(require,module,exports){
 /**
  * @author jscastro / https://github.com/jscastro76
  */
@@ -2057,7 +2657,7 @@ LabelRenderer = function (map) {
 }
 
 module.exports = exports = LabelRenderer;
-},{"./CSS2DRenderer.js":8}],10:[function(require,module,exports){
+},{"./CSS2DRenderer.js":13}],15:[function(require,module,exports){
 var Objects = require('./objects.js');
 var utils = require("../utils/utils.js");
 
@@ -2095,7 +2695,7 @@ function Object3D(options) {
 
 
 module.exports = exports = Object3D;
-},{"../utils/utils.js":27,"./objects.js":20}],11:[function(require,module,exports){
+},{"../utils/utils.js":34,"./objects.js":25}],16:[function(require,module,exports){
 /** @license zlib.js 2012 - imaya [ https://github.com/imaya/zlib.js ] The MIT License */var mod = {}, l = void 0, aa = mod; function r(c, d) { var a = c.split("."), b = aa; !(a[0] in b) && b.execScript && b.execScript("var " + a[0]); for (var e; a.length && (e = a.shift());)!a.length && d !== l ? b[e] = d : b = b[e] ? b[e] : b[e] = {} }; var t = "undefined" !== typeof Uint8Array && "undefined" !== typeof Uint16Array && "undefined" !== typeof Uint32Array && "undefined" !== typeof DataView; function v(c) { var d = c.length, a = 0, b = Number.POSITIVE_INFINITY, e, f, g, h, k, m, n, p, s, x; for (p = 0; p < d; ++p)c[p] > a && (a = c[p]), c[p] < b && (b = c[p]); e = 1 << a; f = new (t ? Uint32Array : Array)(e); g = 1; h = 0; for (k = 2; g <= a;) { for (p = 0; p < d; ++p)if (c[p] === g) { m = 0; n = h; for (s = 0; s < g; ++s)m = m << 1 | n & 1, n >>= 1; x = g << 16 | p; for (s = m; s < e; s += k)f[s] = x; ++h } ++g; h <<= 1; k <<= 1 } return [f, a, b] }; function w(c, d) {
 this.g = []; this.h = 32768; this.d = this.f = this.a = this.l = 0; this.input = t ? new Uint8Array(c) : c; this.m = !1; this.i = y; this.r = !1; if (d || !(d = {})) d.index && (this.a = d.index), d.bufferSize && (this.h = d.bufferSize), d.bufferType && (this.i = d.bufferType), d.resize && (this.r = d.resize); switch (this.i) {
 	case A: this.b = 32768; this.c = new (t ? Uint8Array : Array)(32768 + this.h + 258); break; case y: this.b = 0; this.c = new (t ? Uint8Array : Array)(this.h); this.e = this.z; this.n = this.v; this.j = this.w; break; default: throw Error("invalid inflate mode");
@@ -2127,7 +2727,7 @@ var Zlib = mod.Zlib;
 
 module.exports = exports = Zlib;
 
-},{}],12:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 const utils = require("../Utils/Utils.js");
 const Objects = require('./objects.js');
 const CSS2D = require('./CSS2DRenderer.js');
@@ -2152,7 +2752,7 @@ function Label(obj) {
 
 
 module.exports = exports = Label;
-},{"../Utils/Utils.js":3,"./CSS2DRenderer.js":8,"./objects.js":20}],13:[function(require,module,exports){
+},{"../Utils/Utils.js":8,"./CSS2DRenderer.js":13,"./objects.js":25}],18:[function(require,module,exports){
 var THREE = require("../three.js");
 var utils = require("../utils/utils.js");
 var Objects = require('./objects.js');
@@ -3147,7 +3747,7 @@ THREE.Wireframe.prototype = Object.assign( Object.create( THREE.Mesh.prototype )
 
 } );
 
-},{"../three.js":24,"../utils/utils.js":27,"./objects.js":20}],14:[function(require,module,exports){
+},{"../three.js":31,"../utils/utils.js":34,"./objects.js":25}],19:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var Objects = require('./objects.js');
 const OBJLoader = require("./loaders/OBJLoader.js");
@@ -3322,7 +3922,7 @@ function loadObj(options, cb) {
 
 
 module.exports = exports = loadObj;
-},{"../utils/utils.js":27,"./loaders/ColladaLoader.js":15,"./loaders/FBXLoader.js":16,"./loaders/GLTFLoader.js":17,"./loaders/MTLLoader.js":18,"./loaders/OBJLoader.js":19,"./objects.js":20}],15:[function(require,module,exports){
+},{"../utils/utils.js":34,"./loaders/ColladaLoader.js":20,"./loaders/FBXLoader.js":21,"./loaders/GLTFLoader.js":22,"./loaders/MTLLoader.js":23,"./loaders/OBJLoader.js":24,"./objects.js":25}],20:[function(require,module,exports){
 const THREE = require('../../three.js');
 
 /**
@@ -7308,7 +7908,7 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 
 module.exports = exports = THREE.ColladaLoader;
 
-},{"../../three.js":24}],16:[function(require,module,exports){
+},{"../../three.js":31}],21:[function(require,module,exports){
 const THREE = require('../../three.js');
 const Zlib = require('../Zlib.Inflate.js');
 
@@ -11443,7 +12043,7 @@ THREE.FBXLoader = (function () {
 
 module.exports = exports = THREE.FBXLoader;
 
-},{"../../three.js":24,"../Zlib.Inflate.js":11}],17:[function(require,module,exports){
+},{"../../three.js":31,"../Zlib.Inflate.js":16}],22:[function(require,module,exports){
 const THREE = require('../../three.js');
 /**
  * @author Rich Tibbett / https://github.com/richtr
@@ -14889,7 +15489,7 @@ THREE.GLTFLoader = (function () {
 })();
 
 module.exports = exports = THREE.GLTFLoader;
-},{"../../three.js":24}],18:[function(require,module,exports){
+},{"../../three.js":31}],23:[function(require,module,exports){
 const THREE = require('../../three.js');
 
 const MTLLoader = function ( manager ) {
@@ -15449,7 +16049,7 @@ THREE.MTLLoader.MaterialCreator.prototype = {
 };
 
 module.exports = exports = THREE.MTLLoader;
-},{"../../three.js":24}],19:[function(require,module,exports){
+},{"../../three.js":31}],24:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -16325,7 +16925,7 @@ THREE.OBJLoader = (function () {
 })();
 
 module.exports = exports = THREE.OBJLoader;
-},{"../../three.js":24}],20:[function(require,module,exports){
+},{"../../three.js":31}],25:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 const THREE = require('../three.js');
@@ -16967,7 +17567,7 @@ Objects.prototype = {
 }
 
 module.exports = exports = Objects;
-},{"../animation/AnimationManager.js":6,"../three.js":24,"../utils/material.js":26,"../utils/utils.js":27,"./CSS2DRenderer.js":8}],21:[function(require,module,exports){
+},{"../animation/AnimationManager.js":11,"../three.js":31,"../utils/material.js":33,"../utils/utils.js":34,"./CSS2DRenderer.js":13}],26:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 var Objects = require('./objects.js');
@@ -16987,7 +17587,7 @@ function Sphere(options) {
 
 
 module.exports = exports = Sphere;
-},{"../utils/material.js":26,"../utils/utils.js":27,"./Object3D.js":10,"./objects.js":20}],22:[function(require,module,exports){
+},{"../utils/material.js":33,"../utils/utils.js":34,"./Object3D.js":15,"./objects.js":25}],27:[function(require,module,exports){
 const utils = require("../Utils/Utils.js");
 const Objects = require('./objects.js');
 const CSS2D = require('./CSS2DRenderer.js');
@@ -17012,7 +17612,7 @@ function Tooltip(obj) {
 }
 
 module.exports = exports = Tooltip;
-},{"../Utils/Utils.js":3,"./CSS2DRenderer.js":8,"./objects.js":20}],23:[function(require,module,exports){
+},{"../Utils/Utils.js":8,"./CSS2DRenderer.js":13,"./objects.js":25}],28:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 var Objects = require('./objects.js');
@@ -17213,7 +17813,121 @@ tube.prototype = {
 module.exports = exports = tube;
 
 
-},{"../three.js":24,"../utils/material.js":26,"../utils/utils.js":27,"./objects.js":20}],24:[function(require,module,exports){
+},{"../three.js":31,"../utils/material.js":33,"../utils/utils.js":34,"./objects.js":25}],29:[function(require,module,exports){
+const THREE = require('../three.js');
+
+/**
+ * @author HypnosNova / https://www.threejs.org.cn/gallery/
+ *
+ * Afterimage shader
+ * I created this effect inspired by a demo on codepen:
+ * https://codepen.io/brunoimbrizi/pen/MoRJaN?page=1&
+ */
+
+THREE.AfterimageShader = {
+
+	uniforms: {
+
+		"damp": { value: 0.96 },
+		"tOld": { value: null },
+		"tNew": { value: null }
+
+	},
+
+	vertexShader: [
+
+		"varying vec2 vUv;",
+
+		"void main() {",
+
+		"	vUv = uv;",
+		"	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+
+		"}"
+
+	].join("\n"),
+
+	fragmentShader: [
+
+		"uniform float damp;",
+
+		"uniform sampler2D tOld;",
+		"uniform sampler2D tNew;",
+
+		"varying vec2 vUv;",
+
+		"vec4 when_gt( vec4 x, float y ) {",
+
+		"	return max( sign( x - y ), 0.0 );",
+
+		"}",
+
+		"void main() {",
+
+		"	vec4 texelOld = texture2D( tOld, vUv );",
+		"	vec4 texelNew = texture2D( tNew, vUv );",
+
+		"	texelOld *= damp * when_gt( texelOld, 0.1 );",
+
+		"	gl_FragColor = max(texelNew, texelOld);",
+
+		"}"
+
+	].join("\n")
+
+};
+module.exports = exports = { 'THREE.AfterimageShader' : THREE.AfterimageShader };
+},{"../three.js":31}],30:[function(require,module,exports){
+const THREE = require('../three.js');
+/**
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * Full-screen textured quad shader
+ */
+
+THREE.CopyShader = {
+
+	uniforms: {
+
+		"tDiffuse": { value: null },
+		"opacity": { value: 1.0 }
+
+	},
+
+	vertexShader: [
+
+		"varying vec2 vUv;",
+
+		"void main() {",
+
+		"	vUv = uv;",
+		"	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+
+		"}"
+
+	].join("\n"),
+
+	fragmentShader: [
+
+		"uniform float opacity;",
+
+		"uniform sampler2D tDiffuse;",
+
+		"varying vec2 vUv;",
+
+		"void main() {",
+
+		"	vec4 texel = texture2D( tDiffuse, vUv );",
+		"	gl_FragColor = opacity * texel;",
+
+		"}"
+
+	].join("\n")
+
+};
+
+module.exports = exports = { 'THREE.CopyShader': THREE.CopyShader };
+},{"../three.js":31}],31:[function(require,module,exports){
 // threejs.org/license
 (function(k,ua){"object"===typeof exports&&"undefined"!==typeof module?ua(exports):"function"===typeof define&&define.amd?define(["exports"],ua):(k=k||self,ua(k.THREE={}))})(this,function(k){function ua(){}function v(a,b){this.x=a||0;this.y=b||0}function ya(){this.elements=[1,0,0,0,1,0,0,0,1];0<arguments.length&&console.error("THREE.Matrix3: the constructor no longer reads arguments. use .set() instead.")}function W(a,b,c,d,e,f,g,h,l,m){Object.defineProperty(this,"id",{value:ej++});this.uuid=O.generateUUID();
 this.name="";this.image=void 0!==a?a:W.DEFAULT_IMAGE;this.mipmaps=[];this.mapping=void 0!==b?b:W.DEFAULT_MAPPING;this.wrapS=void 0!==c?c:1001;this.wrapT=void 0!==d?d:1001;this.magFilter=void 0!==e?e:1006;this.minFilter=void 0!==f?f:1008;this.anisotropy=void 0!==l?l:1;this.format=void 0!==g?g:1023;this.internalFormat=null;this.type=void 0!==h?h:1009;this.offset=new v(0,0);this.repeat=new v(1,1);this.center=new v(0,0);this.rotation=0;this.matrixAutoUpdate=!0;this.matrix=new ya;this.generateMipmaps=
@@ -18269,9 +18983,9 @@ Oh;k.UnsignedByteType=1009;k.UnsignedInt248Type=1020;k.UnsignedIntType=1014;k.Un
 Ba;k.WebGLRenderTargetCube=function(a,b,c){console.warn("THREE.WebGLRenderTargetCube( width, height, options ) is now WebGLCubeRenderTarget( size, options ).");return new Zb(a,c)};k.WebGLRenderer=jg;k.WebGLUtils=Th;k.WireframeGeometry=Pc;k.WireframeHelper=function(a,b){console.warn("THREE.WireframeHelper has been removed. Use THREE.WireframeGeometry instead.");return new ma(new Pc(a.geometry),new da({color:void 0!==b?b:16777215}))};k.WrapAroundEnding=2402;k.XHRLoader=function(a){console.warn("THREE.XHRLoader has been renamed to THREE.FileLoader.");
 return new Ta(a)};k.ZeroCurvatureEnding=2400;k.ZeroFactor=200;k.ZeroSlopeEnding=2401;k.ZeroStencilOp=0;k.sRGBEncoding=3001;Object.defineProperty(k,"__esModule",{value:!0})});
 
-},{}],25:[function(require,module,exports){
-arguments[4][4][0].apply(exports,arguments)
-},{"dup":4}],26:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
+arguments[4][9][0].apply(exports,arguments)
+},{"dup":9}],33:[function(require,module,exports){
 // This module creates a THREE material from the options object provided into the Objects class.
 // Users can do this in one of three ways:
 
@@ -18324,8 +19038,8 @@ function material (options) {
 
 module.exports = exports = material;
 
-},{"../Utils/Utils.js":3,"../three.js":24}],27:[function(require,module,exports){
-arguments[4][3][0].apply(exports,arguments)
-},{"../three.js":24,"./constants.js":25,"./validate.js":28,"dup":3}],28:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}]},{},[1]);
+},{"../Utils/Utils.js":8,"../three.js":31}],34:[function(require,module,exports){
+arguments[4][8][0].apply(exports,arguments)
+},{"../three.js":31,"./constants.js":32,"./validate.js":35,"dup":8}],35:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}]},{},[1]);

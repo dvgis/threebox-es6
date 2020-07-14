@@ -13,7 +13,17 @@ var loadObj = require("./objects/loadObj.js");
 var Object3D = require("./objects/Object3D.js");
 var line = require("./objects/line.js");
 var tube = require("./objects/tube.js");
-var LabelRenderer = require("./objects/LabelRenderer.js")
+var LabelRenderer = require("./objects/LabelRenderer.js");
+var EffectComposer = require("./Postprocessing/EffectComposer.js");
+var RenderPass = require("./Postprocessing/RenderPass.js");
+var AfterimagePass = require("./Postprocessing/AfterimagePass.js");
+//var UnrealBloomPass = require("./Postprocessing/UnrealBloomPass.js");
+//var ShaderPass = require("./Postprocessing/ShaderPass.js");
+//var FXAAShader = require("./Shaders/FXAAShader.js");
+//var OutlinePass = require("./Postprocessing/OutlinePass.js");
+//var OutlineEffect = require("./Postprocessing/OutlineEffect.js");
+//var HorizontalBlurShader = require("./Shaders/HorizontalBlurShader.js");
+//var CopyShader = require("./Shaders/CopyShader.js");
 
 function Threebox(map, glContext, options){
 
@@ -70,6 +80,24 @@ Threebox.prototype = {
 		this.objectsCache = [];
 
 		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
+
+		//[jscastro] Create a RenderPass that will replace go through EffectComposer
+		this.originalRenderer = this.renderer;
+		this.renderScene = new THREE.RenderPass(this.scene, this.camera);
+		this.renderer = new THREE.EffectComposer(this.renderer);
+		this.composer.addPass(this.renderScene);
+
+		if (this.options.afterimagePass) {
+			this.aip = new THREE.AfterimagePass();
+			this.aip.renderToScreen = false;
+			this.aip._realRender = this.aip.render;
+			this.aip.render = function (renderer) {
+				renderer.setRenderTarget(this.textureComp);
+				renderer.clear();
+				this._realRender.apply(this, arguments);
+			}
+			this.composer.addPass(this.aip);
+		}
 
 		//raycaster for mouse events
 		this.raycaster = new THREE.Raycaster();
@@ -437,6 +465,10 @@ Threebox.prototype = {
 
 		});
 
+		var _this = this;
+		this.map.on('resize', function () {
+				_this.renderer.setSize(this.getCanvas().clientWidth, this.getCanvas().clientHeight);
+			})
 	},
 
 	// Objects
@@ -589,10 +621,9 @@ Threebox.prototype = {
 		// Update any animations
 		this.objects.animationManager.update(timestamp);
 
-		this.renderer.state.reset();
-
 		// Render the scene and repaint the map
-		this.renderer.render(this.scene, this.camera);
+		//this.renderer.state.reset();
+		this.composer.render(this.scene, this.camera);
 
 		// [jscastro] Render any label
 		this.labelRenderer.render(this.scene, this.camera);
@@ -690,7 +721,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.3',
+	version: '2.0.4',
 
 }
 
@@ -701,7 +732,10 @@ var defaultOptions = {
 	enableSelectingObjects: false,
 	enableDraggingObjects: false,
 	enableRotatingObjects: false,
-	enableTooltips: false
+	enableTooltips: false,
+	outlinePass: false,
+	afterimagePass: false,
+	unrealBloomPass: false
 
 }
 module.exports = exports = Threebox;
