@@ -13,20 +13,17 @@ function Object3D(options) {
 	userScaleGroup.model = options.obj;
 
 	Objects.prototype._addMethods(userScaleGroup);
-
-	// [jscastro] if center must be adjusted
-	let center = options.adjustment;
-	if (center) {
-		let size = userScaleGroup.getSize();
-		obj.position.set(size.x * center.x, size.y * center.y, size.z * center.z)
-	}
+	//[jscastro] calculate automatically the pivotal center of the object
+	userScaleGroup.setAnchor(options.anchor);
+	//[jscastro] override the center calculated if the object has adjustments
+	userScaleGroup.setCenter(options.adjustment);
 
 	// [jscastro] after adding methods create the bounding box at userScaleGroup but add it to its children for positioning
 	let boxGrid = userScaleGroup.drawBoundingBox();
 	projScaleGroup.add(boxGrid);
 
 	// [jscastro] we add by default a tooltip that can be override later or hide it with threebox `enableTooltips`
-	userScaleGroup.addTooltip(userScaleGroup.uuid, true, center);
+	userScaleGroup.addTooltip(userScaleGroup.uuid, true, userScaleGroup.anchor);
 
 	userScaleGroup.visibility = true;
 

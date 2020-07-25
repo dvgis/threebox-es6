@@ -1,0 +1,251 @@
+<!doctype html>
+<html>
+<head>
+	<title>Statue of Liberty and Eiffel Tower</title>
+	<script src="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.css" rel="stylesheet" />
+	<script src="../dist/threebox.js" type="text/javascript"></script>
+	<link href="./css/threebox.css" rel="stylesheet" />
+	<script src="plugins/jquery.min.js" type="text/javascript"></script>
+	<!-- Place your kit's code here -->
+	<script src="css/fontawesome.js"></script>
+	<link href="css/free.min.css" rel="stylesheet" />
+	<link href="css/free-v4-font-face-min.css" rel="stylesheet" />
+	<link href="css/free-v4-shims.min.css" rel="stylesheet" />
+	<script src="config.js"></script>
+</head>
+<body>
+	<div id='map' class='map'>
+		<div class="mapboxgl-ctrl helpDiv">
+			<div id="help" class="help">
+				This demo shows over a satellite mapbox style the following features:<br />
+				- Built-in raycasting and selection through 'enableSelectingFeatures' and 'enableSelectingObjects'<br />
+				- Built-in Tooltips on Objects and Fill-Extrusions through 'enableTooltips' <br />
+				- Event handler management for Features through 'map.on('SelectedFeatureChange', ...)'<br />
+				- Event handler management for 3DObjects through 'map.on('SelectedChange', ...)'
+			</div>
+		</div>
+		<div class="mapboxgl-ctrl-top-left">
+			<div id="toolsControl" class="tools-i mapboxgl-ctrl mapboxgl-ctrl-group btn-group btn-group-toggle" style="margin-left:20px;" data-toggle="buttons">
+				<button type="button" name="ALL" id="ALL" title="All" alt="All"><i class="fas fa-globe-americas"></i></button>
+				<button type="button" name="NYC" id="NYC" title="Statue of Liberty, NYC" alt="Statue of Liberty, NYC"><i style="width: 26px; height: 26px; background: url(./images/statue-of-liberty.png) no-repeat center center; background-size: contain; display: block;"></i></button>
+				<button type="button" name="PAR" id="PAR" title="Eiffel Tower, Paris" alt="Eiffel Tower, Paris"><i style="width: 26px; height: 26px; background: url(./images/eiffel-tower.png) no-repeat center center; background-size: contain; display: block;"></i></button>
+			</div>
+			<div style="width:150px;display: inline-block;background: rgba(0, 0, 0, 0.5);border-radius: 3px;color: white;">Icons made by <a href="" title="monkik">monkik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
+		</div>
+
+	</div>
+	<script>
+
+		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
+
+		mapboxgl.accessToken = config.accessToken;
+
+		//starting location for map
+		let popup;
+		let minZoom = 12;
+		let mapConfig = {
+			ALL: { center: [-100.021884, 39.609738, 0], zoom: 3.25, pitch: 12, bearing: 0 },
+			NYC: { origin: [-74.044513, 40.689262, 46.9], center: [-74.044753, 40.690209, 0], zoom: 17.7, pitch: 60, bearing: -10 },
+			PAR: { origin: [2.294514, 48.857475, 0], center: [2.294625, 48.861085, 0], zoom: 15.95, pitch: 60, bearing: 0 },
+			names: {
+				customLayer: "custom-layer",
+				fillExtrusion: "composite",
+				fillExtrusionLayer: "building"
+			}
+		}
+
+		var map = new mapboxgl.Map({
+			style: 'mapbox://styles/mapbox/satellite-v9',//'mapbox://styles/mapbox/outdoors-v11',
+			center: mapConfig.ALL.center,
+			zoom: mapConfig.ALL.zoom,
+			pitch: mapConfig.ALL.pitch,
+			bearing: mapConfig.ALL.bearing,
+			container: 'map',
+			antialias: true,
+			hash: true
+		});
+
+		// we can add Threebox to mapbox to add built-in mouseover/mouseout and click behaviors
+		window.tb = new Threebox(
+			map,
+			map.getCanvas().getContext('webgl'),
+			{
+				defaultLights: true,
+				enableSelectingFeatures: true, //change this to false to disable fill-extrusion features selection
+				enableSelectingObjects: true, //change this to false to disable 3D objects selection
+				enableTooltips: true, // change this to false to disable default tooltips on fill-extrusion and 3D models
+			}
+		);
+
+		// The 'building' layer in the mapbox-streets vector source contains building-height
+		// data from OpenStreetMap.
+		map.on('style.load', function () {
+
+			map.addSource(mapConfig.names.fillExtrusion, {
+				// GeoJSON Data source used in vector tiles, documented at
+				// https://gist.github.com/ryanbaumann/a7d970386ce59d11c16278b90dde094d
+				'type': 'geojson',
+				'generateId': true, // This ensures that all features have unique IDs and allow selecting them
+				'data': './geojson/statue-of-liberty.json'
+			});
+
+			map.addLayer(createExtrusionLayer());
+
+			map.addLayer({
+				id: mapConfig.names.customLayer,
+				type: 'custom',
+				renderingMode: '3d',
+				onAdd: function (map, mbxContext) {
+
+					var options = {
+						obj: './models/LibertyStatue.obj',
+						mtl: './models/LibertyStatue.mtl',
+						type: 'mtl',
+						scale: 45,
+						units: 'meters',
+						rotation: { x: 90, y: 0, z: 0 }, //default rotation
+						anchor: 'center'
+					}
+
+					tb.loadObj(options, function (model) {
+						model.setCoords(mapConfig.NYC.origin);
+						model.setRotation({ x: 0, y: 0, z: -147 });
+						model.addTooltip("Statue of Liberty", true);
+						tb.add(model);
+						model.addEventListener('SelectedChange', onSelectedChange, false);
+					})
+
+					options = {
+						obj: './models/eiffel.glb',
+						type: 'gltf',
+						scale: 0.01029,
+						units: 'meters',
+						rotation: { x: 0, y: 0, z: 0 }, //default rotation
+						adjustment: { x: -0.5, y: -0.5, z: 0 } // model center is displaced
+					}
+
+					tb.loadObj(options, function (model) {
+
+						model.setCoords(mapConfig.PAR.origin);
+						model.setRotation({ x: 0, y: 0, z: 45.7 });
+						model.addTooltip("Eiffel Tower", true);
+						tb.add(model);
+						model.addEventListener('SelectedChange', onSelectedChange, false);
+					})
+
+				},
+
+				render: function (gl, matrix) {
+					tb.update();
+				}
+			});
+			
+			//[jscastro] subscribe to selected/unselect extrusion feature event
+			map.on('SelectedFeatureChange', onSelectedFeatureChange);
+
+		});
+
+		function createExtrusionLayer() {
+			let layer = {
+				'id': mapConfig.names.fillExtrusionLayer,
+				'source': mapConfig.names.fillExtrusion,
+				'filter': ['==', 'extrude', 'true'],
+				'type': 'fill-extrusion',
+				'minzoom': minZoom,
+				'paint': {
+					'fill-extrusion-color':
+						[
+							'case',
+							['boolean', ['feature-state', 'select'], false],
+							"lightgreen",
+							['boolean', ['feature-state', 'hover'], false],
+							"lightblue",
+							'#C7B299'
+						],
+					// use an 'interpolate' expression to add a smooth transition effect to the
+					// buildings as the user zooms in
+					'fill-extrusion-height': [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						minZoom,
+						0,
+						minZoom + 0.05,
+						['get', 'height']
+					],
+					'fill-extrusion-base': [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						minZoom,
+						0,
+						minZoom + 0.05,
+						['get', 'min_height']
+					],
+					'fill-extrusion-opacity': 1
+				}
+			};
+			return layer;
+		}
+
+		//[jscastro] handler for the feature selected UI... we will create a Mapbox popup to compare with Threebox popup
+		function onSelectedFeatureChange(e) {
+			let feature = e.detail;
+			if (feature && feature.state && feature.state.select) {
+
+				if (popup) popup.remove();
+
+				let center = [];
+				let coords = tb.getFeatureCenter(feature, null, 0);
+
+				center.push([coords[0], coords[1]]);
+
+				//TODO: this creates a Mapbox popup in the same coords the Threebox popup to see the difference
+				popup = new mapboxgl.Popup({ offset: 0 })
+					.setLngLat(center[0].slice())
+					.setHTML('<strong>' + (feature.id || feature.type) + '</strong >')
+					.addTo(map);
+
+				console.log(JSON.stringify(feature.properties, null, 2))
+
+			}
+
+
+		}
+
+		function onSelectedChange(e) {
+			let selected = e.detail.selected;
+			console.log("onSelectedChange: " + selected);
+			if (selected) {
+				selectedObject = e.detail;
+				console.log(JSON.stringify(selectedObject.coordinates, null, 2))
+			}
+		}
+
+		$('#ALL').on('click', function () {
+			//we fly smoothly to the object selected
+			flyTo(mapConfig.ALL);
+		});
+		$('#NYC').on('click', function () {
+			//we fly smoothly to the object selected
+			flyTo(mapConfig.NYC);
+		});
+		$('#PAR').on('click', function () {
+			//we fly smoothly to the object selected
+			flyTo(mapConfig.PAR);
+		});
+		function flyTo(coords) {
+			//we fly smoothly to the object selected
+			map.flyTo({
+				center: coords.center,
+				zoom: coords.zoom,
+				pitch: coords.pitch,
+				bearing: coords.bearing
+			});
+
+		}
+
+	</script>
+</body>
+</html>

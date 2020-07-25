@@ -18,7 +18,7 @@ var loadObj = require("./objects/loadObj.js");
 var Object3D = require("./objects/Object3D.js");
 var line = require("./objects/line.js");
 var tube = require("./objects/tube.js");
-var LabelRenderer = require("./objects/LabelRenderer.js")
+var LabelRenderer = require("./objects/LabelRenderer.js");
 
 function Threebox(map, glContext, options){
 
@@ -40,6 +40,9 @@ Threebox.prototype = {
 	 */
 	init: function (map, glContext, options) {
 
+		// apply starter options
+		this.options = utils._validate(options || {}, defaultOptions);
+
 		this.map = map;
 		this.map.tb = this; //[jscastro] needed if we want to queryRenderedFeatures from map.onload
 
@@ -47,12 +50,13 @@ Threebox.prototype = {
 		this.renderer = new THREE.WebGLRenderer({
 			alpha: true,
 			antialias: true,
+			preserveDrawingBuffer: true,
 			canvas: map.getCanvas(),
 			context: glContext
 		});
 
 		this.renderer.setPixelRatio(window.devicePixelRatio);
-		this.renderer.setSize(map.getCanvas().clientWidth, map.getCanvas().clientHeight);
+		this.renderer.setSize(this.map.getCanvas().clientWidth, this.map.getCanvas().clientHeight);
 		this.renderer.outputEncoding = THREE.sRGBEncoding;
 		//this.renderer.shadowMap.enabled = true;
 		this.renderer.autoClear = false;
@@ -61,7 +65,7 @@ Threebox.prototype = {
 		this.labelRenderer = new LabelRenderer(this.map);
 
 		this.scene = new THREE.Scene();
-		this.camera = new THREE.PerspectiveCamera(ThreeboxConstants.FOV_DEGREES, map.getCanvas().clientWidth / map.getCanvas().clientHeight, 1, 1e21);
+		this.camera = new THREE.PerspectiveCamera(ThreeboxConstants.FOV_DEGREES, this.map.getCanvas().clientWidth / this.map.getCanvas().clientHeight, 1, 1e21);
 		this.camera.layers.enable(0);
 		this.camera.layers.enable(1);
 
@@ -81,8 +85,6 @@ Threebox.prototype = {
 		this.raycaster.layers.set(0);
 		//this.raycaster.params.Points.threshold = 100;
 
-		// apply starter options
-		this.options = utils._validate(options || {}, defaultOptions);
 		if (this.options.defaultLights) this.defaultLights();
 		if (this.options.enableSelectingFeatures) this.enableSelectingFeatures = this.options.enableSelectingFeatures; 
 		if (this.options.enableSelectingObjects) this.enableSelectingObjects = this.options.enableSelectingObjects; 
@@ -594,9 +596,8 @@ Threebox.prototype = {
 		// Update any animations
 		this.objects.animationManager.update(timestamp);
 
-		this.renderer.state.reset();
-
 		// Render the scene and repaint the map
+		this.renderer.state.reset();
 		this.renderer.render(this.scene, this.camera);
 
 		// [jscastro] Render any label
@@ -682,11 +683,11 @@ Threebox.prototype = {
 		this.scene.add(ambientLight);
 
 		let directionalLightBack = new THREE.DirectionalLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.25);
-		directionalLightBack.position.set(10, 100, 100);
+		directionalLightBack.position.set(30, 100, 100);
 		this.scene.add(directionalLightBack);
 
 		let directionalLightFront = new THREE.DirectionalLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.25);
-		directionalLightFront.position.set(-10, -100, 100);
+		directionalLightFront.position.set(-30, 100, -100);
 		this.scene.add(directionalLightFront);
 
 	},
@@ -695,7 +696,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.3',
+	version: '2.0.4',
 
 }
 
@@ -707,7 +708,6 @@ var defaultOptions = {
 	enableDraggingObjects: false,
 	enableRotatingObjects: false,
 	enableTooltips: false
-
 }
 module.exports = exports = Threebox;
 
@@ -2073,20 +2073,17 @@ function Object3D(options) {
 	userScaleGroup.model = options.obj;
 
 	Objects.prototype._addMethods(userScaleGroup);
-
-	// [jscastro] if center must be adjusted
-	let center = options.adjustment;
-	if (center) {
-		let size = userScaleGroup.getSize();
-		obj.position.set(size.x * center.x, size.y * center.y, size.z * center.z)
-	}
+	//[jscastro] calculate automatically the pivotal center of the object
+	userScaleGroup.setAnchor(options.anchor);
+	//[jscastro] override the center calculated if the object has adjustments
+	userScaleGroup.setCenter(options.adjustment);
 
 	// [jscastro] after adding methods create the bounding box at userScaleGroup but add it to its children for positioning
 	let boxGrid = userScaleGroup.drawBoundingBox();
 	projScaleGroup.add(boxGrid);
 
 	// [jscastro] we add by default a tooltip that can be override later or hide it with threebox `enableTooltips`
-	userScaleGroup.addTooltip(userScaleGroup.uuid, true, center);
+	userScaleGroup.addTooltip(userScaleGroup.uuid, true, userScaleGroup.anchor);
 
 	userScaleGroup.visibility = true;
 
@@ -3239,20 +3236,17 @@ function loadObj(options, cb) {
 			userScaleGroup.animations = animations;
 
 			Objects.prototype._addMethods(userScaleGroup);
-
-			//[jscastro] if the object options have an adjustment to center the 3D Object
-			let center = options.adjustment;
-			if (center) {
-				let size = userScaleGroup.getSize();
-				obj.position.set(size.x * center.x, size.y * center.y, size.z * center.z)
-			}
+			//[jscastro] calculate automatically the pivotal center of the object
+			userScaleGroup.setAnchor(options.anchor);
+			//[jscastro] override the center calculated if the object has adjustments
+			userScaleGroup.setCenter(options.adjustment);
 
 			// [jscastro] after adding methods create the bounding box at userScaleGroup but add it to its children for positioning
 			let boxGrid = userScaleGroup.drawBoundingBox();
 			projScaleGroup.add(boxGrid);
 
 			//[jscastro] we add by default a tooltip that can be override later or hide it with threebox `enableTooltips`
-			userScaleGroup.addTooltip(userScaleGroup.uuid, true, center);
+			userScaleGroup.addTooltip(userScaleGroup.uuid, true, userScaleGroup.anchor);
 
 			cb(userScaleGroup);
 
@@ -3260,7 +3254,7 @@ function loadObj(options, cb) {
 			userScaleGroup.idle();
 
 		}, () => (null), error => {
-			console.error("Could not load model file. " + error.stack);
+			console.error("Could not load model file: " + options.obj + " \n " + error.stack);
 		});
 
 	};
@@ -3319,7 +3313,6 @@ function loadObj(options, cb) {
 	};
 
 }
-
 
 module.exports = exports = loadObj;
 },{"../utils/utils.js":27,"./loaders/ColladaLoader.js":15,"./loaders/FBXLoader.js":16,"./loaders/GLTFLoader.js":17,"./loaders/MTLLoader.js":18,"./loaders/OBJLoader.js":19,"./objects.js":20}],15:[function(require,module,exports){
@@ -7216,7 +7209,7 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 		// metadata
 
 		var version = collada.getAttribute('version');
-		console.log('THREE.ColladaLoader: File version', version);
+		//console.log('THREE.ColladaLoader: File version', version);
 
 		var asset = parseAsset(getElementsByTagName(collada, 'asset')[0]);
 		var textureLoader = new THREE.TextureLoader(this.manager);
@@ -10576,7 +10569,7 @@ THREE.FBXLoader = (function () {
 
 			var version = reader.getUint32();
 
-			console.log('THREE.FBXLoader: FBX binary version: ' + version);
+			//console.log('THREE.FBXLoader: FBX binary version: ' + version);
 
 			var allNodes = new FBXTree();
 
@@ -16504,7 +16497,7 @@ Objects.prototype = {
 			//[jscastro] added method to create a bounding box and a shadow box
 			obj.drawBoundingBox = function () {
 				//let's create 2 wireframes, one for the object and one to project on the floor position
-				let bb = this.box3();
+				let bb = obj.box3();
 				//create the group to return
 				let boxGrid = new THREE.Group();
 				boxGrid.name = "BoxGrid";
@@ -16535,6 +16528,65 @@ Objects.prototype = {
 				if (obj.boundingBox) {
 					obj.boundingBoxShadow.box.max.z = -obj.modelHeight;
 					obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
+				}
+			}
+			//[jscastro] Set the positional and pivotal anchor automatically from string param  
+			obj.setAnchor = function (anchor) {
+				const box = obj.box3();
+				const size = box.getSize(new THREE.Vector3());
+				const center = box.getCenter(new THREE.Vector3());
+				obj.center = { x: center.x, y: center.y, z: box.min.z };
+				obj.bottom = { x: center.x, y: box.max.y, z: box.min.z };
+				obj.bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
+				obj.bottomRight = { x: box.min.x, y: box.max.y, z: box.min.z };
+				obj.top = { x: center.x, y: box.min.y, z: box.min.z };
+				obj.topLeft = { x: box.max.x, y: box.min.y, z: box.min.z };
+				obj.topRight = { x: box.min.x, y: box.min.y, z: box.min.z };
+				obj.left = { x: box.max.x, y: center.y, z: box.min.z };
+				obj.right = { x: box.min.x, y: center.y, z: box.min.z };
+
+				switch (anchor) {
+					case 'center':
+					case 'auto':
+						obj.anchor = obj.center;
+						break;
+					case 'top':
+						obj.anchor = obj.top;
+						break;
+					case 'top-left':
+						obj.anchor = obj.topLeft;
+						break;
+					case 'top-right':
+						obj.anchor = obj.topRight;
+						break;
+					case 'left':
+						obj.anchor = obj.left;
+						break;
+					case 'right':
+						obj.anchor = obj.right;
+						break;
+					case 'bottom':
+						obj.anchor = obj.bottom;
+						break;
+					case 'bottom-left':
+					default:
+						obj.anchor = obj.bottomLeft;
+						break;
+					case 'bottom-right':
+						obj.anchor = obj.bottomRight;
+						break;
+				}
+
+				obj.model.position.set(-obj.anchor.x, -obj.anchor.y, -obj.anchor.z);
+
+			}
+			//[jscastro] Set the positional and pivotal anchor based on (x, y, z) size units  
+			obj.setCenter = function (center) {
+				//[jscastro] if the object options have an adjustment to center the 3D Object different to 0
+				if (center && (center.x != 0 || center.y != 0 || center.z != 0)) {
+					let size = obj.getSize();
+					obj.anchor = { x: -(size.x * center.x), y: -(size.y * center.y), z: -(size.z * center.z) };
+					obj.model.position.set(-obj.anchor.x, -obj.anchor.y, -obj.anchor.z)
 				}
 			}
 
@@ -16593,20 +16645,23 @@ Objects.prototype = {
 			});
 
 			//[jscastro] add CSS2 label method 
-			obj.addLabel = function (HTMLElement, visible = false) {
+			obj.addLabel = function (HTMLElement, visible = false, center = obj.anchor) {
 				if (HTMLElement) {
 					//we add it to the first children to get same boxing and position
 					//obj.children[0].add(obj.drawLabel(text, height));
-					obj.children[0].add(obj.drawLabelHTML(HTMLElement, visible));
+					obj.children[0].add(obj.drawLabelHTML(HTMLElement, visible, center));
 				}
 			}
 
 			//[jscastro] draw label method can be invoked separately
-			obj.drawLabelHTML = function (HTMLElement, visible = false) {
+			obj.drawLabelHTML = function (HTMLElement, visible = false, center = obj.anchor) {
 				let div = root.drawLabelHTML(HTMLElement, Objects.prototype._defaults.label.cssClass);
-				let size = obj.getSize();
+				const box = obj.box3();
+				const size = box.getSize(new THREE.Vector3());
+				let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
+				if (obj.label) { obj.label.remove; obj.label = null; }
 				obj.label = new CSS2D.CSS2DObject(div);
-				obj.label.position.set(-size.x / 2, -size.y / 2, -size.z / 2);
+				obj.label.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * 0.5); //middle-centered
 				obj.label.visible = visible;
 				obj.label.alwaysVisible = visible;
 
@@ -16614,13 +16669,15 @@ Objects.prototype = {
 			}
 
 			//[jscastro] add tooltip method 
-			obj.addTooltip = function (tooltipText, mapboxStyle = false, center = { x: 0, y: 0, z: 0 }) {
+			obj.addTooltip = function (tooltipText, mapboxStyle = false, center = obj.anchor) {
 				if (tooltipText) {
 					let divToolTip = root.drawTooltip(tooltipText, mapboxStyle);
-					let size = obj.getSize();
+					const box = obj.box3();
+					const size = box.getSize(new THREE.Vector3());
+					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
 					if (obj.tooltip) { obj.tooltip.remove; obj.tooltip = null; }
 					obj.tooltip = new CSS2D.CSS2DObject(divToolTip);
-					obj.tooltip.position.set((size.x * center.x), (size.y * center.y), size.z); //top-centered
+					obj.tooltip.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z); //top-centered
 					obj.tooltip.visible = false; //only visible on mouseover or selected
 					//we add it to the first children to get same boxing and position
 					obj.children[0].add(obj.tooltip);
@@ -16907,7 +16964,7 @@ Objects.prototype = {
 			sides: 20,
 			units: 'scene',
 			material: 'MeshBasicMaterial',
-			adjustment: { x: 0, y: 0, z: 0}
+			anchor: 'bottom-left'
 		},
 
 		label: {
@@ -16930,7 +16987,9 @@ Objects.prototype = {
 			geometry: null,
 			radius: 1,
 			sides: 6,
-			material: 'MeshBasicMaterial'
+			units: 'scene',
+			material: 'MeshBasicMaterial',
+			anchor: 'center'
 		},
 
 		extrusion: {
@@ -16949,13 +17008,13 @@ Objects.prototype = {
 			scale: 1,
 			rotation: 0,
 			defaultAnimation: 0,
-			adjustment: { x: 0, y: 0, z: 0 }
+			anchor: 'bottom-left'
 		},
 
 		Object3D: {
 			obj: null,
 			units: 'scene',
-			adjustment: { x: 0, y: 0, z: 0 }
+			anchor: 'bottom-left'
 		}
 	},
 
@@ -16981,7 +17040,7 @@ function Sphere(options) {
 	var output = new THREE.Mesh(geometry, mat);
 
 	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
-	return new Object3D({ obj: output, units: options.units, adjustment: options.adjustment });
+	return new Object3D({ obj: output, units: options.units, anchor: options.anchor, adjustment: options.adjustment });
 
 }
 
@@ -17017,6 +17076,7 @@ var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 var Objects = require('./objects.js');
 var THREE = require("../three.js");
+var Object3D = require('./Object3D.js');
 
 function tube(obj, world){
 
@@ -17032,9 +17092,12 @@ function tube(obj, world){
 	var mat = material(obj);
 
     var mesh = new THREE.Mesh( geom, mat );
-    mesh.position.copy(normalized.position);
+    //mesh.position.copy(normalized.position);
 
-    return mesh
+	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
+	return new Object3D({ obj: mesh, units: obj.units, anchor: obj.anchor, adjustment: obj.adjustment });
+
+	//return mesh
 
 }
 
@@ -17213,7 +17276,7 @@ tube.prototype = {
 module.exports = exports = tube;
 
 
-},{"../three.js":24,"../utils/material.js":26,"../utils/utils.js":27,"./objects.js":20}],24:[function(require,module,exports){
+},{"../three.js":24,"../utils/material.js":26,"../utils/utils.js":27,"./Object3D.js":10,"./objects.js":20}],24:[function(require,module,exports){
 // threejs.org/license
 (function(k,ua){"object"===typeof exports&&"undefined"!==typeof module?ua(exports):"function"===typeof define&&define.amd?define(["exports"],ua):(k=k||self,ua(k.THREE={}))})(this,function(k){function ua(){}function v(a,b){this.x=a||0;this.y=b||0}function ya(){this.elements=[1,0,0,0,1,0,0,0,1];0<arguments.length&&console.error("THREE.Matrix3: the constructor no longer reads arguments. use .set() instead.")}function W(a,b,c,d,e,f,g,h,l,m){Object.defineProperty(this,"id",{value:ej++});this.uuid=O.generateUUID();
 this.name="";this.image=void 0!==a?a:W.DEFAULT_IMAGE;this.mipmaps=[];this.mapping=void 0!==b?b:W.DEFAULT_MAPPING;this.wrapS=void 0!==c?c:1001;this.wrapT=void 0!==d?d:1001;this.magFilter=void 0!==e?e:1006;this.minFilter=void 0!==f?f:1008;this.anisotropy=void 0!==l?l:1;this.format=void 0!==g?g:1023;this.internalFormat=null;this.type=void 0!==h?h:1009;this.offset=new v(0,0);this.repeat=new v(1,1);this.center=new v(0,0);this.rotation=0;this.matrixAutoUpdate=!0;this.matrix=new ya;this.generateMipmaps=

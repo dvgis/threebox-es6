@@ -176,7 +176,7 @@ Objects.prototype = {
 			//[jscastro] added method to create a bounding box and a shadow box
 			obj.drawBoundingBox = function () {
 				//let's create 2 wireframes, one for the object and one to project on the floor position
-				let bb = this.box3();
+				let bb = obj.box3();
 				//create the group to return
 				let boxGrid = new THREE.Group();
 				boxGrid.name = "BoxGrid";
@@ -207,6 +207,65 @@ Objects.prototype = {
 				if (obj.boundingBox) {
 					obj.boundingBoxShadow.box.max.z = -obj.modelHeight;
 					obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
+				}
+			}
+			//[jscastro] Set the positional and pivotal anchor automatically from string param  
+			obj.setAnchor = function (anchor) {
+				const box = obj.box3();
+				const size = box.getSize(new THREE.Vector3());
+				const center = box.getCenter(new THREE.Vector3());
+				obj.center = { x: center.x, y: center.y, z: box.min.z };
+				obj.bottom = { x: center.x, y: box.max.y, z: box.min.z };
+				obj.bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
+				obj.bottomRight = { x: box.min.x, y: box.max.y, z: box.min.z };
+				obj.top = { x: center.x, y: box.min.y, z: box.min.z };
+				obj.topLeft = { x: box.max.x, y: box.min.y, z: box.min.z };
+				obj.topRight = { x: box.min.x, y: box.min.y, z: box.min.z };
+				obj.left = { x: box.max.x, y: center.y, z: box.min.z };
+				obj.right = { x: box.min.x, y: center.y, z: box.min.z };
+
+				switch (anchor) {
+					case 'center':
+					case 'auto':
+						obj.anchor = obj.center;
+						break;
+					case 'top':
+						obj.anchor = obj.top;
+						break;
+					case 'top-left':
+						obj.anchor = obj.topLeft;
+						break;
+					case 'top-right':
+						obj.anchor = obj.topRight;
+						break;
+					case 'left':
+						obj.anchor = obj.left;
+						break;
+					case 'right':
+						obj.anchor = obj.right;
+						break;
+					case 'bottom':
+						obj.anchor = obj.bottom;
+						break;
+					case 'bottom-left':
+					default:
+						obj.anchor = obj.bottomLeft;
+						break;
+					case 'bottom-right':
+						obj.anchor = obj.bottomRight;
+						break;
+				}
+
+				obj.model.position.set(-obj.anchor.x, -obj.anchor.y, -obj.anchor.z);
+
+			}
+			//[jscastro] Set the positional and pivotal anchor based on (x, y, z) size units  
+			obj.setCenter = function (center) {
+				//[jscastro] if the object options have an adjustment to center the 3D Object different to 0
+				if (center && (center.x != 0 || center.y != 0 || center.z != 0)) {
+					let size = obj.getSize();
+					obj.anchor = { x: -(size.x * center.x), y: -(size.y * center.y), z: -(size.z * center.z) };
+					obj.model.position.set(-obj.anchor.x, -obj.anchor.y, -obj.anchor.z)
 				}
 			}
 
@@ -265,20 +324,23 @@ Objects.prototype = {
 			});
 
 			//[jscastro] add CSS2 label method 
-			obj.addLabel = function (HTMLElement, visible = false) {
+			obj.addLabel = function (HTMLElement, visible = false, center = obj.anchor) {
 				if (HTMLElement) {
 					//we add it to the first children to get same boxing and position
 					//obj.children[0].add(obj.drawLabel(text, height));
-					obj.children[0].add(obj.drawLabelHTML(HTMLElement, visible));
+					obj.children[0].add(obj.drawLabelHTML(HTMLElement, visible, center));
 				}
 			}
 
 			//[jscastro] draw label method can be invoked separately
-			obj.drawLabelHTML = function (HTMLElement, visible = false) {
+			obj.drawLabelHTML = function (HTMLElement, visible = false, center = obj.anchor) {
 				let div = root.drawLabelHTML(HTMLElement, Objects.prototype._defaults.label.cssClass);
-				let size = obj.getSize();
+				const box = obj.box3();
+				const size = box.getSize(new THREE.Vector3());
+				let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
+				if (obj.label) { obj.label.remove; obj.label = null; }
 				obj.label = new CSS2D.CSS2DObject(div);
-				obj.label.position.set(-size.x / 2, -size.y / 2, -size.z / 2);
+				obj.label.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * 0.5); //middle-centered
 				obj.label.visible = visible;
 				obj.label.alwaysVisible = visible;
 
@@ -286,13 +348,15 @@ Objects.prototype = {
 			}
 
 			//[jscastro] add tooltip method 
-			obj.addTooltip = function (tooltipText, mapboxStyle = false, center = { x: 0, y: 0, z: 0 }) {
+			obj.addTooltip = function (tooltipText, mapboxStyle = false, center = obj.anchor) {
 				if (tooltipText) {
 					let divToolTip = root.drawTooltip(tooltipText, mapboxStyle);
-					let size = obj.getSize();
+					const box = obj.box3();
+					const size = box.getSize(new THREE.Vector3());
+					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
 					if (obj.tooltip) { obj.tooltip.remove; obj.tooltip = null; }
 					obj.tooltip = new CSS2D.CSS2DObject(divToolTip);
-					obj.tooltip.position.set((size.x * center.x), (size.y * center.y), size.z); //top-centered
+					obj.tooltip.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z); //top-centered
 					obj.tooltip.visible = false; //only visible on mouseover or selected
 					//we add it to the first children to get same boxing and position
 					obj.children[0].add(obj.tooltip);
@@ -579,7 +643,7 @@ Objects.prototype = {
 			sides: 20,
 			units: 'scene',
 			material: 'MeshBasicMaterial',
-			adjustment: { x: 0, y: 0, z: 0}
+			anchor: 'bottom-left'
 		},
 
 		label: {
@@ -602,7 +666,9 @@ Objects.prototype = {
 			geometry: null,
 			radius: 1,
 			sides: 6,
-			material: 'MeshBasicMaterial'
+			units: 'scene',
+			material: 'MeshBasicMaterial',
+			anchor: 'center'
 		},
 
 		extrusion: {
@@ -621,13 +687,13 @@ Objects.prototype = {
 			scale: 1,
 			rotation: 0,
 			defaultAnimation: 0,
-			adjustment: { x: 0, y: 0, z: 0 }
+			anchor: 'bottom-left'
 		},
 
 		Object3D: {
 			obj: null,
 			units: 'scene',
-			adjustment: { x: 0, y: 0, z: 0 }
+			anchor: 'bottom-left'
 		}
 	},
 

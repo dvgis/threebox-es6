@@ -2,12 +2,12 @@
 <head>
 	<title>Animated soldier</title>
 	<script src="../dist/threebox.js" type="text/javascript"></script>
+	<link href="./css/threebox.css" rel="stylesheet" />
 	<script src="config.js"></script>
-	<script src="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.js"></script>
-	<link href="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.css" rel="stylesheet" />
+	<script src="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.css" rel="stylesheet" />
 	<script src="https://d3js.org/d3.v5.min.js"></script>
 	<script src="plugins/jquery.min.js"></script>
-	<link rel="icon" type="image/png" href="favicon.ico">
 	<!-- Place your kit's code here -->
 	<script src="css/fontawesome.js"></script>
 	<link href="css/free.min.css" rel="stylesheet" />
@@ -155,8 +155,8 @@
 							type: 'gltf',
 							scale: 20,
 							units: 'meters',
-							rotation: { x: 90, y: 0, z: 0 }, //default rotation
-							adjustment: { x: 0, y: 0, z: 0 } // model center is displaced
+							rotation: { x: 90, y: 0, z: 0 },
+							anchor: 'center'//default rotation
 						}
 
 						tb.loadObj(options, function (model) {

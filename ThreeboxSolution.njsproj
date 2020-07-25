@@ -14,7 +14,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <LastActiveSolutionConfig>Debug|Any CPU</LastActiveSolutionConfig>
     <StartWebBrowser>True</StartWebBrowser>
-    <LaunchUrl>/examples/raycaster.html</LaunchUrl>
+    <LaunchUrl>/examples/3Dbuildings.html</LaunchUrl>
     <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
     <NodejsPort>8080</NodejsPort>
   </PropertyGroup>
@@ -36,6 +36,20 @@
     <Content Include="examples\css\free-v4-shims.min.css" />
     <Content Include="examples\css\free.min.css" />
     <Content Include="examples\css\threebox.css" />
+    <Content Include="examples\eiffel.html" />
+    <Content Include="examples\geojson\statue-of-liberty.json" />
+    <Content Include="examples\images\eiffel-tower.png" />
+    <Content Include="examples\images\statue-of-liberty.png" />
+    <Content Include="examples\models\Eiffel.glb" />
+    <Content Include="examples\models\LibertStatue.mtl" />
+    <Content Include="examples\models\LibertStatue.obj" />
+    <Content Include="examples\models\Liberty-DecorazioniMarmo-2.bmp" />
+    <Content Include="examples\models\Liberty-GreenBronze-1.bmp" />
+    <Content Include="examples\models\Liberty-MattoniBasamento-1.bmp" />
+    <Content Include="examples\models\Liberty-Pavimentazione-1.bmp" />
+    <Content Include="examples\models\Liberty-PortaBronzo-1.bmp" />
+    <Content Include="examples\models\LibertyStatue.mtl" />
+    <Content Include="examples\models\LibertyStatue.obj" />
     <Content Include="examples\models\Soldier.glb" />
     <Content Include="examples\models\Truck.mtl" />
     <Content Include="examples\models\Truck.obj" />
@@ -114,6 +128,8 @@
     <Folder Include="docs\img" />
     <Folder Include="examples" />
     <Folder Include="examples\css\" />
+    <Folder Include="examples\geojson\" />
+    <Folder Include="examples\images\" />
     <Folder Include="examples\models" />
     <Folder Include="examples\old" />
     <Folder Include="examples\plugins\" />

@@ -80,12 +80,14 @@ window.tb = new Threebox(
 One of the most powerful capabilities of Threebox is the option to load 3D models from external files in different formats (OBJ/MTL, GLTF/GLB, FBX, DAE are supported). 
 Once the model is loaded and added to Threebox, the object is powered by default with some methods, interactions, events and animations. 
 
-Once the object is loaded and added to Threebox instance, it is by default **selectable**, **draggable** and **rotable** (over the z axis) with the mouse.
+Once the object is loaded and added to Threebox instance, it can be **selectable**, **draggable** and **rotable** (over the z axis) 
+with the mouse if Threebox instance properties `enableSelectingObjects`, `enableDraggingObjects` and 
+`enableRotatingObjects` are set to `true`.
 
 - To **drag** an object you have to select the object and then press **SHIFT** key and move the mouse.
-- To **rotate** and object you have to select the object and then press **ALT** key and move the mouse.
+- To **rotate** and object you have to select the object and then press **ALT** key and move the mouse. The object will always rotate over its defined center.
 
-*TODO: In future version, these behaviours could be deactivated*
+Any 3D object (including 3D extrusions created through fill-extrusion mapbox layers) will have a tooltip if the Threebox instance property `enableTooltips` is set to true.
 
 Here below is the simplest sample to load a 3D model:
 
@@ -94,8 +96,8 @@ Here below is the simplest sample to load a 3D model:
 <head>
 	<title>Simplest sample of 3D Model loading</title>
 	<script src="../dist/threebox.js" type="text/javascript"></script>
-	<script src="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.js"></script>
-	<link href="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.css" rel="stylesheet" />
+	<script src="https://api.mapbox.com/mapbox-gl-js/v.1.11.1/mapbox-gl.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v.1.11.1/mapbox-gl.css" rel="stylesheet" />
 	<style>
 		body, html {
 			width: 100%;
@@ -254,6 +256,7 @@ Internally, uses [`THREE.OBJLoader`](https://github.com/mrdoob/three.js/blob/dev
 | `units`    | no       | scene      | string (`"scene"` or `"meters"`) | "meters" is recommended for precision. Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
 | `rotation`     | no       | 0   | number or {x, y, z}  | Rotation of the object along the three axes, to align it to desired orientation before future rotations. Note that future rotations apply atop this transformation, and do not overwrite it. `rotate` attribute must be provided in number or per axis ((i.e. for an object rotated 90 degrees over the x axis `rotation: {x: 90, y: 0, z: 0}`|
 | `scale`     | no       | 1   | number or {x, y, z}  | Scale of the object along the three axes, to size it appropriately before future transformations. Note that future scaling applies atop this transformation, rather than overwriting it. `scale` attribute must be provided in number or per axis ((i.e. for an object transformed to 3 times higher than it's default size  `scale: {x: 1, y: 1, z: 3}`|
+| `anchor`     | no       | `bottom-left`   | string ()  | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` |
 | `adjustment`     | no       | 1   | {x, y, z}  | 3D models are often not centered in their axes so the object positions and rotates wrongly. `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: 0.5, y: 0.5, z: 0}`), so the model will correct the center position of the object |
 | `normalize`     | no       | 1   | bool  | This param allows to normalize specular values from some 3D models |
 | `feature`     | no       | 1   | [*GeoJson*](https://geojson.org/) feature  | [*GeoJson*](https://geojson.org/) feature instance. `properties` object of the *GeoJson* standard feature could be used to store relavant data to load and paint many different objects such as camera position, zoom, pitch or bearing, apart from the attributes already usually used by [*Mapbox GL* examples](https://docs.mapbox.com/mapbox-gl-js/examples/) such as `height`, `base_height`, `color`|
@@ -542,27 +545,6 @@ Adds a line to the map, in full 3D space. Color renders independently of scene l
 
 <br>
 
-#### Tube
-
-```js
-tb.tube(options);
-```
-
-Extrude a tube along a specific lineGeometry, with an equilateral polygon as cross section. Internally uses a custom tube geometry generator.
-
-
-| option | required | default | type   | description                                                                                  |
-|-----------|----------|---------|--------|----------|
-| `geometry`    | yes       | NA      | lineGeometry | Line coordinates forming the tube backbone |
-| `radius`    | no       | 20      | number | Radius of the tube cross section, or half of tube width.|
-| `sides`  | no       | 8       | number | Number of facets along the tube. The higher, the more closely the tube will approximate a smooth cylinder. |
-| `material`     | no       | MeshLambertMaterial   | threeMaterial  | [THREE material](https://github.com/mrdoob/three.js/tree/master/src/materials) to use. Can be invoked with a text string, or a predefined material object via THREE itself.|   
-| `color`     | no       | black   | color  | Tube color. Ignored if `material` is a predefined `THREE.Material` object.  |
-| `opacity`     | no       | 1   | Number  | Tube opacity |                                                                                                                                                   
-
-
-<br>
-
 ### Dynamic objects
 
 #### Label
@@ -599,6 +581,7 @@ Add a sphere to the map. Internally, calls `THREE.Mesh` with a `THREE.SphereGeom
 | `sides`  | no       | 8       | number | Number of width and height segments. The higher the number, the smoother the sphere. |
 | `color`     | no       | black   | color  | Color of sphere.                                                                             
 | `material`     | no       | MeshLambertMaterial   | threeMaterial  | [THREE material](https://github.com/mrdoob/three.js/tree/master/src/materials) to use. Can be invoked with a text string, or a predefined material object via THREE itself.|   
+| `anchor`     | no       | `bottom-left`   | string | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` |
 | `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
 
 <br>
@@ -622,6 +605,27 @@ Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](
 
 <br>
 
+#### Tube
+
+```js
+tb.tube(options);
+```
+
+Extrude a tube along a specific lineGeometry, with an equilateral polygon as cross section. Internally uses a custom tube geometry generator, and also to `Object3D(options)` to convert it in a dynamic object.
+
+| option | required | default | type   | description                                                                                  |
+|-----------|----------|---------|--------|----------|
+| `geometry`    | yes       | NA      | lineGeometry | Line coordinates forming the tube backbone |
+| `radius`    | no       | 20      | number | Radius of the tube cross section, or half of tube width.|
+| `sides`  | no       | 8       | number | Number of facets along the tube. The higher, the more closely the tube will approximate a smooth cylinder. |
+| `material`     | no       | MeshLambertMaterial   | threeMaterial  | [THREE material](https://github.com/mrdoob/three.js/tree/master/src/materials) to use. Can be invoked with a text string, or a predefined material object via THREE itself.|   
+| `color`     | no       | black   | color  | Tube color. Ignored if `material` is a predefined `THREE.Material` object.  |
+| `opacity`     | no       | 1   | Number  | Tube opacity |                                                                                                                                                   
+| `anchor`     | no       | `bottom-left`   | string | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` |
+| `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
+
+<br>
+
 #### Object3D
 
 ```js
@@ -634,6 +638,7 @@ Add any geometry as [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Obj
 |-----------|----------|---------|--------|------------|
 | `obj`    | yes       | null      | [`THREE.Mesh`](https://threejs.org/docs/index.html#api/en/objects/Mesh) | Object to be enriched with this method adding new attributes. |
 | `units`    | no       | `scene`      | string ("scene" or "meters") | Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
+| `anchor`     | no       | `bottom-left`   | string | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` |
 | `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
 
 This method enriches the Object in the same way is done at 3D Models through `tb.loadObj`.
@@ -651,11 +656,13 @@ In all the samples below, the instance of the Threebox object will be always ref
 
 #### addLabel
 ```js
-obj.addLabel(HTMLElement [, visible])
+obj.addLabel(HTMLElement [, visible, mapboxSyle = false, center = obj.anchor])
 
 ```
 It uses the DOM [HTMLElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement) received to paint it on screen in a relative position to the object that contains it. 
 If `visible` is true, the label will be always visible, otherwise by default its value is false and it's regular behavior is only to be shown on MouseOver.
+`center` defines the object's center of position and rotation that in 3D objects is defined through `options.adjustment` param. As the label is 
+calculated based on the center of the object, this value will change the position of the object.
 Its position is always relative to the object that contains it and rerendered whenever that label is visible.
 Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
 
@@ -665,7 +672,7 @@ Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](
 
 #### addTooltip
 ```js
-obj.addTooltip(tooltipText [, mapboxSyle = false, center = { x: 0, y: 0, z: 0 }])
+obj.addTooltip(tooltipText [, mapboxSyle = false, center = obj.anchor])
 ```
 This method creates a browser-like tooltip for the object using the tooltipText. 
 If `mapboxStyle` is true, it applies the same styles the *Mapbox GL* popups.
@@ -688,6 +695,20 @@ The first bounding box will be assigned to `obj.boundingBox` property and the se
 
 <br>
 
+#### drawLabelHTML
+```js
+obj.drawLabelHTML(HTMLElement [, visible = false, center = obj.anchor])
+
+```
+It uses the DOM [HTMLElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement) received to paint it on screen in a relative position to the object that contains it. 
+If `visible` is true, the label will be always visible, otherwise by default its value is false and it's regular behavior is only to be shown on MouseOver.
+`center` defines the object center of position and rotation that in 3D objects is defined through `options.adjustment` param. As the label is 
+calculated based on the center of the object, this value will change the position of the object.
+Its position is always relative to the object that contains it and rerendered whenever that label is visible.
+Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
+
+
+
 
 #### set
 ```js
@@ -705,6 +726,16 @@ Check out the Threebox Types section below for details.
 | `rotation`    | no       | NA      | `rotationTransform` | Rotation(s) to set the object, in units of degrees |
 | `scale`    | no       | NA      | `scaleTransform` | Scale(s) to set the object, where 1 is the default scale |
 | `duration`    | no       | 1000      | number | Duration of the animation, in milliseconds to complete the values specified in the other properties `scale`, `rotation` and `coords`. If 0 or undefined it will apply the values to the object directly with no animation. |
+
+<br>
+
+#### setAnchor
+```js
+obj.setAnchor(anchor)
+```
+Sets the positional and pivotal anchor automatically from string param. Calculates dynamically the positional and pivotal anchor. 
+`anchor` is a string value that could have the following values: `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. 
+Default value is `bottom-left` for precison on positioning 
 
 <br>
 
@@ -1217,4 +1248,4 @@ Threebox implements many small affordances to make mapping run in *Three.js* qui
 
 ## Performance considerations
 
-- Use `obj.clone()` when adding many identical objects. If your object contains other objects not in the `obj.children` collection, then those objects need to be cloned too.`
+- Use `obj.duplicate()` when adding many identical objects. If your object contains other objects not in the `obj.children` collection, then those objects need to be cloned too.`

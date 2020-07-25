@@ -13,7 +13,7 @@ var loadObj = require("./objects/loadObj.js");
 var Object3D = require("./objects/Object3D.js");
 var line = require("./objects/line.js");
 var tube = require("./objects/tube.js");
-var LabelRenderer = require("./objects/LabelRenderer.js")
+var LabelRenderer = require("./objects/LabelRenderer.js");
 
 function Threebox(map, glContext, options){
 
@@ -35,6 +35,9 @@ Threebox.prototype = {
 	 */
 	init: function (map, glContext, options) {
 
+		// apply starter options
+		this.options = utils._validate(options || {}, defaultOptions);
+
 		this.map = map;
 		this.map.tb = this; //[jscastro] needed if we want to queryRenderedFeatures from map.onload
 
@@ -42,12 +45,13 @@ Threebox.prototype = {
 		this.renderer = new THREE.WebGLRenderer({
 			alpha: true,
 			antialias: true,
+			preserveDrawingBuffer: true,
 			canvas: map.getCanvas(),
 			context: glContext
 		});
 
 		this.renderer.setPixelRatio(window.devicePixelRatio);
-		this.renderer.setSize(map.getCanvas().clientWidth, map.getCanvas().clientHeight);
+		this.renderer.setSize(this.map.getCanvas().clientWidth, this.map.getCanvas().clientHeight);
 		this.renderer.outputEncoding = THREE.sRGBEncoding;
 		//this.renderer.shadowMap.enabled = true;
 		this.renderer.autoClear = false;
@@ -56,7 +60,7 @@ Threebox.prototype = {
 		this.labelRenderer = new LabelRenderer(this.map);
 
 		this.scene = new THREE.Scene();
-		this.camera = new THREE.PerspectiveCamera(ThreeboxConstants.FOV_DEGREES, map.getCanvas().clientWidth / map.getCanvas().clientHeight, 1, 1e21);
+		this.camera = new THREE.PerspectiveCamera(ThreeboxConstants.FOV_DEGREES, this.map.getCanvas().clientWidth / this.map.getCanvas().clientHeight, 1, 1e21);
 		this.camera.layers.enable(0);
 		this.camera.layers.enable(1);
 
@@ -76,8 +80,6 @@ Threebox.prototype = {
 		this.raycaster.layers.set(0);
 		//this.raycaster.params.Points.threshold = 100;
 
-		// apply starter options
-		this.options = utils._validate(options || {}, defaultOptions);
 		if (this.options.defaultLights) this.defaultLights();
 		if (this.options.enableSelectingFeatures) this.enableSelectingFeatures = this.options.enableSelectingFeatures; 
 		if (this.options.enableSelectingObjects) this.enableSelectingObjects = this.options.enableSelectingObjects; 
@@ -589,9 +591,8 @@ Threebox.prototype = {
 		// Update any animations
 		this.objects.animationManager.update(timestamp);
 
-		this.renderer.state.reset();
-
 		// Render the scene and repaint the map
+		this.renderer.state.reset();
 		this.renderer.render(this.scene, this.camera);
 
 		// [jscastro] Render any label
@@ -677,11 +678,11 @@ Threebox.prototype = {
 		this.scene.add(ambientLight);
 
 		let directionalLightBack = new THREE.DirectionalLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.25);
-		directionalLightBack.position.set(10, 100, 100);
+		directionalLightBack.position.set(30, 100, 100);
 		this.scene.add(directionalLightBack);
 
 		let directionalLightFront = new THREE.DirectionalLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.25);
-		directionalLightFront.position.set(-10, -100, 100);
+		directionalLightFront.position.set(-30, 100, -100);
 		this.scene.add(directionalLightFront);
 
 	},
@@ -690,7 +691,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.3',
+	version: '2.0.4',
 
 }
 
@@ -702,7 +703,6 @@ var defaultOptions = {
 	enableDraggingObjects: false,
 	enableRotatingObjects: false,
 	enableTooltips: false
-
 }
 module.exports = exports = Threebox;
 

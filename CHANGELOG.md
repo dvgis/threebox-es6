@@ -1,3 +1,32 @@
+## 2.0.4
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+
+- Update to *Mapbox GL* v1.11..
+- [**#13**](https://github.com/jscastro76/threebox/issues/13) Refactored `tube` and `Object3D` including now all the events, behaviors, `.tooltip` `.boundingBox` and `.boundingBoxShadow` and behave like 3D models loaded through `tb.loadObj`
+- [**#15**](https://github.com/jscastro76/threebox/issues/15) Removed modules from the solution. 
+- [**#17**](https://github.com/jscastro76/threebox/issues/17) 3D models and Objects3D have a new config param `anchor` as string, that will be used to calculate dynamically the position of the object pivotal anchor to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` for precison on positioning.
+- [**#17**](https://github.com/jscastro76/threebox/issues/17) 3D models and Objects3D `adjustment` param will override `anchor` automatic calculation to allow fully custom positioning for a pivotal center and altitude.  
+- 3DObject has now a new method `obj.setAnchor` to define the positional and pivotal center based on a string value.
+- 3DObject has now a new method `obj.setCenter` to allows to define positional and pivotal center based on an {x,y,z} value in units.
+- [**#18**](https://github.com/jscastro76/threebox/issues/18) `obj.addTooltip` and `obj.addLabel` receive a new param `anchor` that is by default `obj.anchor`, so it'll be calculated dynamically to `bottom-left` position. 
+- [**#19**](https://github.com/jscastro76/threebox/issues/19) Removed version logs from `ColladaLoader` and `FBXLoader` 
+- [**#20**](https://github.com/jscastro76/threebox/issues/20) 3D model url returned at `loadObj` error if there's an exception
+- [**#21**](https://github.com/jscastro76/threebox/issues/21) Added new example with [Statue of Liberty and Eiffel Tower](https://github.com/jscastro76/threebox/blob/master/examples/eiffel.html) insipred by this [StackOverflow question](https://stackoverflow.com/questions/46701072/how-to-put-threejs-building-on-mapbox-to-its-real-place/46705447#)
+- [**#22**](https://github.com/jscastro76/threebox/issues/22) All the examples updated to *Mapbox GL* v1.11.1.
+- Threebox initialization params are now validated at the beginning. 
+- Preparation for including post-effects  
+
+#### :beetle: Bug fixes
+- [**#16**](https://github.com/jscastro76/threebox/issues/16) Bug in `obj.duplicate()` method. It was a *Three.js* bug [**19900**](https://github.com/mrdoob/three.js/issues/19900) but it was resolved here through the addition of a copy constructor.
+
+
+<br>
+
+- - - 
+
 ## 2.0.3
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
@@ -16,7 +45,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 - Added default tooltips to 3D objects and fill-extrusion features that can be overriden, so far always top centered.
 - Added a new example *3Dbuildings.html* showing the built-in raycast behavior and tooltips on top of the 3D Buildings fill-extrusions composite layer.
 - Updated samples *raycaster.html*, *mercator.html*, *animation.html*, *mercator.html*, *basic.html*, *logistics.html*.
-- Refactored `sphere` and `Object3D` including now `.tooltip` `.boundingBox` and `.boundingBoxShadow` and behave like 3D models loaded through `tb.loadObj`
+- Refactored `sphere` and `Object3D` including now all the events, behaviors, `.tooltip` `.boundingBox` and `.boundingBoxShadow` and behave like 3D models loaded through `tb.loadObj`
 - Refactored `t.loadObj` to validate options format.
 - Added `toolbox.css` that supports generic styles for tooltips mapbox-like.
 

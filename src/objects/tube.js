@@ -2,6 +2,7 @@ var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 var Objects = require('./objects.js');
 var THREE = require("../three.js");
+var Object3D = require('./Object3D.js');
 
 function tube(obj, world){
 
@@ -17,9 +18,12 @@ function tube(obj, world){
 	var mat = material(obj);
 
     var mesh = new THREE.Mesh( geom, mat );
-    mesh.position.copy(normalized.position);
+    //mesh.position.copy(normalized.position);
 
-    return mesh
+	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
+	return new Object3D({ obj: mesh, units: obj.units, anchor: obj.anchor, adjustment: obj.adjustment });
+
+	//return mesh
 
 }
 

@@ -3891,7 +3891,7 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 		// metadata
 
 		var version = collada.getAttribute('version');
-		console.log('THREE.ColladaLoader: File version', version);
+		//console.log('THREE.ColladaLoader: File version', version);
 
 		var asset = parseAsset(getElementsByTagName(collada, 'asset')[0]);
 		var textureLoader = new THREE.TextureLoader(this.manager);
