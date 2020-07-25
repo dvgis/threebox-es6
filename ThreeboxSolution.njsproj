@@ -41,8 +41,6 @@
     <Content Include="examples\images\eiffel-tower.png" />
     <Content Include="examples\images\statue-of-liberty.png" />
     <Content Include="examples\models\Eiffel.glb" />
-    <Content Include="examples\models\LibertStatue.mtl" />
-    <Content Include="examples\models\LibertStatue.obj" />
     <Content Include="examples\models\Liberty-DecorazioniMarmo-2.bmp" />
     <Content Include="examples\models\Liberty-GreenBronze-1.bmp" />
     <Content Include="examples\models\Liberty-MattoniBasamento-1.bmp" />

@@ -9,7 +9,7 @@ A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://d
 - - -
 ## Current release
 
-Current release is [**2.0.4**](https://github.com/jscastro76/threebox/releases/tag/v.2.0.4), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md) for more details.
+Current release is [**2.0.4**](https://github.com/jscastro76/threebox/releases/tag/v.2.0.4), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#204) for more details.
 
 <br>
 

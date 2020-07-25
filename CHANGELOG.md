@@ -4,7 +4,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 #### :sparkles: Enhancements
 
-- Update to *Mapbox GL* v1.11..
+- Update to *Mapbox GL* v1.11.1.
 - [**#13**](https://github.com/jscastro76/threebox/issues/13) Refactored `tube` and `Object3D` including now all the events, behaviors, `.tooltip` `.boundingBox` and `.boundingBoxShadow` and behave like 3D models loaded through `tb.loadObj`
 - [**#15**](https://github.com/jscastro76/threebox/issues/15) Removed modules from the solution. 
 - [**#17**](https://github.com/jscastro76/threebox/issues/17) 3D models and Objects3D have a new config param `anchor` as string, that will be used to calculate dynamically the position of the object pivotal anchor to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` for precison on positioning.
