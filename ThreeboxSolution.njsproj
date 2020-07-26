@@ -14,7 +14,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <LastActiveSolutionConfig>Debug|Any CPU</LastActiveSolutionConfig>
     <StartWebBrowser>True</StartWebBrowser>
-    <LaunchUrl>/examples/3Dbuildings.html</LaunchUrl>
+    <LaunchUrl>/examples/mercator.html</LaunchUrl>
     <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
     <NodejsPort>8080</NodejsPort>
   </PropertyGroup>
@@ -92,19 +92,19 @@
     <Content Include="examples\old\basic.html" />
     <Content Include="examples\old\flocking.html" />
     <Content Include="examples\old\orientation.html" />
-    <Content Include="src\Animation\AnimationManager.js" />
-    <Content Include="src\Camera\CameraSync.js" />
+    <Content Include="src\animation\AnimationManager.js" />
+    <Content Include="src\camera\CameraSync.js" />
     <Content Include="src\objects\line.js" />
     <Content Include="src\objects\loadObj.js" />
     <Content Include="src\objects\Object3D.js" />
     <Content Include="src\objects\objects.js" />
     <Content Include="src\objects\sphere.js" />
     <Content Include="src\objects\tube.js" />
-    <Content Include="src\Utils\constants.js" />
-    <Content Include="src\Utils\material.js" />
-    <Content Include="src\Utils\Utils.js" />
-    <Content Include="src\Utils\validate.js" />
-    <Content Include="src\Utils\ValueGenerator.js" />
+    <Content Include="src\utils\constants.js" />
+    <Content Include="src\utils\material.js" />
+    <Content Include="src\utils\utils.js" />
+    <Content Include="src\utils\validate.js" />
+    <Content Include="src\utils\ValueGenerator.js" />
     <Content Include="src\objects\customLines\Line2.js" />
     <Content Include="src\objects\customLines\LineGeometry.js" />
     <Content Include="src\objects\customLines\LineMaterial.js" />
@@ -132,12 +132,12 @@
     <Folder Include="examples\old" />
     <Folder Include="examples\plugins\" />
     <Folder Include="src" />
-    <Folder Include="src\Animation" />
-    <Folder Include="src\Camera" />
+    <Folder Include="src\animation\" />
+    <Folder Include="src\camera\" />
     <Folder Include="src\objects" />
     <Folder Include="src\objects\customLines" />
     <Folder Include="src\objects\loaders" />
-    <Folder Include="src\Utils" />
+    <Folder Include="src\utils\" />
     <Folder Include="tests" />
     <Folder Include="tests\unit" />
     <Folder Include="ThreeboxSolution" />

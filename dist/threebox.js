@@ -2125,7 +2125,7 @@ var Zlib = mod.Zlib;
 module.exports = exports = Zlib;
 
 },{}],12:[function(require,module,exports){
-const utils = require("../Utils/Utils.js");
+const utils = require("../utils/utils.js");
 const Objects = require('./objects.js');
 const CSS2D = require('./CSS2DRenderer.js');
 
@@ -2149,7 +2149,7 @@ function Label(obj) {
 
 
 module.exports = exports = Label;
-},{"../Utils/Utils.js":3,"./CSS2DRenderer.js":8,"./objects.js":20}],13:[function(require,module,exports){
+},{"../utils/utils.js":27,"./CSS2DRenderer.js":8,"./objects.js":20}],13:[function(require,module,exports){
 var THREE = require("../three.js");
 var utils = require("../utils/utils.js");
 var Objects = require('./objects.js');
@@ -16530,6 +16530,7 @@ Objects.prototype = {
 					obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
 				}
 			}
+
 			//[jscastro] Set the positional and pivotal anchor automatically from string param  
 			obj.setAnchor = function (anchor) {
 				const box = obj.box3();
@@ -16856,12 +16857,35 @@ Objects.prototype = {
 			tb.map.repaint = true;
 		}
 
+		//[jscastro] clone + assigning all the attributes
 		obj.duplicate = function () {
-			var dupe = obj.clone();
+			var dupe = obj.clone(true);
 			dupe.userData = obj.userData;
-			if (obj.model) { dupe.model = obj.model.clone(); }
+			dupe.model = dupe.children[0].children[0];
+			dupe.animations = dupe.model.animations;
 			root._addMethods(dupe);
-			return dupe
+			dupe.deepCopy(obj);
+
+			return dupe;
+		}
+
+		obj.deepCopy = function (o) {
+
+			obj.anchor = o.anchor;
+			obj.bottom = o.bottom;
+			obj.bottomLeft = o.bottomLeft;
+			obj.bottomRight = o.bottomRight;
+			obj.center = o.center;
+			obj.left = o.left;
+			obj.right = o.right;
+			obj.top = o.top;
+			obj.topLeft = o.topLeft;
+			obj.topRight = o.topRight;
+			obj.boundingBox = obj.children[0].children[1].children[0];
+			obj.boundingBoxShadow = obj.children[0].children[1].children[1];
+			obj.tooltip = obj.children[0].children[2];
+
+			return obj;
 		}
 
 		obj.dispose = function () {
@@ -17047,7 +17071,7 @@ function Sphere(options) {
 
 module.exports = exports = Sphere;
 },{"../utils/material.js":26,"../utils/utils.js":27,"./Object3D.js":10,"./objects.js":20}],22:[function(require,module,exports){
-const utils = require("../Utils/Utils.js");
+const utils = require("../utils/utils.js");
 const Objects = require('./objects.js');
 const CSS2D = require('./CSS2DRenderer.js');
 
@@ -17071,7 +17095,7 @@ function Tooltip(obj) {
 }
 
 module.exports = exports = Tooltip;
-},{"../Utils/Utils.js":3,"./CSS2DRenderer.js":8,"./objects.js":20}],23:[function(require,module,exports){
+},{"../utils/utils.js":27,"./CSS2DRenderer.js":8,"./objects.js":20}],23:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 var Objects = require('./objects.js');
@@ -18342,7 +18366,7 @@ arguments[4][4][0].apply(exports,arguments)
 // - specify a `material` string, `color`, and/or `opacity` as modifications of the default material
 // - provide none of these parameters, to use the default material
 
-var utils = require("../Utils/Utils.js");
+var utils = require("../utils/utils.js");
 var THREE = require("../three.js");
 
 var defaults = {
@@ -18387,7 +18411,7 @@ function material (options) {
 
 module.exports = exports = material;
 
-},{"../Utils/Utils.js":3,"../three.js":24}],27:[function(require,module,exports){
+},{"../three.js":24,"../utils/utils.js":27}],27:[function(require,module,exports){
 arguments[4][3][0].apply(exports,arguments)
 },{"../three.js":24,"./constants.js":25,"./validate.js":28,"dup":3}],28:[function(require,module,exports){
 arguments[4][5][0].apply(exports,arguments)

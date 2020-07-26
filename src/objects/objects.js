@@ -209,6 +209,7 @@ Objects.prototype = {
 					obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
 				}
 			}
+
 			//[jscastro] Set the positional and pivotal anchor automatically from string param  
 			obj.setAnchor = function (anchor) {
 				const box = obj.box3();
@@ -535,12 +536,35 @@ Objects.prototype = {
 			tb.map.repaint = true;
 		}
 
+		//[jscastro] clone + assigning all the attributes
 		obj.duplicate = function () {
-			var dupe = obj.clone();
+			var dupe = obj.clone(true);
 			dupe.userData = obj.userData;
-			if (obj.model) { dupe.model = obj.model.clone(); }
+			dupe.model = dupe.children[0].children[0];
+			dupe.animations = dupe.model.animations;
 			root._addMethods(dupe);
-			return dupe
+			dupe.deepCopy(obj);
+
+			return dupe;
+		}
+
+		obj.deepCopy = function (o) {
+
+			obj.anchor = o.anchor;
+			obj.bottom = o.bottom;
+			obj.bottomLeft = o.bottomLeft;
+			obj.bottomRight = o.bottomRight;
+			obj.center = o.center;
+			obj.left = o.left;
+			obj.right = o.right;
+			obj.top = o.top;
+			obj.topLeft = o.topLeft;
+			obj.topRight = o.topRight;
+			obj.boundingBox = obj.children[0].children[1].children[0];
+			obj.boundingBoxShadow = obj.children[0].children[1].children[1];
+			obj.tooltip = obj.children[0].children[2];
+
+			return obj;
 		}
 
 		obj.dispose = function () {

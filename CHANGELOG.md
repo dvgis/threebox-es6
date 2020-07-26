@@ -17,10 +17,12 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 - [**#21**](https://github.com/jscastro76/threebox/issues/21) Added new example with [Statue of Liberty and Eiffel Tower](https://github.com/jscastro76/threebox/blob/master/examples/eiffel.html) insipred by this [StackOverflow question](https://stackoverflow.com/questions/46701072/how-to-put-threejs-building-on-mapbox-to-its-real-place/46705447#)
 - [**#22**](https://github.com/jscastro76/threebox/issues/22) All the examples updated to *Mapbox GL* v1.11.1.
 - Threebox initialization params are now validated at the beginning. 
+- [**#23**](https://github.com/jscastro76/threebox/issues/23) Updated sample [mercator.html](https://github.com/jscastro76/threebox/blob/master/examples/mercator.html) to test the changes in `obj.duplicate()` method comparing duplication with new instances creation.
 - Preparation for including post-effects  
 
 #### :beetle: Bug fixes
 - [**#16**](https://github.com/jscastro76/threebox/issues/16) Bug in `obj.duplicate()` method. It was a *Three.js* bug [**19900**](https://github.com/mrdoob/three.js/issues/19900) but it was resolved here through the addition of a copy constructor.
+- [**#23**](https://github.com/jscastro76/threebox/issues/23) Bug in `obj.duplicate()` method. It's not cloning properly all the members of a Threebox Object3D such as `obj.animations`, `obj.boundingBox`, `obj.boundingBoxShadow`, `obj.anchor`, etc...
 
 
 <br>
@@ -53,7 +55,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 - Bug fixed in `THREE.MTLLoader` with url undefined. (Pending decouple MTLLoader unless it's a `.obj` model)
 - Bug fixed in `addTooltip(f, map)` method when a fill-extrusion has no name or id.
-- Bug fixed in `Utils.getFeatureCenter` that was not considering geoJson `MultiPolygon` type.
+- Bug fixed in `utils.getFeatureCenter` that was not considering geoJson `MultiPolygon` type.
 
 <br>
 
