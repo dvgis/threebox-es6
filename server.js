@@ -3,7 +3,7 @@ var http = require('http');
 var url = require('url');
 var fs = require('fs');
 var path = require('path');
-var baseDirectory = "C:\\Users\\jscastro\\source\\repos\\archean-incubator\\mapbox-poc\\threebox-new\\";
+var baseDirectory = "C:\\Users\\jscastro\\Documents\\GitHub\\threebox\\";
 var port = process.env.PORT || 1337;
 var counter = 0;
 
