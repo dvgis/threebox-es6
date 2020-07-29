@@ -18,7 +18,7 @@ Validate.prototype = {
             return
         }
     
-        for (member of input) {
+        for (const member of input) {
             if (member.constructor !== Number) {
                 console.error("Coords values must be numbers")
                 return
@@ -42,7 +42,7 @@ Validate.prototype = {
             return
         }
 
-        for (coord of input){
+        for (const coord of input){
             if (!scope.Coords(coord)) {
                 console.error("Each coordinate in a line must be a valid Coords type")
                 return                    
@@ -59,7 +59,7 @@ Validate.prototype = {
 
         else if (input.constructor === Object) {
 
-            for (key of Object.keys(input)){
+            for (const key of Object.keys(input)){
 
                 if (!['x', 'y', 'z'].includes(key)) {
                     console.error('Rotation parameters must be x, y, or z')
@@ -88,7 +88,7 @@ Validate.prototype = {
         
         else if (input.constructor === Object) {
 
-            for (key of Object.keys(input)){
+            for (const key of Object.keys(input)){
 
                 if (!['x', 'y', 'z'].includes(key)) {
                     console.error('Scale parameters must be x, y, or z')

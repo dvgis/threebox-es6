@@ -209,7 +209,6 @@ Objects.prototype = {
 					obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
 				}
 			}
-
 			//[jscastro] Set the positional and pivotal anchor automatically from string param  
 			obj.setAnchor = function (anchor) {
 				const box = obj.box3();
@@ -535,7 +534,6 @@ Objects.prototype = {
 			tb.remove(obj);
 			tb.map.repaint = true;
 		}
-
 		//[jscastro] clone + assigning all the attributes
 		obj.duplicate = function () {
 			var dupe = obj.clone(true);

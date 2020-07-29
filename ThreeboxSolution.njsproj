@@ -140,7 +140,6 @@
     <Folder Include="src\utils\" />
     <Folder Include="tests" />
     <Folder Include="tests\unit" />
-    <Folder Include="ThreeboxSolution" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="dist\threebox.min.js" />

@@ -1,6 +1,6 @@
 var THREE = require("../three.js");
-var utils = require("../Utils/Utils.js");
-var ThreeboxConstants = require("../Utils/constants.js");
+var utils = require("../utils/utils.js");
+var ThreeboxConstants = require("../utils/constants.js");
 
 function CameraSync(map, camera, world) {
     this.map = map;
@@ -61,7 +61,7 @@ CameraSync.prototype = {
         }
 
         // Furthest distance optimized by @satorbs
-        // https://github.com/satorbs/threebox/blob/master/src/Camera/CameraSync.js
+        // https://github.com/satorbs/threebox/blob/master/src/camera/CameraSync.js
         const t = this.map.transform;
         const groundAngle = Math.PI / 2 + t._pitch;
         const fovAboveCenter = this.state.fov * (0.5 + this.state.offset.y / t.height);

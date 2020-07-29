@@ -2,7 +2,7 @@
 window.Threebox = require('./src/Threebox.js'),
 window.THREE = require('./src/three.js')
 
-},{"./src/Threebox.js":2,"./src/three.js":24}],2:[function(require,module,exports){
+},{"./src/Threebox.js":2,"./src/three.js":21}],2:[function(require,module,exports){
 var THREE = require("./three.js");
 var CameraSync = require("./camera/CameraSync.js");
 var utils = require("./utils/utils.js");
@@ -712,464 +712,7 @@ var defaultOptions = {
 module.exports = exports = Threebox;
 
 
-},{"./animation/AnimationManager.js":6,"./camera/CameraSync.js":7,"./objects/LabelRenderer.js":9,"./objects/Object3D.js":10,"./objects/label.js":12,"./objects/line.js":13,"./objects/loadObj.js":14,"./objects/objects.js":20,"./objects/sphere.js":21,"./objects/tooltip.js":22,"./objects/tube.js":23,"./three.js":24,"./utils/constants.js":25,"./utils/material.js":26,"./utils/utils.js":27}],3:[function(require,module,exports){
-var THREE = require("../three.js");
-var Constants = require("./constants.js");
-var validate = require("./validate.js");
-
-var utils = {
-
-	prettyPrintMatrix: function (uglymatrix) {
-		for (var s = 0; s < 4; s++) {
-			var quartet = [uglymatrix[s],
-			uglymatrix[s + 4],
-			uglymatrix[s + 8],
-			uglymatrix[s + 12]];
-			console.log(quartet.map(function (num) { return num.toFixed(4) }))
-		}
-	},
-
-	makePerspectiveMatrix: function (fovy, aspect, near, far) {
-
-		var out = new THREE.Matrix4();
-		var f = 1.0 / Math.tan(fovy / 2),
-			nf = 1 / (near - far);
-
-		var newMatrix = [
-			f / aspect, 0, 0, 0,
-			0, f, 0, 0,
-			0, 0, (far + near) * nf, -1,
-			0, 0, (2 * far * near) * nf, 0
-		]
-
-		out.elements = newMatrix
-		return out;
-	},
-
-	//gimme radians
-	radify: function (deg) {
-
-		function convert(degrees) {
-			degrees = degrees || 0;
-			return Math.PI * 2 * degrees / 360
-		}
-
-		if (typeof deg === 'object') {
-
-			//if [x,y,z] array of rotations
-			if (deg.length > 0) {
-				return deg.map(function (degree) {
-					return convert(degree)
-				})
-			}
-
-			// if {x: y: z:} rotation object
-			else {
-				return [convert(deg.x), convert(deg.y), convert(deg.z)]
-			}
-		}
-
-		//if just a number
-		else return convert(deg)
-	},
-
-	//gimme degrees
-	degreeify: function (rad) {
-		function convert(radians) {
-			radians = radians || 0;
-			return radians * 360 / (Math.PI * 2)
-		}
-
-		if (typeof rad === 'object') {
-			return [convert(rad.x), convert(rad.y), convert(rad.z)]
-		}
-
-		else return convert(rad)
-	},
-
-	projectToWorld: function (coords) {
-
-		// Spherical mercator forward projection, re-scaling to WORLD_SIZE
-
-		var projected = [
-			-Constants.MERCATOR_A * Constants.DEG2RAD * coords[0] * Constants.PROJECTION_WORLD_SIZE,
-			-Constants.MERCATOR_A * Math.log(Math.tan((Math.PI * 0.25) + (0.5 * Constants.DEG2RAD * coords[1]))) * Constants.PROJECTION_WORLD_SIZE
-		];
-
-		//z dimension, defaulting to 0 if not provided
-
-		if (!coords[2]) projected.push(0)
-		else {
-			var pixelsPerMeter = this.projectedUnitsPerMeter(coords[1]);
-			projected.push(coords[2] * pixelsPerMeter);
-		}
-
-		var result = new THREE.Vector3(projected[0], projected[1], projected[2]);
-
-		return result;
-	},
-
-	projectedUnitsPerMeter: function (latitude) {
-		return Math.abs(Constants.WORLD_SIZE / Math.cos(Constants.DEG2RAD * latitude) / Constants.EARTH_CIRCUMFERENCE);
-	},
-
-	_scaleVerticesToMeters: function (centerLatLng, vertices) {
-		var pixelsPerMeter = this.projectedUnitsPerMeter(centerLatLng[1]);
-		var centerProjected = this.projectToWorld(centerLatLng);
-
-		for (var i = 0; i < vertices.length; i++) {
-			vertices[i].multiplyScalar(pixelsPerMeter);
-		}
-
-		return vertices;
-	},
-
-	projectToScreen: function (coords) {
-		console.log("WARNING: Projecting to screen coordinates is not yet implemented");
-	},
-
-	unprojectFromScreen: function (pixel) {
-		console.log("WARNING: unproject is not yet implemented");
-	},
-
-	//world units to lnglat
-	unprojectFromWorld: function (worldUnits) {
-
-		var unprojected = [
-			-worldUnits.x / (Constants.MERCATOR_A * Constants.DEG2RAD * Constants.PROJECTION_WORLD_SIZE),
-			2 * (Math.atan(Math.exp(worldUnits.y / (Constants.PROJECTION_WORLD_SIZE * (-Constants.MERCATOR_A)))) - Math.PI / 4) / Constants.DEG2RAD
-		];
-
-		var pixelsPerMeter = this.projectedUnitsPerMeter(unprojected[1]);
-
-		//z dimension
-		var height = worldUnits.z || 0;
-		unprojected.push(height / pixelsPerMeter);
-
-		return unprojected;
-	},
-
-	toScreenPosition: function (obj, camera) {
-		var vector = new THREE.Vector3();
-
-		var widthHalf = 0.5 * renderer.context.canvas.width;
-		var heightHalf = 0.5 * renderer.context.canvas.height;
-
-		obj.updateMatrixWorld();
-		vector.setFromMatrixPosition(obj.matrixWorld);
-		vector.project(camera);
-
-		vector.x = (vector.x * widthHalf) + widthHalf;
-		vector.y = - (vector.y * heightHalf) + heightHalf;
-
-		return {
-			x: vector.x,
-			y: vector.y
-		};
-
-	},
-
-	//get the center point of a feature
-	getFeatureCenter: function getFeatureCenter(feature, model, level) {
-		let center = [];
-		let latitude = 0;
-		let longitude = 0;
-		let height = 0;
-		let coordinates = [];
-		//deep clone to avoid modifying the original array
-		coordinates.push(...feature.geometry.coordinates[0]);
-		if (feature.geometry.type === "Point") {
-			center = coordinates[0];
-		}
-		else {
-			//features in mapbox repeat the first coordinates at the end. We remove it.
-			if (feature.geometry.type === "MultiPolygon") coordinates = coordinates[0];
-			coordinates.splice(-1, 1);
-			coordinates.forEach(function (c) {
-				latitude += c[0];
-				longitude += c[1];
-			});
-			center = [latitude / coordinates.length, longitude / coordinates.length];
-		}
-		height = this.getObjectHeightOnFloor(feature, model, level);
-
-		(center.length < 3 ? center.push(height) : center[2] = height);
-
-		return center;
-	},
-
-	getObjectHeightOnFloor: function (feature, obj, level = feature.properties.level || 0) {
-		let floorHeightMin = (level * (feature.properties.levelHeight || 0));
-		//object height is modelSize.z + base_height or min_height configured for this object
-		let base = (feature.properties.base_height || feature.properties.min_height || 0);
-		//let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - base));
-		let height = ((obj && obj.model) ? 0 : (feature.properties.height - base));
-		let objectHeight = height + base;
-		let modelHeightFloor = floorHeightMin + objectHeight;
-		return modelHeightFloor;
-	},
-
-	_flipMaterialSides: function (obj) {
-
-	},
-
-	// to improve precision, normalize a series of vector3's to their collective center, and move the resultant mesh to that center
-	normalizeVertices(vertices) {
-
-		var geometry = new THREE.Geometry();
-
-		for (v3 of vertices) {
-			geometry.vertices.push(v3)
-		}
-
-		geometry.computeBoundingSphere();
-		var center = geometry.boundingSphere.center;
-		var radius = geometry.boundingSphere.radius;
-
-		var scaled = vertices.map(function (v3) {
-			var normalized = v3.sub(center);
-			return normalized;
-		});
-
-		return { vertices: scaled, position: center }
-	},
-
-	//flatten an array of Vector3's into a shallow array of values in x-y-z order, for bufferGeometry
-	flattenVectors(vectors) {
-		var flattenedArray = [];
-		for (vertex of vectors) {
-			flattenedArray.push(vertex.x, vertex.y, vertex.z);
-		}
-		return flattenedArray
-	},
-
-	//convert a line/polygon to Vector3's
-
-	lnglatsToWorld: function (coords) {
-
-		var vector3 = coords.map(
-			function (pt) {
-				var p = utils.projectToWorld(pt);
-				var v3 = new THREE.Vector3(p.x, p.y, p.z);
-				return v3
-			}
-		);
-
-		return vector3
-	},
-
-	extend: function (original, addition) {
-		for (key in addition) original[key] = addition[key];
-	},
-
-	clone: function (original) {
-		var clone = {};
-		for (key in original) clone[key] = original[key];
-		return clone;
-	},
-
-	clamp: function(n, min, max) {
-		return Math.min(max, Math.max(min, n));
-	},
-
-	// retrieve object parameters from an options object
-
-	types: {
-
-		rotation: function (r, currentRotation) {
-
-			//[jscastro] rotation default 0
-			if (!r) { r = 0; };
-
-			// if number provided, rotate only in Z by that amount
-			if (typeof r === 'number') r = { z: r };
-
-			var degrees = this.applyDefault([r.x, r.y, r.z], currentRotation);
-			var radians = utils.radify(degrees);
-			return radians;
-
-		},
-
-		scale: function (s, currentScale) {
-			//[jscastro] scale default 1
-			if (!s) { s = 1; };
-			if (typeof s === 'number') return s = [s, s, s];
-			else return this.applyDefault([s.x, s.y, s.z], currentScale);
-		},
-
-		applyDefault: function (array, current) {
-
-			var output = array.map(function (item, index) {
-				item = item || current[index];
-				return item
-			})
-
-			return output
-		}
-	},
-
-	_validate: function (userInputs, defaults) {
-
-		userInputs = userInputs || {};
-		var validatedOutput = {};
-		utils.extend(validatedOutput, userInputs);
-
-		for (key of Object.keys(defaults)) {
-
-			if (userInputs[key] === undefined) {
-				//make sure required params are present
-				if (defaults[key] === null) {
-					console.error(key + ' is required')
-					return;
-				}
-
-				else validatedOutput[key] = defaults[key]
-
-			}
-
-			else validatedOutput[key] = userInputs[key]
-		}
-
-		return validatedOutput
-	},
-	Validator: new validate(),
-	exposedMethods: ['projectToWorld', 'projectedUnitsPerMeter', 'extend', 'unprojectFromWorld']
-}
-
-module.exports = exports = utils
-},{"../three.js":24,"./constants.js":4,"./validate.js":5}],4:[function(require,module,exports){
-const WORLD_SIZE = 1024000;
-const MERCATOR_A = 6378137.0;
-const FOV = Math.atan(3/4);
-
-module.exports = exports = {
-    WORLD_SIZE: WORLD_SIZE,
-    PROJECTION_WORLD_SIZE: WORLD_SIZE / (MERCATOR_A * Math.PI * 2),
-    MERCATOR_A: MERCATOR_A, // 900913 projection property
-    DEG2RAD: Math.PI / 180,
-    RAD2DEG: 180 / Math.PI,
-    EARTH_CIRCUMFERENCE: 40075000, // In meters
-    FOV: FOV, // Math.atan(3/4) radians. If this value is changed, FOV_DEGREES must be calculated
-    FOV_DEGREES: FOV * 360 / (Math.PI * 2), // Math.atan(3/4) in degrees
-    TILE_SIZE: 512
-}
-},{}],5:[function(require,module,exports){
-// Type validator
-
-function Validate(){
-
-};
-
-Validate.prototype = {
-
-    Coords: function(input) {
-
-        if (input.constructor !== Array) {
-            console.error("Coords must be an array")
-            return
-        }
-
-        if (input.length < 2) {
-            console.error("Coords length must be at least 2")
-            return
-        }
-    
-        for (member of input) {
-            if (member.constructor !== Number) {
-                console.error("Coords values must be numbers")
-                return
-            }
-        }
-
-        if (Math.abs(input[1]) > 90) {
-            console.error("Latitude must be between -90 and 90")
-            return                    
-        }
-
-        return input
-    },
-
-    Line: function(input) {
-
-        var scope = this;
-
-        if (input.constructor !== Array) {
-            console.error("Line must be an array")
-            return
-        }
-
-        for (coord of input){
-            if (!scope.Coords(coord)) {
-                console.error("Each coordinate in a line must be a valid Coords type")
-                return                    
-            }
-
-        }
-
-        return input
-    },
-
-    Rotation: function(input) {
-
-        if (input.constructor === Number) input = {z: input}
-
-        else if (input.constructor === Object) {
-
-            for (key of Object.keys(input)){
-
-                if (!['x', 'y', 'z'].includes(key)) {
-                    console.error('Rotation parameters must be x, y, or z')
-                    return                            
-                }
-                if (input[key].constructor !== Number) {
-                    console.error('Individual rotation values must be numbers')
-                    return
-                }
-            }
-        }
-
-        else {
-            console.error('Rotation must be an object or a number')
-            return
-        }
-
-        return input
-    },
-
-    Scale: function(input) {
-
-        if (input.constructor === Number) {
-            input = {x:input, y:input, z: input}
-        }
-        
-        else if (input.constructor === Object) {
-
-            for (key of Object.keys(input)){
-
-                if (!['x', 'y', 'z'].includes(key)) {
-                    console.error('Scale parameters must be x, y, or z')
-                    return                            
-                }
-                if (input[key].constructor !== Number) {
-                    console.error('Individual scale values must be numbers')
-                    return
-                }
-            }
-        }
-
-        else {
-            console.error('Scale must be an object or a number')
-            return
-        }
-
-        return input
-    }
-
-}
-
-
-module.exports = exports = Validate;
-},{}],6:[function(require,module,exports){
+},{"./animation/AnimationManager.js":3,"./camera/CameraSync.js":4,"./objects/LabelRenderer.js":6,"./objects/Object3D.js":7,"./objects/label.js":9,"./objects/line.js":10,"./objects/loadObj.js":11,"./objects/objects.js":17,"./objects/sphere.js":18,"./objects/tooltip.js":19,"./objects/tube.js":20,"./three.js":21,"./utils/constants.js":22,"./utils/material.js":23,"./utils/utils.js":24}],3:[function(require,module,exports){
 const THREE = require('../three.js');
 var threebox = require('../Threebox.js');
 var utils = require("../utils/utils.js");
@@ -1606,10 +1149,10 @@ const defaults = {
     }
 }
 module.exports = exports = AnimationManager;
-},{"../Threebox.js":2,"../three.js":24,"../utils/utils.js":27,"../utils/validate.js":28}],7:[function(require,module,exports){
+},{"../Threebox.js":2,"../three.js":21,"../utils/utils.js":24,"../utils/validate.js":25}],4:[function(require,module,exports){
 var THREE = require("../three.js");
-var utils = require("../Utils/Utils.js");
-var ThreeboxConstants = require("../Utils/constants.js");
+var utils = require("../utils/utils.js");
+var ThreeboxConstants = require("../utils/constants.js");
 
 function CameraSync(map, camera, world) {
     this.map = map;
@@ -1670,7 +1213,7 @@ CameraSync.prototype = {
         }
 
         // Furthest distance optimized by @satorbs
-        // https://github.com/satorbs/threebox/blob/master/src/Camera/CameraSync.js
+        // https://github.com/satorbs/threebox/blob/master/src/camera/CameraSync.js
         const t = this.map.transform;
         const groundAngle = Math.PI / 2 + t._pitch;
         const fovAboveCenter = this.state.fov * (0.5 + this.state.offset.y / t.height);
@@ -1730,7 +1273,7 @@ CameraSync.prototype = {
 }
 
 module.exports = exports = CameraSync;
-},{"../Utils/Utils.js":3,"../Utils/constants.js":4,"../three.js":24}],8:[function(require,module,exports){
+},{"../three.js":21,"../utils/constants.js":22,"../utils/utils.js":24}],5:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -1960,14 +1503,14 @@ THREE.CSS2DRenderer = function () {
 module.exports = exports = { CSS2DRenderer: THREE.CSS2DRenderer, CSS2DObject: THREE.CSS2DObject };
 
 
-},{"../three.js":24}],9:[function(require,module,exports){
+},{"../three.js":21}],6:[function(require,module,exports){
 /**
  * @author jscastro / https://github.com/jscastro76
  */
 
 var THREE = require("./CSS2DRenderer.js");
 
-LabelRenderer = function (map) {
+function LabelRenderer(map) {
 
 	this.map = map;
 
@@ -2057,7 +1600,7 @@ LabelRenderer = function (map) {
 }
 
 module.exports = exports = LabelRenderer;
-},{"./CSS2DRenderer.js":8}],10:[function(require,module,exports){
+},{"./CSS2DRenderer.js":5}],7:[function(require,module,exports){
 var Objects = require('./objects.js');
 var utils = require("../utils/utils.js");
 
@@ -2092,7 +1635,7 @@ function Object3D(options) {
 
 
 module.exports = exports = Object3D;
-},{"../utils/utils.js":27,"./objects.js":20}],11:[function(require,module,exports){
+},{"../utils/utils.js":24,"./objects.js":17}],8:[function(require,module,exports){
 /** @license zlib.js 2012 - imaya [ https://github.com/imaya/zlib.js ] The MIT License */var mod = {}, l = void 0, aa = mod; function r(c, d) { var a = c.split("."), b = aa; !(a[0] in b) && b.execScript && b.execScript("var " + a[0]); for (var e; a.length && (e = a.shift());)!a.length && d !== l ? b[e] = d : b = b[e] ? b[e] : b[e] = {} }; var t = "undefined" !== typeof Uint8Array && "undefined" !== typeof Uint16Array && "undefined" !== typeof Uint32Array && "undefined" !== typeof DataView; function v(c) { var d = c.length, a = 0, b = Number.POSITIVE_INFINITY, e, f, g, h, k, m, n, p, s, x; for (p = 0; p < d; ++p)c[p] > a && (a = c[p]), c[p] < b && (b = c[p]); e = 1 << a; f = new (t ? Uint32Array : Array)(e); g = 1; h = 0; for (k = 2; g <= a;) { for (p = 0; p < d; ++p)if (c[p] === g) { m = 0; n = h; for (s = 0; s < g; ++s)m = m << 1 | n & 1, n >>= 1; x = g << 16 | p; for (s = m; s < e; s += k)f[s] = x; ++h } ++g; h <<= 1; k <<= 1 } return [f, a, b] }; function w(c, d) {
 this.g = []; this.h = 32768; this.d = this.f = this.a = this.l = 0; this.input = t ? new Uint8Array(c) : c; this.m = !1; this.i = y; this.r = !1; if (d || !(d = {})) d.index && (this.a = d.index), d.bufferSize && (this.h = d.bufferSize), d.bufferType && (this.i = d.bufferType), d.resize && (this.r = d.resize); switch (this.i) {
 	case A: this.b = 32768; this.c = new (t ? Uint8Array : Array)(32768 + this.h + 258); break; case y: this.b = 0; this.c = new (t ? Uint8Array : Array)(this.h); this.e = this.z; this.n = this.v; this.j = this.w; break; default: throw Error("invalid inflate mode");
@@ -2124,7 +1667,7 @@ var Zlib = mod.Zlib;
 
 module.exports = exports = Zlib;
 
-},{}],12:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 const utils = require("../utils/utils.js");
 const Objects = require('./objects.js');
 const CSS2D = require('./CSS2DRenderer.js');
@@ -2149,7 +1692,7 @@ function Label(obj) {
 
 
 module.exports = exports = Label;
-},{"../utils/utils.js":27,"./CSS2DRenderer.js":8,"./objects.js":20}],13:[function(require,module,exports){
+},{"../utils/utils.js":24,"./CSS2DRenderer.js":5,"./objects.js":17}],10:[function(require,module,exports){
 var THREE = require("../three.js");
 var utils = require("../utils/utils.js");
 var Objects = require('./objects.js');
@@ -3144,7 +2687,7 @@ THREE.Wireframe.prototype = Object.assign( Object.create( THREE.Mesh.prototype )
 
 } );
 
-},{"../three.js":24,"../utils/utils.js":27,"./objects.js":20}],14:[function(require,module,exports){
+},{"../three.js":21,"../utils/utils.js":24,"./objects.js":17}],11:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var Objects = require('./objects.js');
 const OBJLoader = require("./loaders/OBJLoader.js");
@@ -3315,7 +2858,7 @@ function loadObj(options, cb) {
 }
 
 module.exports = exports = loadObj;
-},{"../utils/utils.js":27,"./loaders/ColladaLoader.js":15,"./loaders/FBXLoader.js":16,"./loaders/GLTFLoader.js":17,"./loaders/MTLLoader.js":18,"./loaders/OBJLoader.js":19,"./objects.js":20}],15:[function(require,module,exports){
+},{"../utils/utils.js":24,"./loaders/ColladaLoader.js":12,"./loaders/FBXLoader.js":13,"./loaders/GLTFLoader.js":14,"./loaders/MTLLoader.js":15,"./loaders/OBJLoader.js":16,"./objects.js":17}],12:[function(require,module,exports){
 const THREE = require('../../three.js');
 
 /**
@@ -7301,7 +6844,7 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 
 module.exports = exports = THREE.ColladaLoader;
 
-},{"../../three.js":24}],16:[function(require,module,exports){
+},{"../../three.js":21}],13:[function(require,module,exports){
 const THREE = require('../../three.js');
 const Zlib = require('../Zlib.Inflate.js');
 
@@ -11436,7 +10979,7 @@ THREE.FBXLoader = (function () {
 
 module.exports = exports = THREE.FBXLoader;
 
-},{"../../three.js":24,"../Zlib.Inflate.js":11}],17:[function(require,module,exports){
+},{"../../three.js":21,"../Zlib.Inflate.js":8}],14:[function(require,module,exports){
 const THREE = require('../../three.js');
 /**
  * @author Rich Tibbett / https://github.com/richtr
@@ -14882,7 +14425,7 @@ THREE.GLTFLoader = (function () {
 })();
 
 module.exports = exports = THREE.GLTFLoader;
-},{"../../three.js":24}],18:[function(require,module,exports){
+},{"../../three.js":21}],15:[function(require,module,exports){
 const THREE = require('../../three.js');
 
 const MTLLoader = function ( manager ) {
@@ -15442,7 +14985,7 @@ THREE.MTLLoader.MaterialCreator.prototype = {
 };
 
 module.exports = exports = THREE.MTLLoader;
-},{"../../three.js":24}],19:[function(require,module,exports){
+},{"../../three.js":21}],16:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -16318,7 +15861,7 @@ THREE.OBJLoader = (function () {
 })();
 
 module.exports = exports = THREE.OBJLoader;
-},{"../../three.js":24}],20:[function(require,module,exports){
+},{"../../three.js":21}],17:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 const THREE = require('../three.js');
@@ -16530,7 +16073,6 @@ Objects.prototype = {
 					obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
 				}
 			}
-
 			//[jscastro] Set the positional and pivotal anchor automatically from string param  
 			obj.setAnchor = function (anchor) {
 				const box = obj.box3();
@@ -16856,7 +16398,6 @@ Objects.prototype = {
 			tb.remove(obj);
 			tb.map.repaint = true;
 		}
-
 		//[jscastro] clone + assigning all the attributes
 		obj.duplicate = function () {
 			var dupe = obj.clone(true);
@@ -17050,7 +16591,7 @@ Objects.prototype = {
 }
 
 module.exports = exports = Objects;
-},{"../animation/AnimationManager.js":6,"../three.js":24,"../utils/material.js":26,"../utils/utils.js":27,"./CSS2DRenderer.js":8}],21:[function(require,module,exports){
+},{"../animation/AnimationManager.js":3,"../three.js":21,"../utils/material.js":23,"../utils/utils.js":24,"./CSS2DRenderer.js":5}],18:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 var Objects = require('./objects.js');
@@ -17070,7 +16611,7 @@ function Sphere(options) {
 
 
 module.exports = exports = Sphere;
-},{"../utils/material.js":26,"../utils/utils.js":27,"./Object3D.js":10,"./objects.js":20}],22:[function(require,module,exports){
+},{"../utils/material.js":23,"../utils/utils.js":24,"./Object3D.js":7,"./objects.js":17}],19:[function(require,module,exports){
 const utils = require("../utils/utils.js");
 const Objects = require('./objects.js');
 const CSS2D = require('./CSS2DRenderer.js');
@@ -17095,7 +16636,7 @@ function Tooltip(obj) {
 }
 
 module.exports = exports = Tooltip;
-},{"../utils/utils.js":27,"./CSS2DRenderer.js":8,"./objects.js":20}],23:[function(require,module,exports){
+},{"../utils/utils.js":24,"./CSS2DRenderer.js":5,"./objects.js":17}],20:[function(require,module,exports){
 var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 var Objects = require('./objects.js');
@@ -17300,7 +16841,7 @@ tube.prototype = {
 module.exports = exports = tube;
 
 
-},{"../three.js":24,"../utils/material.js":26,"../utils/utils.js":27,"./Object3D.js":10,"./objects.js":20}],24:[function(require,module,exports){
+},{"../three.js":21,"../utils/material.js":23,"../utils/utils.js":24,"./Object3D.js":7,"./objects.js":17}],21:[function(require,module,exports){
 // threejs.org/license
 (function(k,ua){"object"===typeof exports&&"undefined"!==typeof module?ua(exports):"function"===typeof define&&define.amd?define(["exports"],ua):(k=k||self,ua(k.THREE={}))})(this,function(k){function ua(){}function v(a,b){this.x=a||0;this.y=b||0}function ya(){this.elements=[1,0,0,0,1,0,0,0,1];0<arguments.length&&console.error("THREE.Matrix3: the constructor no longer reads arguments. use .set() instead.")}function W(a,b,c,d,e,f,g,h,l,m){Object.defineProperty(this,"id",{value:ej++});this.uuid=O.generateUUID();
 this.name="";this.image=void 0!==a?a:W.DEFAULT_IMAGE;this.mipmaps=[];this.mapping=void 0!==b?b:W.DEFAULT_MAPPING;this.wrapS=void 0!==c?c:1001;this.wrapT=void 0!==d?d:1001;this.magFilter=void 0!==e?e:1006;this.minFilter=void 0!==f?f:1008;this.anisotropy=void 0!==l?l:1;this.format=void 0!==g?g:1023;this.internalFormat=null;this.type=void 0!==h?h:1009;this.offset=new v(0,0);this.repeat=new v(1,1);this.center=new v(0,0);this.rotation=0;this.matrixAutoUpdate=!0;this.matrix=new ya;this.generateMipmaps=
@@ -18356,9 +17897,23 @@ Oh;k.UnsignedByteType=1009;k.UnsignedInt248Type=1020;k.UnsignedIntType=1014;k.Un
 Ba;k.WebGLRenderTargetCube=function(a,b,c){console.warn("THREE.WebGLRenderTargetCube( width, height, options ) is now WebGLCubeRenderTarget( size, options ).");return new Zb(a,c)};k.WebGLRenderer=jg;k.WebGLUtils=Th;k.WireframeGeometry=Pc;k.WireframeHelper=function(a,b){console.warn("THREE.WireframeHelper has been removed. Use THREE.WireframeGeometry instead.");return new ma(new Pc(a.geometry),new da({color:void 0!==b?b:16777215}))};k.WrapAroundEnding=2402;k.XHRLoader=function(a){console.warn("THREE.XHRLoader has been renamed to THREE.FileLoader.");
 return new Ta(a)};k.ZeroCurvatureEnding=2400;k.ZeroFactor=200;k.ZeroSlopeEnding=2401;k.ZeroStencilOp=0;k.sRGBEncoding=3001;Object.defineProperty(k,"__esModule",{value:!0})});
 
-},{}],25:[function(require,module,exports){
-arguments[4][4][0].apply(exports,arguments)
-},{"dup":4}],26:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
+const WORLD_SIZE = 1024000;
+const MERCATOR_A = 6378137.0;
+const FOV = Math.atan(3/4);
+
+module.exports = exports = {
+    WORLD_SIZE: WORLD_SIZE,
+    PROJECTION_WORLD_SIZE: WORLD_SIZE / (MERCATOR_A * Math.PI * 2),
+    MERCATOR_A: MERCATOR_A, // 900913 projection property
+    DEG2RAD: Math.PI / 180,
+    RAD2DEG: 180 / Math.PI,
+    EARTH_CIRCUMFERENCE: 40075000, // In meters
+    FOV: FOV, // Math.atan(3/4) radians. If this value is changed, FOV_DEGREES must be calculated
+    FOV_DEGREES: FOV * 360 / (Math.PI * 2), // Math.atan(3/4) in degrees
+    TILE_SIZE: 512
+}
+},{}],23:[function(require,module,exports){
 // This module creates a THREE material from the options object provided into the Objects class.
 // Users can do this in one of three ways:
 
@@ -18411,8 +17966,445 @@ function material (options) {
 
 module.exports = exports = material;
 
-},{"../three.js":24,"../utils/utils.js":27}],27:[function(require,module,exports){
-arguments[4][3][0].apply(exports,arguments)
-},{"../three.js":24,"./constants.js":25,"./validate.js":28,"dup":3}],28:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}]},{},[1]);
+},{"../three.js":21,"../utils/utils.js":24}],24:[function(require,module,exports){
+var THREE = require("../three.js");
+var Constants = require("./constants.js");
+var validate = require("./validate.js");
+
+var utils = {
+
+	prettyPrintMatrix: function (uglymatrix) {
+		for (var s = 0; s < 4; s++) {
+			var quartet = [uglymatrix[s],
+			uglymatrix[s + 4],
+			uglymatrix[s + 8],
+			uglymatrix[s + 12]];
+			console.log(quartet.map(function (num) { return num.toFixed(4) }))
+		}
+	},
+
+	makePerspectiveMatrix: function (fovy, aspect, near, far) {
+
+		var out = new THREE.Matrix4();
+		var f = 1.0 / Math.tan(fovy / 2),
+			nf = 1 / (near - far);
+
+		var newMatrix = [
+			f / aspect, 0, 0, 0,
+			0, f, 0, 0,
+			0, 0, (far + near) * nf, -1,
+			0, 0, (2 * far * near) * nf, 0
+		]
+
+		out.elements = newMatrix
+		return out;
+	},
+
+	//gimme radians
+	radify: function (deg) {
+
+		function convert(degrees) {
+			degrees = degrees || 0;
+			return Math.PI * 2 * degrees / 360
+		}
+
+		if (typeof deg === 'object') {
+
+			//if [x,y,z] array of rotations
+			if (deg.length > 0) {
+				return deg.map(function (degree) {
+					return convert(degree)
+				})
+			}
+
+			// if {x: y: z:} rotation object
+			else {
+				return [convert(deg.x), convert(deg.y), convert(deg.z)]
+			}
+		}
+
+		//if just a number
+		else return convert(deg)
+	},
+
+	//gimme degrees
+	degreeify: function (rad) {
+		function convert(radians) {
+			radians = radians || 0;
+			return radians * 360 / (Math.PI * 2)
+		}
+
+		if (typeof rad === 'object') {
+			return [convert(rad.x), convert(rad.y), convert(rad.z)]
+		}
+
+		else return convert(rad)
+	},
+
+	projectToWorld: function (coords) {
+
+		// Spherical mercator forward projection, re-scaling to WORLD_SIZE
+
+		var projected = [
+			-Constants.MERCATOR_A * Constants.DEG2RAD * coords[0] * Constants.PROJECTION_WORLD_SIZE,
+			-Constants.MERCATOR_A * Math.log(Math.tan((Math.PI * 0.25) + (0.5 * Constants.DEG2RAD * coords[1]))) * Constants.PROJECTION_WORLD_SIZE
+		];
+
+		//z dimension, defaulting to 0 if not provided
+
+		if (!coords[2]) projected.push(0)
+		else {
+			var pixelsPerMeter = this.projectedUnitsPerMeter(coords[1]);
+			projected.push(coords[2] * pixelsPerMeter);
+		}
+
+		var result = new THREE.Vector3(projected[0], projected[1], projected[2]);
+
+		return result;
+	},
+
+	projectedUnitsPerMeter: function (latitude) {
+		return Math.abs(Constants.WORLD_SIZE / Math.cos(Constants.DEG2RAD * latitude) / Constants.EARTH_CIRCUMFERENCE);
+	},
+
+	_scaleVerticesToMeters: function (centerLatLng, vertices) {
+		var pixelsPerMeter = this.projectedUnitsPerMeter(centerLatLng[1]);
+		var centerProjected = this.projectToWorld(centerLatLng);
+
+		for (var i = 0; i < vertices.length; i++) {
+			vertices[i].multiplyScalar(pixelsPerMeter);
+		}
+
+		return vertices;
+	},
+
+	projectToScreen: function (coords) {
+		console.log("WARNING: Projecting to screen coordinates is not yet implemented");
+	},
+
+	unprojectFromScreen: function (pixel) {
+		console.log("WARNING: unproject is not yet implemented");
+	},
+
+	//world units to lnglat
+	unprojectFromWorld: function (worldUnits) {
+
+		var unprojected = [
+			-worldUnits.x / (Constants.MERCATOR_A * Constants.DEG2RAD * Constants.PROJECTION_WORLD_SIZE),
+			2 * (Math.atan(Math.exp(worldUnits.y / (Constants.PROJECTION_WORLD_SIZE * (-Constants.MERCATOR_A)))) - Math.PI / 4) / Constants.DEG2RAD
+		];
+
+		var pixelsPerMeter = this.projectedUnitsPerMeter(unprojected[1]);
+
+		//z dimension
+		var height = worldUnits.z || 0;
+		unprojected.push(height / pixelsPerMeter);
+
+		return unprojected;
+	},
+
+	toScreenPosition: function (obj, camera) {
+		var vector = new THREE.Vector3();
+
+		var widthHalf = 0.5 * renderer.context.canvas.width;
+		var heightHalf = 0.5 * renderer.context.canvas.height;
+
+		obj.updateMatrixWorld();
+		vector.setFromMatrixPosition(obj.matrixWorld);
+		vector.project(camera);
+
+		vector.x = (vector.x * widthHalf) + widthHalf;
+		vector.y = - (vector.y * heightHalf) + heightHalf;
+
+		return {
+			x: vector.x,
+			y: vector.y
+		};
+
+	},
+
+	//get the center point of a feature
+	getFeatureCenter: function getFeatureCenter(feature, model, level) {
+		let center = [];
+		let latitude = 0;
+		let longitude = 0;
+		let height = 0;
+		let coordinates = [];
+		//deep clone to avoid modifying the original array
+		coordinates.push(...feature.geometry.coordinates[0]);
+		if (feature.geometry.type === "Point") {
+			center = coordinates[0];
+		}
+		else {
+			//features in mapbox repeat the first coordinates at the end. We remove it.
+			if (feature.geometry.type === "MultiPolygon") coordinates = coordinates[0];
+			coordinates.splice(-1, 1);
+			coordinates.forEach(function (c) {
+				latitude += c[0];
+				longitude += c[1];
+			});
+			center = [latitude / coordinates.length, longitude / coordinates.length];
+		}
+		height = this.getObjectHeightOnFloor(feature, model, level);
+
+		(center.length < 3 ? center.push(height) : center[2] = height);
+
+		return center;
+	},
+
+	getObjectHeightOnFloor: function (feature, obj, level = feature.properties.level || 0) {
+		let floorHeightMin = (level * (feature.properties.levelHeight || 0));
+		//object height is modelSize.z + base_height or min_height configured for this object
+		let base = (feature.properties.base_height || feature.properties.min_height || 0);
+		//let height = ((obj && obj.model) ? obj.modelSize.z : (feature.properties.height - base));
+		let height = ((obj && obj.model) ? 0 : (feature.properties.height - base));
+		let objectHeight = height + base;
+		let modelHeightFloor = floorHeightMin + objectHeight;
+		return modelHeightFloor;
+	},
+
+	_flipMaterialSides: function (obj) {
+
+	},
+
+	// to improve precision, normalize a series of vector3's to their collective center, and move the resultant mesh to that center
+	normalizeVertices(vertices) {
+
+		var geometry = new THREE.Geometry();
+
+		for (v3 of vertices) {
+			geometry.vertices.push(v3)
+		}
+
+		geometry.computeBoundingSphere();
+		var center = geometry.boundingSphere.center;
+		var radius = geometry.boundingSphere.radius;
+
+		var scaled = vertices.map(function (v3) {
+			var normalized = v3.sub(center);
+			return normalized;
+		});
+
+		return { vertices: scaled, position: center }
+	},
+
+	//flatten an array of Vector3's into a shallow array of values in x-y-z order, for bufferGeometry
+	flattenVectors(vectors) {
+		var flattenedArray = [];
+		for (vertex of vectors) {
+			flattenedArray.push(vertex.x, vertex.y, vertex.z);
+		}
+		return flattenedArray
+	},
+
+	//convert a line/polygon to Vector3's
+
+	lnglatsToWorld: function (coords) {
+
+		var vector3 = coords.map(
+			function (pt) {
+				var p = utils.projectToWorld(pt);
+				var v3 = new THREE.Vector3(p.x, p.y, p.z);
+				return v3
+			}
+		);
+
+		return vector3
+	},
+
+	extend: function (original, addition) {
+		for (key in addition) original[key] = addition[key];
+	},
+
+	clone: function (original) {
+		var clone = {};
+		for (key in original) clone[key] = original[key];
+		return clone;
+	},
+
+	clamp: function(n, min, max) {
+		return Math.min(max, Math.max(min, n));
+	},
+
+	// retrieve object parameters from an options object
+
+	types: {
+
+		rotation: function (r, currentRotation) {
+
+			//[jscastro] rotation default 0
+			if (!r) { r = 0; };
+
+			// if number provided, rotate only in Z by that amount
+			if (typeof r === 'number') r = { z: r };
+
+			var degrees = this.applyDefault([r.x, r.y, r.z], currentRotation);
+			var radians = utils.radify(degrees);
+			return radians;
+
+		},
+
+		scale: function (s, currentScale) {
+			//[jscastro] scale default 1
+			if (!s) { s = 1; };
+			if (typeof s === 'number') return s = [s, s, s];
+			else return this.applyDefault([s.x, s.y, s.z], currentScale);
+		},
+
+		applyDefault: function (array, current) {
+
+			var output = array.map(function (item, index) {
+				item = item || current[index];
+				return item
+			})
+
+			return output
+		}
+	},
+
+	_validate: function (userInputs, defaults) {
+
+		userInputs = userInputs || {};
+		var validatedOutput = {};
+		utils.extend(validatedOutput, userInputs);
+
+		for (key of Object.keys(defaults)) {
+
+			if (userInputs[key] === undefined) {
+				//make sure required params are present
+				if (defaults[key] === null) {
+					console.error(key + ' is required')
+					return;
+				}
+
+				else validatedOutput[key] = defaults[key]
+
+			}
+
+			else validatedOutput[key] = userInputs[key]
+		}
+
+		return validatedOutput
+	},
+	Validator: new validate(),
+	exposedMethods: ['projectToWorld', 'projectedUnitsPerMeter', 'extend', 'unprojectFromWorld']
+}
+
+module.exports = exports = utils
+},{"../three.js":21,"./constants.js":22,"./validate.js":25}],25:[function(require,module,exports){
+// Type validator
+
+function Validate(){
+
+};
+
+Validate.prototype = {
+
+    Coords: function(input) {
+
+        if (input.constructor !== Array) {
+            console.error("Coords must be an array")
+            return
+        }
+
+        if (input.length < 2) {
+            console.error("Coords length must be at least 2")
+            return
+        }
+    
+        for (const member of input) {
+            if (member.constructor !== Number) {
+                console.error("Coords values must be numbers")
+                return
+            }
+        }
+
+        if (Math.abs(input[1]) > 90) {
+            console.error("Latitude must be between -90 and 90")
+            return                    
+        }
+
+        return input
+    },
+
+    Line: function(input) {
+
+        var scope = this;
+
+        if (input.constructor !== Array) {
+            console.error("Line must be an array")
+            return
+        }
+
+        for (const coord of input){
+            if (!scope.Coords(coord)) {
+                console.error("Each coordinate in a line must be a valid Coords type")
+                return                    
+            }
+
+        }
+
+        return input
+    },
+
+    Rotation: function(input) {
+
+        if (input.constructor === Number) input = {z: input}
+
+        else if (input.constructor === Object) {
+
+            for (const key of Object.keys(input)){
+
+                if (!['x', 'y', 'z'].includes(key)) {
+                    console.error('Rotation parameters must be x, y, or z')
+                    return                            
+                }
+                if (input[key].constructor !== Number) {
+                    console.error('Individual rotation values must be numbers')
+                    return
+                }
+            }
+        }
+
+        else {
+            console.error('Rotation must be an object or a number')
+            return
+        }
+
+        return input
+    },
+
+    Scale: function(input) {
+
+        if (input.constructor === Number) {
+            input = {x:input, y:input, z: input}
+        }
+        
+        else if (input.constructor === Object) {
+
+            for (const key of Object.keys(input)){
+
+                if (!['x', 'y', 'z'].includes(key)) {
+                    console.error('Scale parameters must be x, y, or z')
+                    return                            
+                }
+                if (input[key].constructor !== Number) {
+                    console.error('Individual scale values must be numbers')
+                    return
+                }
+            }
+        }
+
+        else {
+            console.error('Scale must be an object or a number')
+            return
+        }
+
+        return input
+    }
+
+}
+
+
+module.exports = exports = Validate;
+},{}]},{},[1]);
