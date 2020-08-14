@@ -1,3 +1,8 @@
+/**
+ * @author peterqliu / https://github.com/peterqliu
+ * @author jscastro / https://github.com/jscastro76
+ */
+
 var utils = require("../utils/utils.js");
 var material = require("../utils/material.js");
 const THREE = require('../three.js');
@@ -209,11 +214,13 @@ Objects.prototype = {
 					obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
 				}
 			}
+
 			//[jscastro] Set the positional and pivotal anchor automatically from string param  
 			obj.setAnchor = function (anchor) {
 				const box = obj.box3();
 				const size = box.getSize(new THREE.Vector3());
 				const center = box.getCenter(new THREE.Vector3());
+				obj.none = { x: 0, y: 0, z: 0 };
 				obj.center = { x: center.x, y: center.y, z: box.min.z };
 				obj.bottom = { x: center.x, y: box.max.y, z: box.min.z };
 				obj.bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
@@ -226,7 +233,6 @@ Objects.prototype = {
 
 				switch (anchor) {
 					case 'center':
-					case 'auto':
 						obj.anchor = obj.center;
 						break;
 					case 'top':
@@ -254,12 +260,16 @@ Objects.prototype = {
 					case 'bottom-right':
 						obj.anchor = obj.bottomRight;
 						break;
+					case 'auto':
+					case 'none':
+						obj.anchor = obj.none;
 				}
 
 				obj.model.position.set(-obj.anchor.x, -obj.anchor.y, -obj.anchor.z);
 
 			}
-			//[jscastro] Set the positional and pivotal anchor based on (x, y, z) size units  
+
+			//[jscastro] Set the positional and pivotal anchor based on (x, y, z) size units
 			obj.setCenter = function (center) {
 				//[jscastro] if the object options have an adjustment to center the 3D Object different to 0
 				if (center && (center.x != 0 || center.y != 0 || center.z != 0)) {
@@ -362,6 +372,55 @@ Objects.prototype = {
 					obj.children[0].add(obj.tooltip);
 				}
 			}
+
+			let _castShadow = false;
+			//[jscastro] added property for traverse an object to cast a shadow
+			Object.defineProperty(obj, 'castShadow', {
+				get() { return _castShadow; },
+				set(value) {
+					if (_castShadow != value) {
+						obj.model.traverse(function (c) {
+							if (c.isMesh) c.castShadow = true;
+						});
+						if (value) {
+							// we add the shadow plane automatically 
+							const s = obj.modelSize;
+							const sizes = [s.x, s.y, s.z];
+							const planeSize = Math.max(...sizes) * 10;
+							const planeGeo = new THREE.PlaneBufferGeometry(planeSize, planeSize);
+							const planeMat = new THREE.ShadowMaterial();
+							planeMat.opacity = 0.5;
+							let plane = new THREE.Mesh(planeGeo, planeMat);
+							plane.layers.enable(1); plane.layers.disable(0); // it makes the object invisible for the raycaster
+							plane.receiveShadow = value;
+							obj.add(plane);
+						} else {
+							// or we remove it 
+							obj.traverse(function (c) {
+								if (c.isMesh && c.material instanceof THREE.ShadowMaterial)
+									obj.remove(c);	
+							});
+
+						}
+						_castShadow = value;
+					}
+				}
+			})
+
+			let _receiveShadow = false;
+			//[jscastro] added property for traverse an object to cast a shadow
+			Object.defineProperty(obj, 'receiveShadow', {
+				get() { return _receiveShadow; },
+				set(value) {
+					if (_receiveShadow != value) {
+
+						obj.model.traverse(function (c) {
+							if (c.isMesh) c.receiveShadow = true;
+						});
+						_receiveShadow = value;
+					}
+				}
+			})
 
 			let _wireframe = false;
 			//[jscastro] added property for wireframes state
@@ -524,16 +583,17 @@ Objects.prototype = {
 
 		}
 
-		obj.add = function () {
-			tb.add(obj);
-			if (!isStatic) obj.set({ position: obj.coordinates });
-			return obj;
+		obj.add = function (o) {
+			obj.children[0].add(o);
+			o.position.z = (obj.coordinates[2] ? -obj.coordinates[2] : 0);
+			return o;
 		}
 
-		obj.remove = function () {
-			tb.remove(obj);
+		obj.remove = function (o) {
+			obj.children[0].remove(o);
 			tb.map.repaint = true;
 		}
+
 		//[jscastro] clone + assigning all the attributes
 		obj.duplicate = function () {
 			var dupe = obj.clone(true);
@@ -566,9 +626,52 @@ Objects.prototype = {
 		}
 
 		obj.dispose = function () {
+			obj.traverse(object => {
+				if (!object.isMesh) return
+
+				//console.log('dispose geometry!')
+				object.geometry.dispose()
+
+				if (object.material.isMaterial) {
+					cleanMaterial(object.material)
+				} else {
+					// an array of materials
+					for (const material of object.material) cleanMaterial(material)
+				}
+			})
+
 			if (obj.label) { obj.label.dispose() };
 			if (obj.tooltip) { obj.tooltip.dispose() };
 			if (obj.model) { obj.model = {} };
+		}
+
+		const cleanMaterial = material => {
+			//console.log('dispose material!')
+			material.dispose()
+
+			// dispose textures
+			for (const key of Object.keys(material)) {
+				const value = material[key]
+				if (value && typeof value === 'object' && 'minFilter' in value) {
+					//console.log('dispose texture!')
+					value.dispose()
+				}
+			}
+			let m = material;
+			let md = (m.map || m.alphaMap || m.aoMap || m.bumpMap || m.displacementMap || m.emissiveMap || m.envMap || m.lightMap || m.metalnessMap || m.normalMap || m.roughnessMap)
+			if (md) {
+				if (m.map) m.map.dispose();
+				if (m.alphaMap) m.alphaMap.dispose();
+				if (m.aoMap) m.aoMap.dispose();
+				if (m.bumpMap) m.bumpMap.dispose();
+				if (m.displacementMap) m.displacementMap.dispose();
+				if (m.emissiveMap) m.emissiveMap.dispose();
+				if (m.envMap) m.envMap.dispose();
+				if (m.lightMap) m.lightMap.dispose();
+				if (m.metalnessMap) m.metalnessMap.dispose();
+				if (m.normalMap) m.normalMap.dispose();
+				if (m.roughnessMap) m.roughnessMap.dispose();
+			}
 		}
 
 		return obj

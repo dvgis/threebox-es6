@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+	<title>Change map style for Eiffel Tower</title>
+	<script src="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.css" rel="stylesheet" />
+	<script src="../dist/threebox.js" type="text/javascript"></script>
+	<link href="./css/threebox.css" rel="stylesheet" />
+
+	<script src="config.js"></script>
+
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+		}
+
+		html, body, #map {
+			height: 100%;
+		}
+
+		#menu {
+			position: absolute;
+			background: #fff;
+			padding: 10px;
+			font-family: 'Open Sans', sans-serif;
+		}
+	</style>
+</head>
+<body>
+	<div id='map' class='map'></div>
+	<div id="menu">
+		<input id="streets-v11" type="radio" name="rtoggle" value="streets" checked="checked" />
+		<label for="streets-v11">streets</label>
+		<input id="light-v10" type="radio" name="rtoggle" value="light" />
+		<label for="light-v10">light</label>
+		<input id="dark-v10" type="radio" name="rtoggle" value="dark" />
+		<label for="dark-v10">dark</label>
+		<input id="outdoors-v11" type="radio" name="rtoggle" value="outdoors" />
+		<label for="outdoors-v11">outdoors</label>
+		<input id="satellite-v9" type="radio" name="rtoggle" value="outdoors" />
+		<label for="satellite-v9">satellite</label>
+	</div>
+	<script>
+		// This example downloads a tower model from an external OBJ/MTL file, adds it to the map, and drives it around via paths fetched from the Mapbox Directions API
+
+		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
+
+		mapboxgl.accessToken = config.accessToken;
+
+		let mapConfig = {
+			NYC: { origin: [-74.044514, 40.689259, 47], center: [-74.044803, 40.690183, 0], zoom: 17.7, pitch: 60, bearing: -10, scale: 44, timezone: 'America/New_York' },
+			PAR: { origin: [2.294514, 48.857475, 0], center: [2.294625, 48.861085, 0], zoom: 15.95, pitch: 60, bearing: 0, scale: 0.01029, timezone: 'Europe/Paris' },
+			names: {
+				customLayer: "custom-layer"
+			}
+		}
+
+		let map = window.map = new mapboxgl.Map({
+			container: 'map',
+			zoom: mapConfig.PAR.zoom,
+			pitch: mapConfig.PAR.pitch,
+			bearing: mapConfig.PAR.bearing,
+			center: mapConfig.PAR.center,
+			style: 'mapbox://styles/mapbox/streets-v11',
+			hash: true
+		});
+
+		window.tb = new Threebox(
+			map,
+			map.getCanvas().getContext('webgl'),
+			{
+				defaultLights: true
+			}
+		);
+
+		let layerId = "streets-v11";
+		function switchLayer(layer) {
+			if (layerId != layer.target.id) {
+				layerId = layer.target.id;
+				tb.setStyle('mapbox://styles/mapbox/' + layerId);
+			}
+		}
+
+		let styleList = document.getElementById('menu');
+		let inputs = styleList.getElementsByTagName('input');
+		for (let i = 0; i < inputs.length; i++) {
+			inputs[i].onclick = switchLayer;
+		}
+
+		map.on('style.load', () => {
+			map.addLayer({
+				id: mapConfig.names.customLayer,
+				type: 'custom',
+				renderingMode: '3d',
+				onAdd: function (map, mbxContext) {
+
+					options = {
+						obj: './models/eiffel.glb',
+						type: 'gltf',
+						scale: mapConfig.PAR.scale,
+						units: 'meters',
+						//adjustment: { x: -0.5, y: -0.5, z: 0 } // model center is displaced
+					}
+
+					tb.loadObj(options, function (model) {
+						model.setCoords(mapConfig.PAR.origin);
+						model.setRotation({ x: 0, y: 0, z: 45.7 });
+						model.addTooltip("Eiffel Tower", true);
+						tb.add(model);
+					})
+
+				},
+
+				render: function (gl, matrix) {
+					tb.update();
+				}
+			});
+
+		});
+
+	</script>
+</body>
+</html>

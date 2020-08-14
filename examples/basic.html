@@ -17,6 +17,22 @@
 			width: 100%;
 			height: 100%;
 		}
+		#hour {
+			background: rgba(0, 0, 0, 0.5);
+			color: #fff;
+			position: absolute;
+			left: 0px;
+			right: 0px;
+			bottom: 40px;
+			margin-left: auto;
+			margin-right: auto;
+			max-width: 30%;
+			padding: 5px 10px;
+			font-size: 18px;
+			line-height: 18px;
+			border-radius: 3px;
+			text-align: center;
+		}
 	</style>
 </head>
 <body>
@@ -29,7 +45,7 @@
 		mapboxgl.accessToken = config.accessToken;
 
 		//starting location for both map and eventual sphere
-		var origin = [-122.4340, 37.7353, 50];
+		var origin = [-122.4340, 37.7353, 1];
 
 		var map = new mapboxgl.Map({
 			container: 'map',
@@ -50,19 +66,18 @@
 					tb = new Threebox(
 						map, 
 						mbxContext,
-						{defaultLights: true}
+						{ defaultLights: true }
 					);
 
 					//instantiate a red sphere and position it at the origin lnglat
 					var sphere = tb.sphere({color: 'red', material: 'MeshToonMaterial'})
 						.setCoords(origin);
-
 					// add sphere to the scene
 					tb.add(sphere);
 
 				},
 				
-				render: function(gl, matrix){
+				render: function (gl, matrix) {
 					tb.update();
 				}
 			})

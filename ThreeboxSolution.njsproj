@@ -14,7 +14,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <LastActiveSolutionConfig>Debug|Any CPU</LastActiveSolutionConfig>
     <StartWebBrowser>True</StartWebBrowser>
-    <LaunchUrl>/examples/mercator.html</LaunchUrl>
+    <LaunchUrl>/examples/eiffel.html</LaunchUrl>
     <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
     <NodejsPort>8080</NodejsPort>
   </PropertyGroup>
@@ -25,11 +25,15 @@
     <Content Include=".npmrc" />
     <Content Include="docs\AnimationVideo.gif" />
     <Content Include="docs\Depth.gif" />
+    <Content Include="docs\EiffelShadow.gif" />
     <Content Include="docs\LabelsOnHeight.gif" />
+    <Content Include="docs\MapboxShadow.gif" />
     <Content Include="docs\soldieranimation.jpg" />
     <Content Include="docs\Wireframes.gif" />
     <Content Include="examples\3Dbuildings.html" />
+    <Content Include="examples\add-3d-model.html" />
     <Content Include="examples\animation.html" />
+    <Content Include="examples\buildingshadow.html" />
     <Content Include="examples\css\fontawesome.js" />
     <Content Include="examples\css\free-fa-solid-900.woff2" />
     <Content Include="examples\css\free-v4-font-face-min.css" />
@@ -48,6 +52,14 @@
     <Content Include="examples\models\Liberty-PortaBronzo-1.bmp" />
     <Content Include="examples\models\LibertyStatue.mtl" />
     <Content Include="examples\models\LibertyStatue.obj" />
+    <Content Include="examples\models\radar\34M_17.bin" />
+    <Content Include="examples\models\radar\34M_17.gltf" />
+    <Content Include="examples\models\radar\base_AO.png" />
+    <Content Include="examples\models\radar\frame_AO.png" />
+    <Content Include="examples\models\radar\stairs_plt_AO.png" />
+    <Content Include="examples\models\radar\truss_2_AO.png" />
+    <Content Include="examples\models\radar\truss_dish_AO.jpg" />
+    <Content Include="examples\models\radar\wheels_AO.png" />
     <Content Include="examples\models\Soldier.glb" />
     <Content Include="examples\models\Truck.mtl" />
     <Content Include="examples\models\Truck.obj" />
@@ -55,6 +67,7 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="examples\plugins\jquery.min.js" />
+    <Content Include="examples\StyleChange.html" />
     <Content Include="LICENSE.txt" />
     <Content Include="package-lock.json" />
     <Content Include="package.json" />
@@ -80,6 +93,7 @@
     <Content Include="src\objects\tooltip.js" />
     <Content Include="src\three.js" />
     <Content Include="src\Threebox.js" />
+    <Content Include="src\utils\suncalc.js" />
     <Content Include="tests\threebox-tests.html" />
     <Content Include="tests\threebox-tests-bundle.js" />
     <Content Include="tests\threebox-tests.js" />
@@ -129,6 +143,7 @@
     <Folder Include="examples\geojson\" />
     <Folder Include="examples\images\" />
     <Folder Include="examples\models" />
+    <Folder Include="examples\models\radar\" />
     <Folder Include="examples\old" />
     <Folder Include="examples\plugins\" />
     <Folder Include="src" />

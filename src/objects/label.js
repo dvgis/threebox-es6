@@ -1,6 +1,6 @@
 const utils = require("../utils/utils.js");
 const Objects = require('./objects.js');
-const CSS2D = require('./CSS2DRenderer.js');
+const THREE = require('./CSS2DRenderer.js');
 
 function Label(obj) {
 
@@ -8,7 +8,7 @@ function Label(obj) {
 
 	let div = Objects.prototype.drawLabelHTML(obj.htmlElement, obj.cssClass);
 
-	let label = new CSS2D.CSS2DObject(div);
+	let label = new THREE.CSS2DObject(div);
 	label.visible = obj.alwaysVisible;
 	label.alwaysVisible = obj.alwaysVisible;
 

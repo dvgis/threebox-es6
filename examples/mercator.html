@@ -42,43 +42,38 @@
             hash: true
         });
 
-		// we can add Threebox to mapbox to add built-in mouseover/mouseout and click behaviors
-		window.tb = new Threebox(
-			map,
-			map.getCanvas().getContext('webgl'),
-			{
-				defaultLights: true,
-				enableSelectingFeatures: true,
-				enableSelectingObjects: true,
-				enableDraggingObjects: true,
-				enableRotatingObjects: true,
-				enableTooltips: true
-			}
-		);
+        // we can add Threebox to mapbox to add built-in mouseover/mouseout and click behaviors
+        window.tb = new Threebox(
+            map,
+            map.getCanvas().getContext('webgl'),
+            {
+                defaultLights: true
+            }
+        );
 
-		map.on('style.load', function () {
+        var active = false
+        map.on('style.load', function () {
 
-			map.addLayer({
-				id: 'custom_layer',
-				type: 'custom',
-				renderingMode: '3d',
-				onAdd: function (map, mbxContext) {
+            map.addLayer({
+                id: 'custom_layer',
+                type: 'custom',
+                renderingMode: '3d',
+                onAdd: function (map, mbxContext) {
 
-					// generate 100 points around the world, at random locations but the same altitude
-					// check performance of duplicate vs creating 100 new objects
-					var randomPoints = [];
-					var items = 100;
+                    // generate 100 points around the world, at random locations but the same altitude
+                    var randomPoints = [];
 
-					for (var i = 0; i < items; i++) {
+                    for (var i = 0; i < 100; i++) {
 
-						var point = [
-							360 * (Math.random() - 0.5),
-							160 * (Math.random() - 0.5),
-							2000000
-						]
+                        var point = [
+                            360 * (Math.random() - 0.5),
+                            160 * (Math.random() - 0.5),
+                            2000000
+                        ]
 
-						randomPoints.push(point);
-					}
+                        randomPoints.push(point);
+                    }
+
 					// build a template sphere sized in meters, such that it will appear to scale with its local surroundings
 					let sphereTemplate = tb.sphere(
 						{
@@ -90,7 +85,7 @@
 
 						}
 					)
-					console.time("duplicate");
+
 					// for best performance, clone the template sphere for each point in randomPoint
 					randomPoints.forEach(function (pt) {
 
@@ -101,50 +96,16 @@
 						tb.add(newSphere);
 
 					})
-					console.timeEnd("duplicate");
-
-					var randomPoints = [];
-
-					for (var i = 0; i < items; i++) {
-
-						var point = [
-							360 * (Math.random() - 0.5),
-							160 * (Math.random() - 0.5),
-							2000000
-						]
-
-						randomPoints.push(point);
-					}
 
 
-					console.time("new objects");
-					// creating 100 new objects could take from x10 to x30 times more
-					randomPoints.forEach(function (pt) {
+                },
 
-						let newSphere = tb.sphere(
-							{
-								radius: 200000,
-								units: 'meters',
-								sides: 120,
-								color: 'blue',
-								material: 'MeshPhysicalMaterial'
-							}
-						).setCoords(pt);
+                render: function (gl, matrix) {
+                    tb.update();
+                }
+            });
 
-						tb.add(newSphere);
-
-					})
-
-					console.timeEnd("new objects");
-
-				},
-
-				render: function (gl, matrix) {
-					tb.update();
-				}
-			});
-
-		});
+        });
 
     </script>
 </body>

@@ -1,6 +1,12 @@
+/**
+ * @author peterqliu / https://github.com/peterqliu
+ * @author jscastro / https://github.com/jscastro76
+ */
+
 var THREE = require("./three.js");
 var CameraSync = require("./camera/CameraSync.js");
 var utils = require("./utils/utils.js");
+var SunCalc = require("./utils/suncalc.js");
 var AnimationManager = require("./animation/AnimationManager.js");
 var ThreeboxConstants = require("./utils/constants.js");
 
@@ -14,6 +20,7 @@ var Object3D = require("./objects/Object3D.js");
 var line = require("./objects/line.js");
 var tube = require("./objects/tube.js");
 var LabelRenderer = require("./objects/LabelRenderer.js");
+var BuildingShadows = require("./objects/effects/BuildingShadows.js");
 
 function Threebox(map, glContext, options){
 
@@ -45,7 +52,7 @@ Threebox.prototype = {
 		this.renderer = new THREE.WebGLRenderer({
 			alpha: true,
 			antialias: true,
-			preserveDrawingBuffer: true,
+			//preserveDrawingBuffer: true,
 			canvas: map.getCanvas(),
 			context: glContext
 		});
@@ -53,7 +60,6 @@ Threebox.prototype = {
 		this.renderer.setPixelRatio(window.devicePixelRatio);
 		this.renderer.setSize(this.map.getCanvas().clientWidth, this.map.getCanvas().clientHeight);
 		this.renderer.outputEncoding = THREE.sRGBEncoding;
-		//this.renderer.shadowMap.enabled = true;
 		this.renderer.autoClear = false;
 
 		// [jscastro] set labelRendered
@@ -69,6 +75,7 @@ Threebox.prototype = {
 		// projection matrix itself (as is field of view and near/far clipping)
 		// It automatically registers to listen for move events on the map so we don't need to do that here
 		this.world = new THREE.Group();
+		this.world.name = "world";
 		this.scene.add(this.world);
 
 		this.objectsCache = [];
@@ -80,12 +87,21 @@ Threebox.prototype = {
 		this.raycaster.layers.set(0);
 		//this.raycaster.params.Points.threshold = 100;
 
+		this.mapCenter = this.map.getCenter();
+		this.mapCenterUnits = utils.projectToWorld([this.mapCenter.lng, this.mapCenter.lat]);
+		this.lightDateTime = new Date();
+		this.lightLng = this.mapCenter.lng;
+		this.lightLat = this.mapCenter.lat;
+		this.sunPosition;
+
+		this.lights = this.initLights;
 		if (this.options.defaultLights) this.defaultLights();
-		if (this.options.enableSelectingFeatures) this.enableSelectingFeatures = this.options.enableSelectingFeatures; 
-		if (this.options.enableSelectingObjects) this.enableSelectingObjects = this.options.enableSelectingObjects; 
-		if (this.options.enableDraggingObjects) this.enableDraggingObjects = this.options.enableDraggingObjects; 
-		if (this.options.enableRotatingObjects) this.enableRotatingObjects = this.options.enableRotatingObjects; 
-		if (this.options.enableTooltips) this.enableTooltips = this.options.enableTooltips; 
+		if (this.options.realSunlight) this.realSunlight();
+		if (this.options.enableSelectingFeatures) this.enableSelectingFeatures = this.options.enableSelectingFeatures;
+		if (this.options.enableSelectingObjects) this.enableSelectingObjects = this.options.enableSelectingObjects;
+		if (this.options.enableDraggingObjects) this.enableDraggingObjects = this.options.enableDraggingObjects;
+		if (this.options.enableRotatingObjects) this.enableRotatingObjects = this.options.enableRotatingObjects;
+		if (this.options.enableTooltips) this.enableTooltips = this.options.enableTooltips;
 
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
@@ -176,7 +192,7 @@ Threebox.prototype = {
 			}
 
 			function addTooltip(f, map) {
-				if (!map.tb.enableTooltips) return; 
+				if (!map.tb.enableTooltips) return;
 				let coordinates = map.tb.getFeatureCenter(f);
 				let t = map.tb.tooltip({
 					text: f.properties.name || f.id || f.type,
@@ -469,7 +485,20 @@ Threebox.prototype = {
 		return material(o)
 	},
 
+	initLights : {
+		ambientLight: null,
+		dirLight: null,
+		dirLightBack: null,
+		dirLightHelper: null,
+		hemiLight: null,
+		pointLight: null
+	},
+
 	utils: utils,
+
+	SunCalc: SunCalc,
+
+	Constants: ThreeboxConstants,
 
 	projectToWorld: function (coords) {
 		return this.utils.projectToWorld(coords)
@@ -521,6 +550,11 @@ Threebox.prototype = {
 		return result;
 	},
 
+	//[jscastro] method set the CSS2DObjects zoom range and hide them at the same time the layer is
+	setLabelZoomRange: function (minzoom, maxzoom) {
+		this.labelRenderer.setZoomRange(minzoom, maxzoom);
+	},
+
 	//[jscastro] method to replicate behaviour of map.setLayoutProperty when Threebox are affected
 	setLayoutProperty: function (layerId, name, value) {
 		//first set layout property at the map
@@ -569,17 +603,18 @@ Threebox.prototype = {
 		}
 	},
 
+	//[jscastro] mapbox setStyle removes all the layers, including custom layers, so tb.world must be cleaned up too
+	setStyle: function (styleId, options) {
+		this.map.setStyle(styleId, options);
+		this.clear(true);
+	},
+
 	//[jscastro] method to toggle Layer visibility
 	toggleLayer: function (layerId, visible) {
 		if (this.map.getLayer(layerId)) {
 			//call
 			this.setLayoutProperty(layerId, 'visibility', (visible ? 'visible' : 'none'))
 		};
-	},
-
-	//[jscastro] method set the CSS2DObjects zoom range and hide them at the same time the layer is
-	setLabelZoomRange: function (minzoom, maxzoom) {
-		this.labelRenderer.setZoomRange(minzoom, maxzoom);
 	},
 
 	update: function () {
@@ -590,6 +625,8 @@ Threebox.prototype = {
 
 		// Update any animations
 		this.objects.animationManager.update(timestamp);
+
+		this.updateLightHelper();
 
 		// Render the scene and repaint the map
 		this.renderer.state.reset();
@@ -614,6 +651,96 @@ Threebox.prototype = {
 		this.world.remove(obj);
 	},
 
+	//[jscastro] this clears tb.world in order to dispose properly the resources
+	clear: async function (dispose) {
+		return new Promise(clear => {
+			while (this.world.children.length > 0) {
+				let obj = this.world.children[0];
+				if (dispose) obj.dispose();
+				tb.remove(obj);
+			};
+			clear('clear finished');
+		});
+	},
+
+	//[jscastro] get the sun position (azimuth, altitude) from a given datetime, lng, lat
+	getSunPosition: function (date, lng, lat) {
+		return SunCalc.getPosition(date, lat, lng);  
+	},
+
+	//[jscastro] set shadows for fill-extrusion layers
+	setBuildingShadows: function (options) {
+		if (this.map.getLayer(options.buildingsLayerId)) {
+			let layer = new BuildingShadows(options, this);
+			this.map.addLayer(layer, options.buildingsLayerId);
+		}
+		else {
+			console.warn("The layer '" + options.buildingsLayerId + "' does not exist in the map.");
+		}
+	},
+
+	//[jscastro] This method set the sun light for a given datetime and lnglat
+	setSunlight: function (newDate = new Date(), coords) {
+		if (!this.lights.dirLight || !this.options.realSunlight) {
+			console.warn("To use setSunlight it's required to set realSunlight : true in Threebox initial options.");
+			return;
+		}
+
+		var date = new Date(newDate.getTime());
+
+		if (coords) {
+			this.mapCenter = { lng: coords[0], lat: coords[1] };
+		}
+		else {
+			this.mapCenter = this.map.getCenter();
+		}
+
+		if (this.lightDateTime && this.lightDateTime.getTime() === date.getTime() && this.lightLng === this.mapCenter.lng && this.lightLat === this.mapCenter.lat) {
+			return; //setSunLight could be called on render, so due to performance, avoid duplicated calls
+		}
+
+		this.lightDateTime = date;
+		this.lightLng = this.mapCenter.lng; 
+		this.lightLat = this.mapCenter.lat
+		this.sunPosition = this.getSunPosition(date, this.mapCenter.lng, this.mapCenter.lat);  
+		let altitude = this.sunPosition.altitude;
+		let azimuth = Math.PI + this.sunPosition.azimuth;
+		//console.log("Altitude: " + utils.degreeify(altitude) + ", Azimuth: " + (utils.degreeify(azimuth)));
+
+		let radius = ThreeboxConstants.WORLD_SIZE / 2;
+		let alt = Math.sin(altitude);
+		let altRadius = Math.cos(altitude);
+		let azCos = Math.cos(azimuth) * altRadius;
+		let azSin = Math.sin(azimuth) * altRadius;
+
+		this.lights.dirLight.position.set(azSin, azCos, alt);
+		this.lights.dirLight.position.multiplyScalar(radius);
+		this.lights.dirLight.intensity = Math.max(alt, -0.15);
+		//this.lights.hemiLight.intensity = alt * 0.6;
+		//console.log("Intensity:" + this.lights.dirLight.intensity);
+		this.lights.dirLight.updateMatrixWorld();
+		this.updateLightHelper();
+		if (this.map.loaded()) {
+			this.map.setLight({
+				anchor: 'map',
+				position: [1.5, 180 + this.sunPosition.azimuth * 180 / Math.PI, 90 - this.sunPosition.altitude * 180 / Math.PI],
+				'position-transition': { duration: 0 },
+				//color: '#fdb'
+				color: `hsl(40, ${50 * Math.cos(this.sunPosition.altitude)}%, ${96 * Math.sin(this.sunPosition.altitude)}%)`
+			}, { duration: 0 });
+			//console.log(pos.altitude);
+		}
+	},
+
+	//[jscastro] this updates the directional light helper
+	updateLightHelper: function () {
+		if (this.lights.dirLightHelper) {
+			this.lights.dirLightHelper.position.setFromMatrixPosition(this.lights.dirLight.matrixWorld);
+			this.lights.dirLightHelper.updateMatrix();
+			this.lights.dirLightHelper.update();
+		}
+	},
+
 	//[jscastro] method to fully dispose the resources, watch out is you call this without navigating to other page
 	dispose: async function () {
 
@@ -621,41 +748,8 @@ Threebox.prototype = {
 		//console.log(window.performance.memory);
 
 		return new Promise(disposed => {
-			this.world.traverse(function (obj) {
-				if (obj.geometry) {
-					obj.geometry.dispose();
-				}
-				if (obj.material) {
-					if (obj.material instanceof THREE.MeshFaceMaterial) {
-						obj.material.materials.forEach(function (m) {
-							m.dispose();
-							if (m.map) {
-								m.map.dispose();
-							}
-						});
-					} else {
-						obj.material.dispose();
-					}
-
-					let m = obj.material;
-					let md = (m.map || m.alphaMap || m.aoMap || m.bumpMap || m.displacementMap || m.emissiveMap || m.envMap || m.lightMap || m.metalnessMap || m.normalMap || m.roughnessMap)
-					if (md) {
-						if (m.map) m.map.dispose();
-						if (m.alphaMap) m.alphaMap.dispose();
-						if (m.aoMap) m.aoMap.dispose();
-						if (m.bumpMap) m.bumpMap.dispose();
-						if (m.displacementMap) m.displacementMap.dispose();
-						if (m.emissiveMap) m.emissiveMap.dispose();
-						if (m.envMap) m.envMap.dispose();
-						if (m.lightMap) m.lightMap.dispose();
-						if (m.metalnessMap) m.metalnessMap.dispose();
-						if (m.normalMap) m.normalMap.dispose();
-						if (m.roughnessMap) m.roughnessMap.dispose();
-					}
-				}
-				if (obj.dispose) {
-					obj.dispose();
-				}
+			this.world.children.forEach(function (obj) {
+				obj.dispose();
 			});
 			this.map.remove();
 			this.map = {};
@@ -674,16 +768,44 @@ Threebox.prototype = {
 
 	defaultLights: function () {
 
-		let ambientLight = new THREE.AmbientLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.75);
-		this.scene.add(ambientLight);
+		this.lights.ambientLight = new THREE.AmbientLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.75);
+		this.scene.add(this.lights.ambientLight);
 
-		let directionalLightBack = new THREE.DirectionalLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.25);
-		directionalLightBack.position.set(30, 100, 100);
-		this.scene.add(directionalLightBack);
+		this.lights.dirLightBack = new THREE.DirectionalLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.25);
+		this.lights.dirLightBack.position.set(30, 100, 100);
+		this.scene.add(this.lights.dirLightBack);
 
-		let directionalLightFront = new THREE.DirectionalLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.25);
-		directionalLightFront.position.set(-30, 100, -100);
-		this.scene.add(directionalLightFront);
+		this.lights.dirLight  = new THREE.DirectionalLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.25);
+		this.lights.dirLight.position.set(-30, 100, -100);
+		this.scene.add(this.lights.dirLight);
+
+	},
+
+	realSunlight: function () {
+
+		this.renderer.shadowMap.enabled = true;
+		//this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		this.lights.dirLight = new THREE.DirectionalLight(0xffffff, 1);
+		this.scene.add(this.lights.dirLight);
+		this.lights.dirLightHelper = new THREE.DirectionalLightHelper(this.lights.dirLight, 5);
+		this.scene.add(this.lights.dirLightHelper);
+		let d2 = 1000; let r2 = 2; let mapSize2 = 8192;
+		this.lights.dirLight.castShadow = true;
+		this.lights.dirLight.shadow.radius = r2;
+		this.lights.dirLight.shadow.mapSize.width = mapSize2;
+		this.lights.dirLight.shadow.mapSize.height = mapSize2;
+		this.lights.dirLight.shadow.camera.top = this.lights.dirLight.shadow.camera.right = d2;
+		this.lights.dirLight.shadow.camera.bottom = this.lights.dirLight.shadow.camera.left = -d2;
+		this.lights.dirLight.shadow.camera.near = 1;
+		this.lights.dirLight.shadow.camera.visible = true;
+		this.lights.dirLight.shadow.camera.far = 400000000; 
+
+		this.lights.hemiLight = new THREE.HemisphereLight(new THREE.Color(0xffffff), new THREE.Color(0xffffff), 0.6);
+		this.lights.hemiLight.color.setHSL(0.661, 0.96, 0.12);
+		this.lights.hemiLight.groundColor.setHSL(0.11, 0.96, 0.14);
+		this.lights.hemiLight.position.set(0, 0, 50);
+		this.scene.add(this.lights.hemiLight);
+		this.setSunlight();
 
 	},
 
@@ -691,12 +813,13 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.4',
+	version: '2.0.5',
 
 }
 
 var defaultOptions = {
-    defaultLights: false,
+	defaultLights: false,
+	realSunlight: false,
 	passiveRendering: true,
 	enableSelectingFeatures: false,
 	enableSelectingObjects: false,

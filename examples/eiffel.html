@@ -16,26 +16,23 @@
 </head>
 <body>
 	<div id='map' class='map'>
-		<div class="mapboxgl-ctrl helpDiv">
-			<div id="help" class="help">
-				This demo shows over a satellite mapbox style the following features:<br />
-				- Built-in raycasting and selection through 'enableSelectingFeatures' and 'enableSelectingObjects'<br />
-				- Built-in Tooltips on Objects and Fill-Extrusions through 'enableTooltips' <br />
-				- Event handler management for Features through 'map.on('SelectedFeatureChange', ...)'<br />
-				- Event handler management for 3DObjects through 'map.on('SelectedChange', ...)'
-			</div>
-		</div>
 		<div class="mapboxgl-ctrl-top-left">
 			<div id="toolsControl" class="tools-i mapboxgl-ctrl mapboxgl-ctrl-group btn-group btn-group-toggle" style="margin-left:20px;" data-toggle="buttons">
-				<button type="button" name="ALL" id="ALL" title="All" alt="All"><i class="fas fa-globe-americas"></i></button>
+				<!--<button type="button" name="ALL" id="ALL" title="All" alt="All"><i class="fas fa-globe-americas"></i></button>-->
 				<button type="button" name="NYC" id="NYC" title="Statue of Liberty, NYC" alt="Statue of Liberty, NYC"><i style="width: 26px; height: 26px; background: url(./images/statue-of-liberty.png) no-repeat center center; background-size: contain; display: block;"></i></button>
 				<button type="button" name="PAR" id="PAR" title="Eiffel Tower, Paris" alt="Eiffel Tower, Paris"><i style="width: 26px; height: 26px; background: url(./images/eiffel-tower.png) no-repeat center center; background-size: contain; display: block;"></i></button>
 			</div>
 			<div style="width:150px;display: inline-block;background: rgba(0, 0, 0, 0.5);border-radius: 3px;color: white;">Icons made by <a href="" title="monkik">monkik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		</div>
-
 	</div>
+	<div id="hour" class="mapboxgl-map"></div>
+	<input id='time' type='range' min="0" max="86400" />
 	<script>
+		//This demo shows a satellite mapbox style the following features:
+		//- Built-in sunlight through 'realSunlight' that sets the scene and map lights based on 'setSunlight'
+		//- Built-in shadows through 'castShadow' and 'tb.setBuildingShadows'
+		//- Built-in raycasting and selection through 'enableSelectingObjects' <br />
+		//- Built-in Tooltips on for through 'enableTooltips' <br />
 
 		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
 
@@ -44,43 +41,72 @@
 		//starting location for map
 		let popup;
 		let minZoom = 12;
+		let seconds = 0;
+		let date = new Date();
 		let mapConfig = {
-			ALL: { center: [-100.021884, 39.609738, 0], zoom: 3.25, pitch: 12, bearing: 0 },
-			NYC: { origin: [-74.044513, 40.689262, 46.9], center: [-74.044753, 40.690209, 0], zoom: 17.7, pitch: 60, bearing: -10 },
-			PAR: { origin: [2.294514, 48.857475, 0], center: [2.294625, 48.861085, 0], zoom: 15.95, pitch: 60, bearing: 0 },
+			//			ALL: { center: [-100.021884, 39.609738, 0], zoom: 3.25, pitch: 12, bearing: 0, timezone: 'US/Central' },
+			NYC: { origin: [-74.044514, 40.689259, 47], center: [-74.044803, 40.690183, 0], zoom: 17.7, pitch: 60, bearing: -10, scale: 44, timezone: 'America/New_York' },
+			PAR: { origin: [2.294514, 48.857475, 0], center: [2.294625, 48.861085, 0], zoom: 15.95, pitch: 60, bearing: 0, scale: 0.01029, timezone: 'Europe/Paris' },
 			names: {
 				customLayer: "custom-layer",
-				fillExtrusion: "composite",
-				fillExtrusionLayer: "building"
+				fillExtrusion: "composite-b",
+				fillExtrusionLayer: "building-b"
 			}
 		}
+		let point = mapConfig.PAR;
+		let p = document.querySelector("#hour");
 
 		var map = new mapboxgl.Map({
-			style: 'mapbox://styles/mapbox/satellite-v9',//'mapbox://styles/mapbox/outdoors-v11',
-			center: mapConfig.ALL.center,
-			zoom: mapConfig.ALL.zoom,
-			pitch: mapConfig.ALL.pitch,
-			bearing: mapConfig.ALL.bearing,
+			style: 'mapbox://styles/mapbox/satellite-v9',
+			center: point.center,
+			zoom: point.zoom,
+			pitch: point.pitch,
+			bearing: point.bearing,
 			container: 'map',
-			antialias: true,
-			hash: true
+			antialias: true //,	hash: true
 		});
+
+		map.addControl(new mapboxgl.NavigationControl());
+		// Add geolocate control to the map.
+		map.addControl(
+			new mapboxgl.GeolocateControl({
+				positionOptions: {
+					enableHighAccuracy: true
+				},
+				trackUserLocation: true
+			})
+		);
 
 		// we can add Threebox to mapbox to add built-in mouseover/mouseout and click behaviors
 		window.tb = new Threebox(
 			map,
 			map.getCanvas().getContext('webgl'),
 			{
-				defaultLights: true,
-				enableSelectingFeatures: true, //change this to false to disable fill-extrusion features selection
+				realSunlight: true,
 				enableSelectingObjects: true, //change this to false to disable 3D objects selection
 				enableTooltips: true, // change this to false to disable default tooltips on fill-extrusion and 3D models
 			}
 		);
 
+		var time = date.getHours() * 60 * 60 + date.getMinutes() * 60 + date.getSeconds();
+		var timeInput = document.getElementById('time');
+		timeInput.value = time;
+		timeInput.oninput = () => {
+			time = +timeInput.value;
+			date.setHours(Math.floor(time / 60 / 60));
+			date.setMinutes(Math.floor(time / 60) % 60);
+			date.setSeconds(time % 60);
+			console.log(date);
+			map.triggerRepaint();
+		};
+
 		// The 'building' layer in the mapbox-streets vector source contains building-height
 		// data from OpenStreetMap.
 		map.on('style.load', function () {
+
+			let mapCenter = map.getCenter();
+			center = [mapCenter.lng, mapCenter.lat];
+			p.innerHTML = "Local time: " + dateToTimezone(date, point.timezone).toLocaleTimeString();
 
 			map.addSource(mapConfig.names.fillExtrusion, {
 				// GeoJSON Data source used in vector tiles, documented at
@@ -102,7 +128,7 @@
 						obj: './models/LibertyStatue.obj',
 						mtl: './models/LibertyStatue.mtl',
 						type: 'mtl',
-						scale: 45,
+						scale: mapConfig.NYC.scale,
 						units: 'meters',
 						rotation: { x: 90, y: 0, z: 0 }, //default rotation
 						anchor: 'center'
@@ -112,37 +138,34 @@
 						model.setCoords(mapConfig.NYC.origin);
 						model.setRotation({ x: 0, y: 0, z: -147 });
 						model.addTooltip("Statue of Liberty", true);
+						model.castShadow = true;
 						tb.add(model);
-						model.addEventListener('SelectedChange', onSelectedChange, false);
 					})
 
 					options = {
 						obj: './models/eiffel.glb',
 						type: 'gltf',
-						scale: 0.01029,
+						scale: mapConfig.PAR.scale,
 						units: 'meters',
-						rotation: { x: 0, y: 0, z: 0 }, //default rotation
-						adjustment: { x: -0.5, y: -0.5, z: 0 } // model center is displaced
+						//adjustment: { x: -0.5, y: -0.5, z: 0 } // model center is displaced
 					}
 
 					tb.loadObj(options, function (model) {
-
 						model.setCoords(mapConfig.PAR.origin);
 						model.setRotation({ x: 0, y: 0, z: 45.7 });
 						model.addTooltip("Eiffel Tower", true);
+						model.castShadow = true;
 						tb.add(model);
-						model.addEventListener('SelectedChange', onSelectedChange, false);
 					})
 
 				},
 
 				render: function (gl, matrix) {
+					tb.setSunlight(date, point.center);
+					hour.innerHTML = "Local time: " + dateToTimezone(date, point.timezone).toLocaleTimeString();
 					tb.update();
 				}
 			});
-			
-			//[jscastro] subscribe to selected/unselect extrusion feature event
-			map.on('SelectedFeatureChange', onSelectedFeatureChange);
 
 		});
 
@@ -189,53 +212,27 @@
 			return layer;
 		}
 
-		//[jscastro] handler for the feature selected UI... we will create a Mapbox popup to compare with Threebox popup
-		function onSelectedFeatureChange(e) {
-			let feature = e.detail;
-			if (feature && feature.state && feature.state.select) {
 
-				if (popup) popup.remove();
-
-				let center = [];
-				let coords = tb.getFeatureCenter(feature, null, 0);
-
-				center.push([coords[0], coords[1]]);
-
-				//TODO: this creates a Mapbox popup in the same coords the Threebox popup to see the difference
-				popup = new mapboxgl.Popup({ offset: 0 })
-					.setLngLat(center[0].slice())
-					.setHTML('<strong>' + (feature.id || feature.type) + '</strong >')
-					.addTo(map);
-
-				console.log(JSON.stringify(feature.properties, null, 2))
-
-			}
-
-
+		function reset() {
+			date = new Date();
+			seconds = 0;
 		}
 
-		function onSelectedChange(e) {
-			let selected = e.detail.selected;
-			console.log("onSelectedChange: " + selected);
-			if (selected) {
-				selectedObject = e.detail;
-				console.log(JSON.stringify(selectedObject.coordinates, null, 2))
-			}
-		}
-
-		$('#ALL').on('click', function () {
-			//we fly smoothly to the object selected
-			flyTo(mapConfig.ALL);
-		});
 		$('#NYC').on('click', function () {
+			reset();
+			point = mapConfig.NYC;
 			//we fly smoothly to the object selected
-			flyTo(mapConfig.NYC);
+			flyTo(point);
 		});
 		$('#PAR').on('click', function () {
+			reset();
+			point = mapConfig.PAR;
 			//we fly smoothly to the object selected
-			flyTo(mapConfig.PAR);
+			flyTo(point);
 		});
+
 		function flyTo(coords) {
+
 			//we fly smoothly to the object selected
 			map.flyTo({
 				center: coords.center,
@@ -243,6 +240,12 @@
 				pitch: coords.pitch,
 				bearing: coords.bearing
 			});
+
+		}
+
+		function dateToTimezone(date = new Date(), timezone) {
+			var tzTime = date.toLocaleString("en-US", { timeZone: timezone });
+			return new Date(tzTime);
 
 		}
 
