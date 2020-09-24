@@ -657,7 +657,7 @@ Threebox.prototype = {
 			while (this.world.children.length > 0) {
 				let obj = this.world.children[0];
 				if (dispose) obj.dispose();
-				map.tb.remove(obj);
+				this.map.tb.remove(obj);
 			};
 			clear('clear finished');
 		});
