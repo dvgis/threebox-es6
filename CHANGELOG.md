@@ -13,7 +13,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 - [**#58**](https://github.com/jscastro76/threebox/issues/58) Refactor `tb.remove`
 - [**#59**](https://github.com/jscastro76/threebox/issues/59) Refactor `tb.clear` to add `layerId`.
 - [**#60**](https://github.com/jscastro76/threebox/issues/58) Refactor `tb.dispose`
-- All the examples reviewed and updated and added to the [Examples list](https://github.com/jscastro76/threebox/blob/master/examples/readme.md)
+- All the examples reviewed and updated and added to the [Examples list](https://github.com/jscastro76/threebox/tree/master/examples)
 
 <br>
 

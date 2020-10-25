@@ -39,7 +39,7 @@ These are the examples included in Threebox.
 - Built-in raycasting and selection through `enableSelectingFeatures` 
 - Built-in default Labels on altitude for fill-extrusions through `enableTooltips` 
 - Event handler management for Features through `map.on('SelectedFeatureChange', ...)`<br />
-<img alt="threebox" src="images/3Dbuildings.png" width="50%">
+<img alt="threebox" src="images/3dbuildings.png" width="50%">
 
 ##### [09-raycaster.html](https://github.com/jscastro76/threebox/blob/master/examples/09-raycaster.html) 
 - This sample shows how to create 3 objects over a default fill-extrusion composite layer.

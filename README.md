@@ -9,7 +9,7 @@ A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://d
 - - -
 ## Current release
 
-Current release is [**2.0.6**](https://github.com/jscastro76/threebox/releases/tag/v.2.0.6), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#205) for more details.
+Current release is [**2.0.6**](https://github.com/jscastro76/threebox/releases/tag/v.2.0.6), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#206) for more details.
 
 <br>
 
@@ -34,7 +34,7 @@ Current release is [**2.0.6**](https://github.com/jscastro76/threebox/releases/t
 Only in this fork, there is a list of new features implemented on top of the amazing work from [@peterqliu](https://github.com/peterqliu/threebox/):
 - Update to Three.js v117.
 - Update to Mapbox v1.11.1.
-- [15 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) with new features.
+- [15 examples](https://github.com/jscastro76/threebox/tree/master/examples) with new features.
 - Support for multiple format objects (FBX, GLTF/GLB, Collada + OBJ/MTL).
 - Support for CSS2D Labels supporting rich HTML controls through a new LabelManager.
 - Support for CSS2D tooltips/title browser-like and mapbox-like.
