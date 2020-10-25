@@ -8959,7 +8959,7 @@ var material = require("./utils/material.js");
 var sphere = require("./objects/sphere.js");
 var label = require("./objects/label.js");
 var tooltip = require("./objects/tooltip.js");
-var loadObj = require("./objects/loadObj.js");
+var loader = require("./objects/loadObj.js");
 var Object3D = require("./objects/Object3D.js");
 var line = require("./objects/line.js");
 var tube = require("./objects/tube.js");
@@ -8992,6 +8992,8 @@ Threebox.prototype = {
 		this.map = map;
 		this.map.tb = this; //[jscastro] needed if we want to queryRenderedFeatures from map.onload
 
+		this.objects = new Objects(this.map);
+
 		// Set up a THREE.js scene
 		this.renderer = new THREE.WebGLRenderer({
 			alpha: true,
@@ -9022,7 +9024,8 @@ Threebox.prototype = {
 		this.world.name = "world";
 		this.scene.add(this.world);
 
-		this.objectsCache = [];
+		this.objectsCache = new Map();
+		this.primises = new Map();
 
 		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
 
@@ -9403,8 +9406,6 @@ Threebox.prototype = {
 
 	// Objects
 
-	objects: new Objects(AnimationManager),
-
 	sphere: sphere,
 
 	line: line,
@@ -9421,7 +9422,37 @@ Threebox.prototype = {
 		return Object3D(obj, o)
 	},
 
-	loadObj: loadObj,
+	loadObj: async function loadObj(options, cb) {
+
+		//[jscastro] new added cache for 3D Objects
+		let cache = this.objectsCache.get(options.obj);
+		if (cache) {
+			cache.promise
+				.then(obj => {
+					//console.log("Cloning " + options.obj);
+					cb(obj.duplicate());
+				})
+				.catch(err => {
+					this.objectsCache.delete(options.obj);
+					console.error("Could not load model file: " + options.obj);
+				});
+		} else {
+			this.objectsCache.set(options.obj, {
+				promise: new Promise(
+					function (resolve, reject) {
+						loader(options, cb, function (obj) {
+							//console.log("Loading " + options.obj);
+							if (obj.duplicate) {
+								resolve(obj);
+							} else {
+								reject(obj);
+							}
+						});
+					})
+			});
+
+		}
+	},
 
 	// Material
 
@@ -9550,7 +9581,7 @@ Threebox.prototype = {
 	//[jscastro] mapbox setStyle removes all the layers, including custom layers, so tb.world must be cleaned up too
 	setStyle: function (styleId, options) {
 		this.map.setStyle(styleId, options);
-		this.clear(true);
+		this.clear(null, true);
 	},
 
 	//[jscastro] method to toggle Layer visibility
@@ -9592,18 +9623,65 @@ Threebox.prototype = {
 		//[jscastro] remove also the label if exists dispatching the event removed to fire CSS2DRenderer "removed" listener
 		if (obj.label) { obj.label.remove() };
 		if (obj.tooltip) { obj.tooltip.remove() };
+		obj.traverse(function (o) {
+			if (o.isMesh) {
+				o.geometry.dispose();
+				if (o.material) {
+					if (o.material instanceof THREE.MeshFaceMaterial) {
+						o.material.materials.forEach(function (m) {
+							m.dispose();
+							if (m.map) {
+								m.map.dispose();
+							}
+						});
+					} else {
+						o.material.dispose();
+					}
+					let m = o.material;
+					let md = (m.map || m.alphaMap || m.aoMap || m.bumpMap || m.displacementMap || m.emissiveMap || m.envMap || m.lightMap || m.metalnessMap || m.normalMap || m.roughnessMap)
+					if (md) {
+						if (m.map) m.map.dispose();
+						if (m.alphaMap) m.alphaMap.dispose();
+						if (m.aoMap) m.aoMap.dispose();
+						if (m.bumpMap) m.bumpMap.dispose();
+						if (m.displacementMap) m.displacementMap.dispose();
+						if (m.emissiveMap) m.emissiveMap.dispose();
+						if (m.envMap) m.envMap.dispose();
+						if (m.lightMap) m.lightMap.dispose();
+						if (m.metalnessMap) m.metalnessMap.dispose();
+						if (m.normalMap) m.normalMap.dispose();
+						if (m.roughnessMap) m.roughnessMap.dispose();
+					}
+				}
+			}
+			if (o.dispose) o.dispose();
+		})
 		this.world.remove(obj);
 	},
 
 	//[jscastro] this clears tb.world in order to dispose properly the resources
-	clear: async function (dispose) {
-		return new Promise(clear => {
-			while (this.world.children.length > 0) {
-				let obj = this.world.children[0];
-				if (dispose) obj.dispose();
-				tb.remove(obj);
-			};
-			clear('clear finished');
+	clear: async function (layerId = null, dispose = false) {
+		return new Promise((resolve, reject) => {
+			let objects = [];
+			this.world.children.forEach(function (object) {
+				objects.push(object);
+			});
+			for (let i = 0; i < objects.length; i++) {
+				let obj = objects[i];
+				//if layerId, check the layer to remove, otherwise always remove
+				if ((layerId && obj.userData.feature.layer === layerId) || !layerId) {
+					if (dispose) obj.dispose();
+					this.remove(obj);
+				}
+			}
+			resolve("clear");
+		});
+	},
+
+	//[jscastro] remove a layer clearing first the 3D objects from this layer in tb.world
+	removeLayer: function (layerId) {
+		this.clear(layerId, true).then( () => {
+			this.map.removeLayer(layerId);
 		});
 	},
 
@@ -9692,9 +9770,7 @@ Threebox.prototype = {
 		//console.log(window.performance.memory);
 
 		return new Promise(disposed => {
-			this.world.children.forEach(function (obj) {
-				obj.dispose();
-			});
+			this.clear(null, true);
 			this.map.remove();
 			this.map = {};
 			this.scene.remove(this.world);
@@ -9757,7 +9833,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.5',
+	version: '2.0.6',
 
 }
 
@@ -11875,13 +11951,14 @@ const gltfLoader = new GLTFLoader();
 const fbxLoader = new FBXLoader();
 const daeLoader = new ColladaLoader();
 
-function loadObj(options, cb) {
+function loadObj(options, cb, promise) {
 
 	if (options === undefined) return console.error("Invalid options provided to loadObj()");
 
 	options = utils._validate(options, Objects.prototype._defaults.loadObj);
 
 	this.loaded = false;
+
 	//console.time('loadObj Start ');
 	const modelComplete = (m) => {
 		console.log("Model complete!", m);
@@ -11966,12 +12043,14 @@ function loadObj(options, cb) {
 			userScaleGroup.addTooltip(userScaleGroup.uuid, true, userScaleGroup.anchor);
 
 			cb(userScaleGroup);
+			promise(userScaleGroup);
 
 			// [jscastro] initialize the default animation to avoid issues with position
 			userScaleGroup.idle();
 
 		}, () => (null), error => {
-			console.error("Could not load model file: " + options.obj + " \n " + error.stack);
+				console.error("Could not load model file: " + options.obj + " \n " + error.stack);
+				promise("Error loading the model");
 		});
 
 	};
@@ -12002,32 +12081,6 @@ function loadObj(options, cb) {
 
 		});
 	}
-
-	//[jscastro] new added cache for 3D Objects
-	function cache(obj) {
-		let found = false;
-		objectsCache.forEach(function (c) {
-			if (c.userData.obj == obj.userData.obj) {
-				found = true;
-				return;
-			}
-		});
-		if (!found) {
-			objectsCache.push(obj);
-		}
-		return found;
-	};
-
-	//[jscastro] new added cache for 3D Objects
-	function getFromCache(objUrl) {
-		let dup = null;
-		objectsCache.forEach(function (c) {
-			if (c.userData.obj == objUrl) {
-				dup = c.duplicate();
-			}
-		});
-		return dup;
-	};
 
 }
 

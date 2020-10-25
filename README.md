@@ -9,7 +9,7 @@ A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://d
 - - -
 ## Current release
 
-Current release is [**2.0.5**](https://github.com/jscastro76/threebox/releases/tag/v.2.0.5), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#205) for more details.
+Current release is [**2.0.6**](https://github.com/jscastro76/threebox/releases/tag/v.2.0.6), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#205) for more details.
 
 <br>
 
@@ -34,7 +34,7 @@ Current release is [**2.0.5**](https://github.com/jscastro76/threebox/releases/t
 Only in this fork, there is a list of new features implemented on top of the amazing work from [@peterqliu](https://github.com/peterqliu/threebox/):
 - Update to Three.js v117.
 - Update to Mapbox v1.11.1.
-- All the [examples](https://github.com/jscastro76/threebox/tree/master/examples) updated, and 6 more examples added with new features.
+- [15 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) with new features.
 - Support for multiple format objects (FBX, GLTF/GLB, Collada + OBJ/MTL).
 - Support for CSS2D Labels supporting rich HTML controls through a new LabelManager.
 - Support for CSS2D tooltips/title browser-like and mapbox-like.
@@ -48,8 +48,10 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Support for style change keeping 3D models.
 - Support for Non-AABB Non Axes Aligned Bounding Box and real model size. 
 - Support for wireframing on Objects3D, removing them from the raycast.
-- Support for setLayerZoomRange and setLayoutProperty on Custom Layers (not available in Mapbox).
+- Support for `setLayerZoomRange` and `setLayoutProperty` on Custom Layers (not available in Mapbox).
+- Support for `setStyle` and `removeLayer` considering 3D objects.
 - Support for partial and full dispose of Mapbox, Three and Threebox resources.
+- Optimization for loading of thousands of objects through cache.
 - Optimization of Camera perspective to have Raycast with pixel-precision level.
 - Adjusted positioning for Objects3D to set center and rotation axes by config.
 - Check out [v2.04 change log](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#205) for more detail.

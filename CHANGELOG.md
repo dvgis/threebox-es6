@@ -1,3 +1,24 @@
+## 2.0.6
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+
+- [**#43**](https://github.com/jscastro76/threebox/issues/43) Threebox new method `tb.removeLayer` that removes the 3D objects of a layer, apart from removing the layer itself with `map.removeLayer`
+- [**#56**](https://github.com/jscastro76/threebox/issues/56) Objects cache at `tb.loadObj`
+  - `tb.loadObj` now is 100% async and in the first call to an object load by url, then caches the returned object for the sucessive calls to return a clone of the object through `obj.duplicate()`
+  - Closes [**#51**](https://github.com/jscastro76/threebox/issues/51), [**#55**](https://github.com/jscastro76/threebox/issues/55)
+- [**#57**](https://github.com/jscastro76/threebox/issues/57) Add a new sample to measure performance
+  - Added new example to demonstrate add thousands of objects and measure performance [Threebox Performance](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html).
+- [**#58**](https://github.com/jscastro76/threebox/issues/58) Refactor `tb.remove`
+- [**#59**](https://github.com/jscastro76/threebox/issues/59) Refactor `tb.clear` to add `layerId`.
+- [**#60**](https://github.com/jscastro76/threebox/issues/58) Refactor `tb.dispose`
+- All the examples reviewed and updated and added to the [Examples list](https://github.com/jscastro76/threebox/blob/master/examples/readme.md)
+
+<br>
+
+- - - 
+
 ## 2.0.5
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 

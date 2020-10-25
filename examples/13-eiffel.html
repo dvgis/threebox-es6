@@ -12,6 +12,46 @@
 	<link href="css/free.min.css" rel="stylesheet" />
 	<link href="css/free-v4-font-face-min.css" rel="stylesheet" />
 	<link href="css/free-v4-shims.min.css" rel="stylesheet" />
+	<style>
+		body, html {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+		}
+
+		#map {
+			width: 100%;
+			height: 100%;
+		}
+
+		#time {
+			position: absolute;
+			left: 0;
+			right: 0;
+			bottom: 80px;
+			margin-left: auto;
+			margin-right: auto;
+			min-width: 90%;
+		}
+
+		#hour {
+			background: rgba(0, 0, 0, 0.5);
+			color: #fff;
+			position: absolute;
+			left: 0px;
+			right: 0px;
+			bottom: 40px;
+			margin-left: auto;
+			margin-right: auto;
+			max-width: 30%;
+			padding: 5px 10px;
+			font-size: 18px;
+			line-height: 18px;
+			border-radius: 3px;
+			text-align: center;
+		}
+	</style>
+
 	<script src="config.js"></script>
 </head>
 <body>
@@ -162,7 +202,7 @@
 
 				render: function (gl, matrix) {
 					tb.setSunlight(date, point.center);
-					hour.innerHTML = "Local time: " + dateToTimezone(date, point.timezone).toLocaleTimeString();
+					hour.innerHTML = "Local date/time: " + dateToTimezone(date, point.timezone).toLocaleString();
 					tb.update();
 				}
 			});
@@ -211,7 +251,6 @@
 			};
 			return layer;
 		}
-
 
 		function reset() {
 			date = new Date();

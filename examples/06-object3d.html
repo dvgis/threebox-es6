@@ -1,9 +1,10 @@
 <!doctype html>
 <head>
-    <title>Threebox Basic Example</title>
+    <title>Threebox Object3D Example</title>
     <script src="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.css" rel="stylesheet" />
     <script src="../dist/threebox.js" type="text/javascript"></script>
+    <link href="./css/threebox.css" rel="stylesheet" />
     <script src="config.js"></script>
     <style>
         body, html {
@@ -31,45 +32,53 @@
       container: 'map',
       style: 'mapbox://styles/mapbox/light-v9',
       center: origin,
-      zoom: 8,
+      zoom: 12.5,
       pitch: 60,
       bearing: 80
     });
 
 
+// we can add Threebox to mapbox to add built-in mouseover/mouseout and click behaviors
+window.tb = new Threebox(
+	map,
+	map.getCanvas().getContext('webgl'),
+	{
+		defaultLights: true,
+	}
+);
+
 map.on('style.load', function() {
 
-    map.addLayer({
-        id: 'custom_layer',
-        type: 'custom',
-        onAdd: function(map, mbxContext){
+	map.addLayer({
+		id: 'custom_layer',
+		type: 'custom',
+		renderingMode: '3d',
+		onAdd: function (map, mbxContext) {
 
-            tb = new Threebox(
-                map, 
-                mbxContext,
-                {defaultLights: true}
-            );
+			// import soldier from an external glb file, scaling up its size 20x
+			// IMPORTANT: .glb is not a standard MIME TYPE, you'll have to add it to your web server config,
+			// otherwise you'll receive a 404 error
+			var options = {
+				obj: './models/soldier.glb',
+				type: 'gltf',
+				scale: 1000,
+				units: 'meters',
+				rotation: { x: 90, y: 0, z: 0 }, //default rotation
+				anchor: 'center'
+			}
 
-            // initialize geometry and material of our cube object
-            var geometry = new THREE.BoxGeometry(200, 200, 200);
+			tb.loadObj(options, function (model) {
+				let soldier = model.setCoords(origin);
+				tb.add(soldier);
+			})
 
-            var redMaterial = new THREE.MeshPhongMaterial( {
-                color: 0x009900, 
-                side: THREE.DoubleSide
-            });
+		},
 
-            var cube = new THREE.Mesh(geometry, redMaterial);
+		render: function (gl, matrix) {
+			tb.update();
+		}
+	});
 
-			cube = tb.Object3D({ obj: cube, adjustment: { x: -0.5, y: -0.5, z: 0.5 }})
-                .setCoords(origin)
-
-            tb.add(cube)
-        },
-        
-        render: function(gl, matrix){
-            tb.update();
-        }
-    });
 });
 
 

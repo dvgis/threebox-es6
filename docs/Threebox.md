@@ -10,6 +10,29 @@ Threebox works by adding a *Three.js* scene to *Mapbox GL*, creating a new *Mapb
 
 - - -
 
+## Examples
+
+Threebox contains [15 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.
+- [01-basic.html](https://github.com/jscastro76/threebox/blob/master/examples/01-basic.html) 
+- [02-line.html](https://github.com/jscastro76/threebox/blob/master/examples/02-line.html) 
+- [03-tube.html](https://github.com/jscastro76/threebox/blob/master/examples/03-tube.html) 
+- [04-mercator.html](https://github.com/jscastro76/threebox/blob/master/examples/04-mercator.html) 
+- [05-logistics.html](https://github.com/jscastro76/threebox/blob/master/examples/05-logistics.html) 
+- [06-object3d.html](https://github.com/jscastro76/threebox/blob/master/examples/06-object3d.html) 
+- [07-alignmentTest.html](https://github.com/jscastro76/threebox/blob/master/examples/07-alignmentTest.html) 
+- [08-3dbuildings.html](https://github.com/jscastro76/threebox/blob/master/examples/08-3dbuildings.html) 
+- [09-raycaster.html](https://github.com/jscastro76/threebox/blob/master/examples/09-raycaster.html) 
+- [10-stylechange.html](https://github.com/jscastro76/threebox/blob/master/examples/10-stylechange.html) 
+- [11-animation.html](https://github.com/jscastro76/threebox/blob/master/examples/11-animation.html) 
+- [12-add3dmodel.html](https://github.com/jscastro76/threebox/blob/master/examples/12-add3dmodel.html) 
+- [13-eiffel.html](https://github.com/jscastro76/threebox/blob/master/examples/13-eiffel.html) 
+- [14-buildingshadow.html](https://github.com/jscastro76/threebox/blob/master/examples/14-buildingshadow.html) 
+- [15-performance.html](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html) 
+
+<br>
+
+- - -
+
 ## Threebox
 
 ### Using Threebox
@@ -186,9 +209,9 @@ method to add an object to Threebox scene. It will add it to `tb.world.children`
 
 #### clear 
 ```js
-tb.clear([dispose])
+async tb.clear([layerId, dispose])
 ```
-This method removes any children from `tb.world`. if it receives `true` as a param, it will also call `obj.dispose` to dispose all the resources reserved by those objects.
+This method removes any children from `tb.world`. If it receives a `layerId` this only affects to the objects in that layer. If it receives `true` as a param, it will also call `obj.dispose` to dispose all the resources reserved by those objects.
 
 <br>
 
@@ -249,10 +272,11 @@ This method can be used for both a Poligon feature for a Fill Extrusion or a Poi
 
 #### loadObj
 ```js
-tb.loadObj(options, callback(obj));
+async tb.loadObj(options, callback(obj));
 ```
 
-This method loads a 3D model in different formats from its respective files. 
+This async method loads a 3D model in different formats from its respective files. 
+It automatically caches the first object for each resource url so the next instances are returned from `obj.duplicate`.
 Note that unlike all the other object classes, this is asynchronous, and returns the object as an argument of the callback function. 
 Internally, uses [`THREE.OBJLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/OBJLoader.js), [`THREE.FBXLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/FBXLoader.js), [`THREE.GLTFLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/GLTFLoader.js) or [`THREE.ColladaLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/ColladaLoader.js) respectively to fetch the  assets to each 3D format. [`THREE.FBXLoader`](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/FBXLoader.js) also dependes on [Zlib](https://github.com/imaya/zlib.js) to open compressed files which this format is based on.
 
@@ -355,7 +379,7 @@ function onSelectedChange(e) {
 	map.repaint = true;
 }
 ```
-
+<br>
 
 ##### 3D Formats and MIME types 
 Most of the popular 3D formats extensions (.glb, .gltf, .fbx, .dae, ...) are not standard [MIME types](https://www.iana.org/assignments/media-types/media-types.xhtml), so you will need to configure your web server engine to accept this extensions, otherwise you'll receive different HTTP errors downloading them. 
@@ -378,6 +402,34 @@ If you are using **IIS** server from an *ASP.Net* application, add the xml lines
 	  </staticContent>
 </system.webServer>
 ```
+<br/>
+
+If you are using **ASP.net core** server, add the C# lines below in the `Configure` method of the `Startup` class:
+```C#
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+    ...
+
+    // Set up custom content types - associating file extension to MIME type
+    var provider = new FileExtensionContentTypeProvider();
+    // Add new mappings
+    provider.Mappings[".mtl"] = "model/mtl";
+    provider.Mappings[".obj"] = "model/obj";
+    provider.Mappings[".glb"] = "model/gltf-binary";
+    provider.Mappings[".gltf"] = "model/gltf+json";
+    provider.Mappings[".fbx"] = "application/octet-stream";
+
+    app.UseStaticFiles(new StaticFileOptions 
+    {
+        ContentTypeProvider = provider
+    });
+
+    ...
+}
+```
+
+<br/>
+
 If you are using an **nginx** server, add the following lines to the *nginx.conf* file in the `http` object:
 ```
 http {
@@ -400,6 +452,8 @@ model/gltf+json gltf
 model/gltf-binary glb
 application/octet-stream fbx
 ```
+
+
 
 <br>
 
@@ -452,6 +506,14 @@ These lights can be overriden manually adding custom lights to the Threebox `sce
 tb.remove(obj)
 ```
 method to remove an object from Threebox scene and the `tb.world.children` array.
+
+<br>
+
+#### removeLayer 
+```js
+tb.removeLayer(layerId)
+```
+method to remove a layer from Mapbox, including all 3D objects from Threebox scene and the `tb.world.children` array. 
 
 <br>
 
@@ -1227,7 +1289,8 @@ Returns a clone of the object. Greatly improves performance when handling many i
 
 ## Threebox types
 
-<b>pointGeometry</b> `[longitude, latitude(, meters altitude)]`
+#### pointGeometry 
+`[longitude, latitude(, meters altitude)]`
 
 An array of 2-3 numbers representing longitude, latitude, and optionally altitude (in meters). When altitude is omitted, it is assumed to be 0. When populating this from a [*GeoJson*](https://geojson.org/) Point, this array can be accessed at `point.geometry.coordinates`.  
 
@@ -1275,14 +1338,8 @@ Can be expressed as a string to the corresponding material type (e.g. `"MeshPhys
 
 - - -
 
-## Using vanilla *Three.js* in Threebox
-
-Threebox implements many small affordances to make mapping run in *Three.js* quickly and precisely on a global scale. Whenever possible, use threebox methods to add, change, manage, and remove elements of the scene. Otherwise, here are some best practices:
-
-- Use `threebox.Object3D` to add custom objects to the scene
-- If you must interact directly with the THREE scene, add all objects to `threebox.world`.
-- `tb.projectToWorld` to convert lnglat to the corresponding `Vector3()`
 
 ## Performance considerations
 
-- Use `obj.duplicate()` when adding many identical objects. If your object contains other objects not in the `obj.children` collection, then those objects need to be cloned too.`
+- Use `obj.duplicate()` when adding many identical objects. If your object contains other objects not in the `obj.children` collection, then those objects need to be cloned too.
+- This is a by default behavior when `tb.loadObj` is called. 

@@ -14,7 +14,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <LastActiveSolutionConfig>Debug|Any CPU</LastActiveSolutionConfig>
     <StartWebBrowser>True</StartWebBrowser>
-    <LaunchUrl>/examples/eiffel.html</LaunchUrl>
+    <LaunchUrl>/examples/01-basic.html</LaunchUrl>
     <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
     <NodejsPort>8080</NodejsPort>
   </PropertyGroup>
@@ -30,20 +30,44 @@
     <Content Include="docs\MapboxShadow.gif" />
     <Content Include="docs\soldieranimation.jpg" />
     <Content Include="docs\Wireframes.gif" />
-    <Content Include="examples\3Dbuildings.html" />
-    <Content Include="examples\add-3d-model.html" />
-    <Content Include="examples\animation.html" />
-    <Content Include="examples\buildingshadow.html" />
+    <Content Include="examples\01-basic.html" />
+    <Content Include="examples\02-line.html" />
+    <Content Include="examples\03-tube.html" />
+    <Content Include="examples\04-mercator.html" />
+    <Content Include="examples\05-logistics.html" />
+    <Content Include="examples\06-object3d.html" />
+    <Content Include="examples\07-alignmentTest.html" />
+    <Content Include="examples\08-3dbuildings.html" />
+    <Content Include="examples\09-raycaster.html" />
+    <Content Include="examples\10-stylechange.html" />
+    <Content Include="examples\11-animation.html" />
+    <Content Include="examples\12-add3dmodel.html" />
+    <Content Include="examples\13-eiffel.html" />
+    <Content Include="examples\14-buildingshadow.html" />
+    <Content Include="examples\15-performance.html" />
     <Content Include="examples\css\fontawesome.js" />
     <Content Include="examples\css\free-fa-solid-900.woff2" />
     <Content Include="examples\css\free-v4-font-face-min.css" />
     <Content Include="examples\css\free-v4-shims.min.css" />
     <Content Include="examples\css\free.min.css" />
     <Content Include="examples\css\threebox.css" />
-    <Content Include="examples\eiffel.html" />
     <Content Include="examples\geojson\statue-of-liberty.json" />
+    <Content Include="examples\images\3dbuildings.png" />
+    <Content Include="examples\images\add-3d-model.png" />
+    <Content Include="examples\images\alignmentTest.png" />
+    <Content Include="examples\images\animation.png" />
+    <Content Include="examples\images\basic.png" />
+    <Content Include="examples\images\buildingshadow.png" />
     <Content Include="examples\images\eiffel-tower.png" />
+    <Content Include="examples\images\eiffel.png" />
+    <Content Include="examples\images\line.png" />
+    <Content Include="examples\images\logistics.png" />
+    <Content Include="examples\images\mercator.png" />
+    <Content Include="examples\images\object3D.png" />
+    <Content Include="examples\images\raycaster.png" />
     <Content Include="examples\images\statue-of-liberty.png" />
+    <Content Include="examples\images\stylechange.png" />
+    <Content Include="examples\images\tube.png" />
     <Content Include="examples\models\Eiffel.glb" />
     <Content Include="examples\models\Liberty-DecorazioniMarmo-2.bmp" />
     <Content Include="examples\models\Liberty-GreenBronze-1.bmp" />
@@ -63,11 +87,11 @@
     <Content Include="examples\models\Soldier.glb" />
     <Content Include="examples\models\Truck.mtl" />
     <Content Include="examples\models\Truck.obj" />
-    <Content Include="examples\alignmentTest.html">
-      <SubType>Code</SubType>
-    </Content>
+    <Content Include="examples\models\windmill_a\textures\material_baseColor.png" />
+    <Content Include="examples\models\windmill_a\windmill_a.bin" />
+    <Content Include="examples\models\windmill_a\windmill_a.json" />
     <Content Include="examples\plugins\jquery.min.js" />
-    <Content Include="examples\StyleChange.html" />
+    <Content Include="examples\README.md" />
     <Content Include="LICENSE.txt" />
     <Content Include="package-lock.json" />
     <Content Include="package.json" />
@@ -79,13 +103,6 @@
     <Content Include="docs\gallery.jpg" />
     <Content Include="docs\SymbolLayer3D.md" />
     <Content Include="docs\Threebox.md" />
-    <Content Include="examples\basic.html" />
-    <Content Include="examples\line.html" />
-    <Content Include="examples\logistics.html" />
-    <Content Include="examples\mercator.html" />
-    <Content Include="examples\Object3D.html" />
-    <Content Include="examples\raycaster.html" />
-    <Content Include="examples\tube.html" />
     <Content Include="examples\config_template.js" />
     <Content Include="server.js" />
     <Content Include="src\objects\label.js" />
@@ -144,6 +161,8 @@
     <Folder Include="examples\images\" />
     <Folder Include="examples\models" />
     <Folder Include="examples\models\radar\" />
+    <Folder Include="examples\models\windmill_a\" />
+    <Folder Include="examples\models\windmill_a\textures\" />
     <Folder Include="examples\old" />
     <Folder Include="examples\plugins\" />
     <Folder Include="src" />

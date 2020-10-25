@@ -11,13 +11,14 @@ const gltfLoader = new GLTFLoader();
 const fbxLoader = new FBXLoader();
 const daeLoader = new ColladaLoader();
 
-function loadObj(options, cb) {
+function loadObj(options, cb, promise) {
 
 	if (options === undefined) return console.error("Invalid options provided to loadObj()");
 
 	options = utils._validate(options, Objects.prototype._defaults.loadObj);
 
 	this.loaded = false;
+
 	//console.time('loadObj Start ');
 	const modelComplete = (m) => {
 		console.log("Model complete!", m);
@@ -102,12 +103,14 @@ function loadObj(options, cb) {
 			userScaleGroup.addTooltip(userScaleGroup.uuid, true, userScaleGroup.anchor);
 
 			cb(userScaleGroup);
+			promise(userScaleGroup);
 
 			// [jscastro] initialize the default animation to avoid issues with position
 			userScaleGroup.idle();
 
 		}, () => (null), error => {
-			console.error("Could not load model file: " + options.obj + " \n " + error.stack);
+				console.error("Could not load model file: " + options.obj + " \n " + error.stack);
+				promise("Error loading the model");
 		});
 
 	};
@@ -138,32 +141,6 @@ function loadObj(options, cb) {
 
 		});
 	}
-
-	//[jscastro] new added cache for 3D Objects
-	function cache(obj) {
-		let found = false;
-		objectsCache.forEach(function (c) {
-			if (c.userData.obj == obj.userData.obj) {
-				found = true;
-				return;
-			}
-		});
-		if (!found) {
-			objectsCache.push(obj);
-		}
-		return found;
-	};
-
-	//[jscastro] new added cache for 3D Objects
-	function getFromCache(objUrl) {
-		let dup = null;
-		objectsCache.forEach(function (c) {
-			if (c.userData.obj == objUrl) {
-				dup = c.duplicate();
-			}
-		});
-		return dup;
-	};
 
 }
 

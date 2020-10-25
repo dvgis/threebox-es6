@@ -53,11 +53,8 @@
 	<div id="hour" class="mapboxgl-map"></div>
 
 	<script>
-		//This demo shows a satellite mapbox style the following features:
 		//- Built-in sunlight through 'realSunlight' that sets the scene and map lights based on 'setSunlight'
 		//- Built-in shadows through 'castShadow' and 'tb.setBuildingShadows'
-		//- Built-in raycasting and selection through 'enableSelectingObjects' <br />
-		//- Built-in Tooltips on for through 'enableTooltips' <br />
 
 		let mapConfig = {
 			NYC: { origin: [-74.044514, 40.689259, 39], center: [-74.0137, 40.70346, 0], zoom: 16.2, pitch: 60, bearing: -10, scale: 44, timezone: 'America/New_York' }
@@ -128,8 +125,6 @@
 			}
 
 			tb.setBuildingShadows({ layerId: 'building-shadows', buildingsLayerId: '3d-buildings', minAltitude: 0.10 });
-			//tb.setSunlight(date);
-
 		});
 
 		map.on('render', () => {
