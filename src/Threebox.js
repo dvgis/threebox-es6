@@ -81,7 +81,6 @@ Threebox.prototype = {
 		this.scene.add(this.world);
 
 		this.objectsCache = new Map();
-		this.primises = new Map();
 
 		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
 
