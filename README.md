@@ -69,6 +69,7 @@ All the [**Threebox Documentation**](/docs/Threebox.md) has been completely upda
 - [**Loading a 3D Model**](/docs/Threebox.md#loading-a-3d-model)
 - [**Threebox methods**](/docs/Threebox.md#threebox-methods)
 - [**Object methods**](/docs/Threebox.md#object-methods)
+- [**Examples**](/examples/README.md)
 
 <br>
 
