@@ -59,7 +59,7 @@ function loadObj(options, cb, promise) {
 		loader.load(options.obj, obj => {
 
 			//[jscastro] MTL/GLTF/FBX models have a different structure
-			let animations;
+			let animations = [];
 			switch (options.type) {
 				case "mtl":
 					obj = obj.children[0];
@@ -73,7 +73,7 @@ function loadObj(options, cb, promise) {
 					animations = obj.animations;
 					break;
 			}
-
+			obj.animations = animations;
 			// [jscastro] options.rotation was wrongly used
 			var r = utils.types.rotation(options.rotation, [0, 0, 0]);
 			var s = utils.types.scale(options.scale, [1, 1, 1]);
@@ -81,11 +81,12 @@ function loadObj(options, cb, promise) {
 			obj.scale.set(s[0], s[1], s[2]);
 			// [jscastro] normalize specular/metalness/shininess from meshes in FBX and GLB model as it would need 5 lights to illuminate them properly
 			if (options.normalize) { normalizeSpecular(obj); }
-
+			obj.name = "model";
 			var projScaleGroup = new THREE.Group();
+			projScaleGroup.name = "group";
 			projScaleGroup.add(obj)
 			var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, options);
-			userScaleGroup.model = obj;
+			userScaleGroup.name = "object";
 			//[jscastro] assign the animations to the userScaleGroup before enrolling it in AnimationsManager through _addMethods
 			userScaleGroup.animations = animations;
 
@@ -94,6 +95,8 @@ function loadObj(options, cb, promise) {
 			userScaleGroup.setAnchor(options.anchor);
 			//[jscastro] override the center calculated if the object has adjustments
 			userScaleGroup.setCenter(options.adjustment);
+
+			let anim = userScaleGroup.animations;
 
 			// [jscastro] after adding methods create the bounding box at userScaleGroup but add it to its children for positioning
 			let boxGrid = userScaleGroup.drawBoundingBox();

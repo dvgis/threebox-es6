@@ -13,6 +13,10 @@ function AnimationManager(map) {
 
 AnimationManager.prototype = {
 
+	unenroll: function (obj) {
+		this.enrolledObjects.splice(this.enrolledObjects.indexOf(obj), 1);
+	},
+
 	enroll: function (obj) {
 
 		//[jscastro] add the object default animations
@@ -71,7 +75,6 @@ AnimationManager.prototype = {
 		})
 
 		/* Extend the provided object with animation-specific properties and track in the animation manager */
-
 		this.enrolledObjects.push(obj);
 
 		// Give this object its own internal animation queue
@@ -128,7 +131,7 @@ AnimationManager.prototype = {
 				this.animationQueue
 					.push(entry);
 
-				map.repaint = true;
+				tb.map.repaint = true;
 			}
 
 			//if no duration set, stop object's existing animations and go to that state immediately
@@ -178,7 +181,7 @@ AnimationManager.prototype = {
 			this.animationQueue
 				.push(entry);
 
-			map.repaint = true;
+			tb.map.repaint = true;
 
 			return this;
 		};
@@ -215,7 +218,7 @@ AnimationManager.prototype = {
 			if (w) this.position.copy(w);
 
 			this.updateMatrixWorld();
-			map.repaint = true
+			tb.map.repaint = true
 		};
 
 		//[jscastro] play default animation
@@ -238,7 +241,7 @@ AnimationManager.prototype = {
 				this.animationQueue
 					.push(entry);
 
-				map.repaint = true
+				tb.map.repaint = true
 				return this;
 			}
 		}
@@ -298,7 +301,7 @@ AnimationManager.prototype = {
 				// Update the animation mixer and render this frame
 				obj.mixer.update(0.01);
 			}
-			map.repaint = true;
+			tb.map.repaint = true;
 			return this;
 		}
 
@@ -413,7 +416,7 @@ AnimationManager.prototype = {
 						object.isPlaying = true;
 						object.animationMethod = requestAnimationFrame(this.update);
 						object.mixer.update(object.clock.getDelta());
-						map.repaint = true;
+						tb.map.repaint = true;
 					}
 
 				}

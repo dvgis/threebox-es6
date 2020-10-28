@@ -9,12 +9,12 @@ function Label(obj) {
 	let div = Objects.prototype.drawLabelHTML(obj.htmlElement, obj.cssClass);
 
 	let label = new THREE.CSS2DObject(div);
+	label.name = "label";
 	label.visible = obj.alwaysVisible;
 	label.alwaysVisible = obj.alwaysVisible;
 
 	var userScaleGroup = Objects.prototype._makeGroup(label, obj);
 	Objects.prototype._addMethods(userScaleGroup);
-	userScaleGroup.label = label;
 	userScaleGroup.visibility = obj.alwaysVisible;
 
 	return userScaleGroup;

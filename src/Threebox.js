@@ -48,7 +48,7 @@ Threebox.prototype = {
 		this.map = map;
 		this.map.tb = this; //[jscastro] needed if we want to queryRenderedFeatures from map.onload
 
-		this.objects = new Objects(this.map);
+		this.objects = new Objects();
 
 		// Set up a THREE.js scene
 		this.renderer = new THREE.WebGLRenderer({
@@ -81,7 +81,7 @@ Threebox.prototype = {
 		this.scene.add(this.world);
 
 		this.objectsCache = new Map();
-
+		
 		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
 
 		//raycaster for mouse events
@@ -485,7 +485,7 @@ Threebox.prototype = {
 			cache.promise
 				.then(obj => {
 					//console.log("Cloning " + options.obj);
-					cb(obj.duplicate());
+					cb(obj.duplicate(options));
 				})
 				.catch(err => {
 					this.objectsCache.delete(options.obj);
@@ -498,7 +498,7 @@ Threebox.prototype = {
 						loader(options, cb, function (obj) {
 							//console.log("Loading " + options.obj);
 							if (obj.duplicate) {
-								resolve(obj);
+								resolve(obj.duplicate());
 							} else {
 								reject(obj);
 							}
@@ -675,43 +675,9 @@ Threebox.prototype = {
 	},
 
 	remove: function (obj) {
-		//[jscastro] remove also the label if exists dispatching the event removed to fire CSS2DRenderer "removed" listener
-		if (obj.label) { obj.label.remove() };
-		if (obj.tooltip) { obj.tooltip.remove() };
-		obj.traverse(function (o) {
-			if (o.isMesh) {
-				o.geometry.dispose();
-				if (o.material) {
-					if (o.material instanceof THREE.MeshFaceMaterial) {
-						o.material.materials.forEach(function (m) {
-							m.dispose();
-							if (m.map) {
-								m.map.dispose();
-							}
-						});
-					} else {
-						o.material.dispose();
-					}
-					let m = o.material;
-					let md = (m.map || m.alphaMap || m.aoMap || m.bumpMap || m.displacementMap || m.emissiveMap || m.envMap || m.lightMap || m.metalnessMap || m.normalMap || m.roughnessMap)
-					if (md) {
-						if (m.map) m.map.dispose();
-						if (m.alphaMap) m.alphaMap.dispose();
-						if (m.aoMap) m.aoMap.dispose();
-						if (m.bumpMap) m.bumpMap.dispose();
-						if (m.displacementMap) m.displacementMap.dispose();
-						if (m.emissiveMap) m.emissiveMap.dispose();
-						if (m.envMap) m.envMap.dispose();
-						if (m.lightMap) m.lightMap.dispose();
-						if (m.metalnessMap) m.metalnessMap.dispose();
-						if (m.normalMap) m.normalMap.dispose();
-						if (m.roughnessMap) m.roughnessMap.dispose();
-					}
-				}
-			}
-			if (o.dispose) o.dispose();
-		})
+		obj.dispose()
 		this.world.remove(obj);
+		obj = null;
 	},
 
 	//[jscastro] this clears tb.world in order to dispose properly the resources
@@ -725,7 +691,6 @@ Threebox.prototype = {
 				let obj = objects[i];
 				//if layerId, check the layer to remove, otherwise always remove
 				if ((layerId && obj.userData.feature.layer === layerId) || !layerId) {
-					if (dispose) obj.dispose();
 					this.remove(obj);
 				}
 			}
@@ -888,7 +853,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.6',
+	version: '2.0.7',
 
 }
 

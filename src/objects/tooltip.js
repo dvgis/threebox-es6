@@ -12,10 +12,9 @@ function Tooltip(obj) {
 
 		let tooltip = new CSS2D.CSS2DObject(divToolTip);
 		tooltip.visible = false;
+		tooltip.name = "tooltip";
 		var userScaleGroup = Objects.prototype._makeGroup(tooltip, obj);
 		Objects.prototype._addMethods(userScaleGroup);
-		userScaleGroup.tooltip = tooltip;
-
 		return userScaleGroup;
 	}
 

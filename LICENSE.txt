@@ -2,7 +2,7 @@ v.0.3.0
 MIT License
 Copyright (c) 2017 Peter Liu
 
-v.2.0.1 - v.2.0.6
+v.2.0.1 - v.2.0.7
 MIT License
 Copyright (c) 2020 Jesus Serrano
 

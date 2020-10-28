@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <head>
 	<meta charset="utf-8" />
 	<title>Threebox performance test</title>
@@ -64,7 +64,7 @@
 			}
 		);
 
-
+		 
 		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
 
 		map.on('style.load', function () {
@@ -106,6 +106,8 @@
 			count: 100
 		};
 
+		var model = { obj: 'models/windmill_a/windmill_a.json', type: 'gltf', scale: 0.1 };
+
 		function initMesh() {
 
 			let diff = api.count - tb.world.children.length;
@@ -116,7 +118,6 @@
 				console.time("(clear)");
 				for (let j = tb.world.children.length - 1; j >= api.count; j--) {
 					var obj = tb.world.children[j];
-					if (obj.dispose) obj.dispose();
 					tb.remove(obj);
 				}
 				getGeometryTotalLength();
@@ -126,22 +127,23 @@
 
 			} else {
 				var options = {
-					obj: 'models/windmill_a/windmill_a.json', 
-					type: 'gltf',
-					scale: 0.1,
+					obj: model.obj, 
+					type: model.type,
+					scale: model.scale,
 					units: 'meters',
 					rotation: { x: 90, y: 90, z: 0 },
 					anchor: 'center'
 				}
-				makeNaive(options, diff);
+				if (!processing) makeNaive(options, diff);
 
 			}
 
 		}
 
+		let processing = false;
 
 		function makeNaive(options, diff) {
-
+			processing = true;
 			let j = 0;
 			for (var i = 0; i < diff; i++) {
 
@@ -158,14 +160,16 @@
 					let lng = origin[0] + Math.random() * 0.4 - 0.2;
 					let lat = origin[1] + Math.random() * 0.4 - 0.2;
 					let alt = origin[2] + Math.random() * 0.4 - 0.2;
-					let pdu = model.setCoords([lng, lat, alt]);
-					tb.add(pdu);
+					let obj = model.setCoords([lng, lat, alt]);
+					tb.add(obj);
 
 					getGeometryTotalLength();
 
-					if (j == diff)
+					if (j == diff) {
 						console.timeEnd(api.method + ' (build)');
-
+						console.log("Items: " + tb.world.children.length);
+						processing = false;
+					}
 				})
 
 			}
@@ -178,7 +182,7 @@
 
 			gui = new GUI();
 			gui.add(api, 'method', Method).onChange(initMesh);
-			gui.add(api, 'count', 1, 1000).step(10).onChange(initMesh);
+			gui.add(api, 'count', 0, 1000).step(10).onChange(initMesh);
 
 			var perfFolder = gui.addFolder('Performance');
 

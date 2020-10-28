@@ -9,8 +9,8 @@ function Object3D(options) {
 	var projScaleGroup = new THREE.Group();
 	projScaleGroup.add(obj);
 	var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, options);
-
-	userScaleGroup.model = options.obj;
+	options.obj.name = "model";
+	//userScaleGroup.model = options.obj;
 
 	Objects.prototype._addMethods(userScaleGroup);
 	//[jscastro] calculate automatically the pivotal center of the object

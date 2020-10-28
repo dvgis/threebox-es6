@@ -14,7 +14,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <LastActiveSolutionConfig>Debug|Any CPU</LastActiveSolutionConfig>
     <StartWebBrowser>True</StartWebBrowser>
-    <LaunchUrl>/examples/01-basic.html</LaunchUrl>
+    <LaunchUrl>/examples/15-performance.html</LaunchUrl>
     <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
     <NodejsPort>8080</NodejsPort>
   </PropertyGroup>
@@ -64,6 +64,7 @@
     <Content Include="examples\images\logistics.png" />
     <Content Include="examples\images\mercator.png" />
     <Content Include="examples\images\object3D.png" />
+    <Content Include="examples\images\performance.png" />
     <Content Include="examples\images\raycaster.png" />
     <Content Include="examples\images\statue-of-liberty.png" />
     <Content Include="examples\images\stylechange.png" />

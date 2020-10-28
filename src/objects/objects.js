@@ -47,6 +47,21 @@ Objects.prototype = {
 
 	},
 
+	unenroll: function (obj, isStatic) {
+		var root = this;
+
+		if (isStatic) {
+
+		}
+
+		else {
+			// Bestow this mesh with animation superpowers and keeps track of its movements in the global animation queue			
+			root.animationManager.unenroll(obj);
+
+		}
+
+	},
+
 	_addMethods: function (obj, isStatic) {
 
 		var root = this;
@@ -157,24 +172,22 @@ Objects.prototype = {
 				model.position.add(point); // re-add the offset
 				model.rotateOnAxis(axis, theta)
 
-				map.repaint = true;
+				tb.map.repaint = true;
 			}
 
 			let _boundingBox;
 			//[jscastro] added property for boundingBox helper
 			Object.defineProperty(obj, 'boundingBox', {
-				get() { return _boundingBox; },
-				set(value) {
-					_boundingBox = value;
+				get() {
+					return obj.getObjectByName("BoxModel");
 				}
 			})
 
 			let _boundingBoxShadow;
 			//[jscastro] added property for boundingBox helper
 			Object.defineProperty(obj, 'boundingBoxShadow', {
-				get() { return _boundingBoxShadow; },
-				set(value) {
-					_boundingBoxShadow = value;
+				get() {
+					return obj.getObjectByName("BoxShadow");
 				}
 			})
 
@@ -190,7 +203,7 @@ Objects.prototype = {
 				boxModel.name = "BoxModel";
 				boxGrid.add(boxModel);
 				boxModel.layers.disable(0); // it makes the object invisible for the raycaster
-				obj.boundingBox = boxModel;
+				//obj.boundingBox = boxModel;
 
 				//it needs to clone, to avoid changing the object by reference
 				let bb2 = bb.clone();
@@ -201,7 +214,7 @@ Objects.prototype = {
 
 				boxGrid.add(boxShadow);
 				boxShadow.layers.disable(0); // it makes the object invisible for the raycaster
-				obj.boundingBoxShadow = boxShadow;
+				//obj.boundingBoxShadow = boxShadow;
 
 				boxGrid.visible = false; // visibility is managed from the parent
 				return boxGrid;
@@ -280,21 +293,27 @@ Objects.prototype = {
 			}
 
 			let _label;
-			//[jscastro] added property for wireframes state
+			//[jscastro] added property for simulated label
 			Object.defineProperty(obj, 'label', {
-				get() { return _label; },
-				set(value) {
-					_label = value;
-				}
+				get() { return obj.getObjectByName("label"); }
 			});
 
 			let _tooltip;
 			//[jscastro] added property for simulated tooltip
 			Object.defineProperty(obj, 'tooltip', {
-				get() { return _tooltip; },
-				set(value) {
-					_tooltip = value;
-				}
+				get() { return obj.getObjectByName("tooltip"); }
+			});
+
+			//[jscastro] added property for the internal 3D model
+			Object.defineProperty(obj, 'model', {
+				get() { return obj.getObjectByName("model"); }
+			});
+
+			let _animations;
+			//[jscastro] added property for the internal 3D model
+			Object.defineProperty(obj, 'animations', {
+				get() { return _animations},
+				set(value) { _animations = value}
 			});
 
 			//[jscastro] added property to redefine visible, including the label and tooltip
@@ -348,13 +367,14 @@ Objects.prototype = {
 				const box = obj.box3();
 				const size = box.getSize(new THREE.Vector3());
 				let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
-				if (obj.label) { obj.label.remove; obj.label = null; }
-				obj.label = new CSS2D.CSS2DObject(div);
-				obj.label.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * 0.5); //middle-centered
-				obj.label.visible = visible;
-				obj.label.alwaysVisible = visible;
+				if (obj.label) { obj.label.remove; }
+				let label = new CSS2D.CSS2DObject(div);
+				label.name = "label";
+				label.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * 0.5); //middle-centered
+				label.visible = visible;
+				label.alwaysVisible = visible;
 
-				return obj.label;
+				return label;
 			}
 
 			//[jscastro] add tooltip method 
@@ -364,12 +384,13 @@ Objects.prototype = {
 					const box = obj.box3();
 					const size = box.getSize(new THREE.Vector3());
 					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
-					if (obj.tooltip) { obj.tooltip.remove; obj.tooltip = null; }
-					obj.tooltip = new CSS2D.CSS2DObject(divToolTip);
-					obj.tooltip.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z); //top-centered
-					obj.tooltip.visible = false; //only visible on mouseover or selected
+					if (obj.tooltip) { obj.tooltip.remove; }
+					let tooltip = new CSS2D.CSS2DObject(divToolTip);
+					tooltip.name = "tooltip";
+					tooltip.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z); //top-centered
+					tooltip.visible = false; //only visible on mouseover or selected
 					//we add it to the first children to get same boxing and position
-					obj.children[0].add(obj.tooltip);
+					obj.children[0].add(tooltip);
 				}
 			}
 
@@ -535,9 +556,9 @@ Objects.prototype = {
 				if (obj.model) {
 					//let's clone the object before manipulate it
 					let dup = obj.clone(true);
-					dup.model = obj.model.clone();
+					let model = obj.model.clone();
 					//get the size of the model because the object is translated and has boundingBoxShadow
-					bounds = new THREE.Box3().setFromObject(dup.model);
+					bounds = new THREE.Box3().setFromObject(model);
 					//if the object has parent it's already in the added to world so it's scaled and it could be rotated
 					if (obj.parent) {
 						//first, we return the object to it's original position of rotation, extract rotation and apply inversed
@@ -547,7 +568,7 @@ Objects.prototype = {
 						rm.getInverse(rmi);
 						dup.setRotationFromMatrix(rmi);
 						//now the object inside will give us a NAABB Non-Axes Aligned Bounding Box 
-						bounds = new THREE.Box3().setFromObject(dup.model);
+						bounds = new THREE.Box3().setFromObject(model);
 					}
 				}
 				return bounds;
@@ -595,11 +616,9 @@ Objects.prototype = {
 		}
 
 		//[jscastro] clone + assigning all the attributes
-		obj.duplicate = function () {
-			var dupe = obj.clone(true);
-			dupe.userData = obj.userData;
-			dupe.model = dupe.children[0].children[0];
-			dupe.animations = dupe.model.animations;
+		obj.duplicate = function (options) {
+			let dupe = obj.clone(true);
+			dupe.userData = options || obj.userData;
 			root._addMethods(dupe);
 			dupe.deepCopy(obj);
 
@@ -609,40 +628,44 @@ Objects.prototype = {
 		obj.deepCopy = function (o) {
 
 			obj.anchor = o.anchor;
+			obj.none = { x: 0, y: 0, z: 0 };
+			obj.center = o.center;
 			obj.bottom = o.bottom;
 			obj.bottomLeft = o.bottomLeft;
 			obj.bottomRight = o.bottomRight;
-			obj.center = o.center;
-			obj.left = o.left;
-			obj.right = o.right;
 			obj.top = o.top;
 			obj.topLeft = o.topLeft;
 			obj.topRight = o.topRight;
-			obj.boundingBox = obj.children[0].children[1].children[0];
-			obj.boundingBoxShadow = obj.children[0].children[1].children[1];
-			obj.tooltip = obj.children[0].children[2];
+			obj.left = o.left;
+			obj.right = o.right;
 
 			return obj;
 		}
 
 		obj.dispose = function () {
-			obj.traverse(object => {
-				if (!object.isMesh) return
 
-				//console.log('dispose geometry!')
-				object.geometry.dispose()
+			Objects.prototype.unenroll(obj);
 
-				if (object.material.isMaterial) {
-					cleanMaterial(object.material)
-				} else {
-					// an array of materials
-					for (const material of object.material) cleanMaterial(material)
+			obj.traverse(o => {
+				//don't dispose th object itself as it will be recursive
+				if (o.parent && o.parent.name == "world") return;
+				if (o.isMesh) {
+					//console.log('dispose geometry!')
+					o.geometry.dispose();
+
+					if (o.material.isMaterial) {
+						cleanMaterial(o.material)
+					} else {
+						// an array of materials
+						for (const material of o.material) cleanMaterial(material)
+					}
 				}
+				if (o.dispose) o.dispose();
+
 			})
 
-			if (obj.label) { obj.label.dispose() };
-			if (obj.tooltip) { obj.tooltip.dispose() };
-			if (obj.model) { obj.model = {} };
+			obj.children = [];
+
 		}
 
 		const cleanMaterial = material => {

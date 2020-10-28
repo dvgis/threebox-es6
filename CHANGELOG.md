@@ -1,3 +1,24 @@
+## 2.0.7
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+
+- [**#54**](https://github.com/jscastro76/threebox/issues/54) vue and threebox,map not defined.
+- [**#63**](https://github.com/jscastro76/threebox/issues/63) `CSS2DObject` is not disposing properly.
+- Update example [15-performance.html](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html) to avoid dupplicated calls when dragging the count GUI control.
+
+#### :beetle: Bug fixes
+
+- [**#61**](https://github.com/jscastro76/threebox/issues/61) .userData not refreshed properly on obj.duplicate.
+- [**#62**](https://github.com/jscastro76/threebox/issues/62) Memory Leak on tb.remove(). Tested
+- [**#64**](https://github.com/jscastro76/threebox/issues/64) Cache instance of a loaded model is disposed when the world children is.
+
+<br>
+
+- - - 
+
+
 ## 2.0.6
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 

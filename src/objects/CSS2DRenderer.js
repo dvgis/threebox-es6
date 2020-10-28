@@ -16,6 +16,8 @@ THREE.CSS2DObject = function (element) {
 
 	this.dispose = function () {
 		this.remove();
+		this.element = null;
+		if (this.parent) this.parent.remove(this);
 	}
 
 	this.remove = function () {
