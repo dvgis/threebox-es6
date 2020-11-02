@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <head>
 	<meta charset="utf-8" />
 	<title>Threebox performance test</title>
@@ -182,7 +182,7 @@
 
 			gui = new GUI();
 			gui.add(api, 'method', Method).onChange(initMesh);
-			gui.add(api, 'count', 0, 1000).step(10).onChange(initMesh);
+			gui.add(api, 'count', 0, 10000).step(10).onChange(initMesh);
 
 			var perfFolder = gui.addFolder('Performance');
 
@@ -228,7 +228,7 @@
 
 			}
 
-			return total;
+			return total; 
 
 		}
 

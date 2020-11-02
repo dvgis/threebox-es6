@@ -1,30 +1,22 @@
 var Objects = require('./objects.js');
 var utils = require("../utils/utils.js");
 
-function Object3D(options) {
-	options = utils._validate(options, Objects.prototype._defaults.Object3D);
+function Object3D(opt) {
+	opt = utils._validate(opt, Objects.prototype._defaults.Object3D);
 
 	// [jscastro] full refactor of Object3D to behave exactly like 3D Models loadObj
-	var obj = options.obj;
+	var obj = opt.obj;
+	obj.name = "model";
 	var projScaleGroup = new THREE.Group();
 	projScaleGroup.add(obj);
-	var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, options);
-	options.obj.name = "model";
-	//userScaleGroup.model = options.obj;
-
+	projScaleGroup.name = "scaleGroup";
+	var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, opt);
+	opt.obj.name = "model";
 	Objects.prototype._addMethods(userScaleGroup);
 	//[jscastro] calculate automatically the pivotal center of the object
-	userScaleGroup.setAnchor(options.anchor);
+	userScaleGroup.setAnchor(opt.anchor);
 	//[jscastro] override the center calculated if the object has adjustments
-	userScaleGroup.setCenter(options.adjustment);
-
-	// [jscastro] after adding methods create the bounding box at userScaleGroup but add it to its children for positioning
-	let boxGrid = userScaleGroup.drawBoundingBox();
-	projScaleGroup.add(boxGrid);
-
-	// [jscastro] we add by default a tooltip that can be override later or hide it with threebox `enableTooltips`
-	userScaleGroup.addTooltip(userScaleGroup.uuid, true, userScaleGroup.anchor);
-
+	userScaleGroup.setCenter(opt.adjustment);
 	userScaleGroup.visibility = true;
 
 	return userScaleGroup

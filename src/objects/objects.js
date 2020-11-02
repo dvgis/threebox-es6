@@ -74,6 +74,25 @@ Objects.prototype = {
 
 			if (!obj.coordinates) obj.coordinates = [0, 0, 0];
 
+			//[jscastro] added property for the internal 3D model
+			Object.defineProperty(obj, 'model', {
+				get() {
+					return obj.getObjectByName("model");
+				}
+			});
+
+			let _animations;
+			//[jscastro] added property for the internal 3D model
+			Object.defineProperty(obj, 'animations', {
+				get() {
+					const model = obj.model;
+					if (model) {
+						return model.animations
+					} else return null;
+				},
+				//set(value) { _animations = value}
+			});
+
 			// Bestow this mesh with animation superpowers and keeps track of its movements in the global animation queue			
 			root.animationManager.enroll(obj);
 
@@ -103,7 +122,7 @@ Objects.prototype = {
 				obj.set({ position: lnglat });
 				//Each time the object is positioned, set modelHeight property and project the floor
 				obj.modelHeight = obj.coordinates[2];
-				obj.setBoundingBoxShadowFloor();
+				if (obj.boxGroup) obj.setBoundingBoxShadowFloor();
 				return obj;
 
 			}
@@ -175,19 +194,33 @@ Objects.prototype = {
 				tb.map.repaint = true;
 			}
 
-			let _boundingBox;
+
+			//[jscastro] added property for scaled group inside threeboxObject
+			Object.defineProperty(obj, 'scaleGroup', {
+				get() {
+					return obj.getObjectByName("scaleGroup");
+				}
+			})
+
+			//[jscastro] added property for boundingBox group helper
+			Object.defineProperty(obj, 'boxGroup', {
+				get() {
+					return obj.getObjectByName("boxGroup");
+				}
+			})
+
 			//[jscastro] added property for boundingBox helper
 			Object.defineProperty(obj, 'boundingBox', {
 				get() {
-					return obj.getObjectByName("BoxModel");
+					return obj.getObjectByName("boxModel");
 				}
 			})
 
 			let _boundingBoxShadow;
-			//[jscastro] added property for boundingBox helper
+			//[jscastro] added property for boundingBox shadow helper
 			Object.defineProperty(obj, 'boundingBoxShadow', {
 				get() {
-					return obj.getObjectByName("BoxShadow");
+					return obj.getObjectByName("boxShadow");
 				}
 			})
 
@@ -196,12 +229,12 @@ Objects.prototype = {
 				//let's create 2 wireframes, one for the object and one to project on the floor position
 				let bb = obj.box3();
 				//create the group to return
-				let boxGrid = new THREE.Group();
-				boxGrid.name = "BoxGrid";
-				boxGrid.updateMatrixWorld(true);
+				let boxGroup = new THREE.Group();
+				boxGroup.name = "boxGroup";
+				boxGroup.updateMatrixWorld(true);
 				let boxModel = new THREE.Box3Helper(bb, Objects.prototype._defaults.colors.yellow);
-				boxModel.name = "BoxModel";
-				boxGrid.add(boxModel);
+				boxModel.name = "boxModel";
+				boxGroup.add(boxModel);
 				boxModel.layers.disable(0); // it makes the object invisible for the raycaster
 				//obj.boundingBox = boxModel;
 
@@ -210,14 +243,15 @@ Objects.prototype = {
 				//we make the second box flat and at the floor height level
 				bb2.max.z = bb2.min.z;
 				let boxShadow = new THREE.Box3Helper(bb2, Objects.prototype._defaults.colors.black);
-				boxShadow.name = "BoxShadow";
+				boxShadow.name = "boxShadow";
 
-				boxGrid.add(boxShadow);
+				boxGroup.add(boxShadow);
 				boxShadow.layers.disable(0); // it makes the object invisible for the raycaster
 				//obj.boundingBoxShadow = boxShadow;
 
-				boxGrid.visible = false; // visibility is managed from the parent
-				return boxGrid;
+				boxGroup.visible = false; // visibility is managed from the parent
+				obj.scaleGroup.add(boxGroup);
+				obj.setBoundingBoxShadowFloor();
 			}
 
 			//[jscastro] added method to position the shadow box on the floor depending the object height
@@ -304,18 +338,6 @@ Objects.prototype = {
 				get() { return obj.getObjectByName("tooltip"); }
 			});
 
-			//[jscastro] added property for the internal 3D model
-			Object.defineProperty(obj, 'model', {
-				get() { return obj.getObjectByName("model"); }
-			});
-
-			let _animations;
-			//[jscastro] added property for the internal 3D model
-			Object.defineProperty(obj, 'animations', {
-				get() { return _animations},
-				set(value) { _animations = value}
-			});
-
 			//[jscastro] added property to redefine visible, including the label and tooltip
 			Object.defineProperty(obj, 'visibility', {
 				get() { return obj.visible; },
@@ -357,7 +379,16 @@ Objects.prototype = {
 				if (HTMLElement) {
 					//we add it to the first children to get same boxing and position
 					//obj.children[0].add(obj.drawLabel(text, height));
-					obj.children[0].add(obj.drawLabelHTML(HTMLElement, visible, center));
+					obj.scaleGroup.add(obj.drawLabelHTML(HTMLElement, visible, center));
+				}
+			}
+
+			//[jscastro] remove CSS2 label method 
+			obj.removeLabel = function () {
+				if (obj.label) {
+					obj.label.dispose();
+					let g = obj.scaleGroup.children;
+					g.splice(g.indexOf(obj.label), 1);
 				}
 			}
 
@@ -367,7 +398,7 @@ Objects.prototype = {
 				const box = obj.box3();
 				const size = box.getSize(new THREE.Vector3());
 				let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
-				if (obj.label) { obj.label.remove; }
+				obj.removeLabel();
 				let label = new CSS2D.CSS2DObject(div);
 				label.name = "label";
 				label.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * 0.5); //middle-centered
@@ -378,19 +409,29 @@ Objects.prototype = {
 			}
 
 			//[jscastro] add tooltip method 
-			obj.addTooltip = function (tooltipText, mapboxStyle = false, center = obj.anchor) {
+			obj.addTooltip = function (tooltipText, mapboxStyle = false, center = obj.anchor, custom = true) {
 				if (tooltipText) {
 					let divToolTip = root.drawTooltip(tooltipText, mapboxStyle);
 					const box = obj.box3();
 					const size = box.getSize(new THREE.Vector3());
 					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
-					if (obj.tooltip) { obj.tooltip.remove; }
+					obj.removeTooltip();
 					let tooltip = new CSS2D.CSS2DObject(divToolTip);
 					tooltip.name = "tooltip";
 					tooltip.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z); //top-centered
 					tooltip.visible = false; //only visible on mouseover or selected
+					tooltip.custom = custom;
 					//we add it to the first children to get same boxing and position
-					obj.children[0].add(tooltip);
+					obj.scaleGroup.add(tooltip);
+				}
+			}
+
+			//[jscastro] remove CSS2 tooltip method
+			obj.removeTooltip = function () {
+				if (obj.tooltip) {
+					obj.tooltip.dispose();
+					let g = obj.scaleGroup.children;
+					g.splice(g.indexOf(obj.tooltip), 1);
 				}
 			}
 
@@ -482,7 +523,7 @@ Objects.prototype = {
 				get() { return _selected; },
 				set(value) {
 					if (value) {
-						if (obj.boundingBox) {
+						if (obj.boxGroup) {
 							obj.boundingBox.material = Objects.prototype._defaults.materials.boxSelectedMaterial;
 							obj.boundingBox.parent.visible = true;
 							obj.boundingBox.layers.enable(1);
@@ -491,11 +532,12 @@ Objects.prototype = {
 						if (obj.label && !obj.label.alwaysVisible) obj.label.visible = true;
 					}
 					else {
-						if (obj.boundingBox) {
+						if (obj.boxGroup) {
 							obj.boundingBox.parent.visible = false;
 							obj.boundingBox.layers.disable(1);
 							obj.boundingBoxShadow.layers.disable(1);
 							obj.boundingBox.material = Objects.prototype._defaults.materials.boxNormalMaterial;
+							obj.remove(obj.boxGroup);
 						}
 						if (obj.label && !obj.label.alwaysVisible) obj.label.visible = false;
 					}
@@ -516,7 +558,9 @@ Objects.prototype = {
 				set(value) {
 					if (value) {
 						if (!obj.selected) {
-							if (obj.boundingBox) {
+							if (obj.userData.bbox && !obj.boundingBox) obj.drawBoundingBox();
+							if (obj.userData.tooltip && !obj.tooltip) obj.addTooltip(obj.uuid, true, obj.anchor, false);
+							if (obj.boxGroup) {
 								obj.boundingBox.material = Objects.prototype._defaults.materials.boxOverMaterial;
 								obj.boundingBox.parent.visible = true;
 								obj.boundingBox.layers.enable(1);
@@ -535,6 +579,8 @@ Objects.prototype = {
 								obj.boundingBox.layers.disable(1);
 								obj.boundingBoxShadow.layers.disable(1);
 								obj.boundingBox.material = Objects.prototype._defaults.materials.boxNormalMaterial;
+								obj.remove(obj.boxGroup);
+								if (!obj.tooltip.custom) obj.removeTooltip();
 							}
 							if (obj.label && !obj.label.alwaysVisible) { obj.label.visible = false; }
 						}
@@ -605,27 +651,66 @@ Objects.prototype = {
 		}
 
 		obj.add = function (o) {
-			obj.children[0].add(o);
+			obj.scaleGroup.add(o);
 			o.position.z = (obj.coordinates[2] ? -obj.coordinates[2] : 0);
 			return o;
 		}
 
 		obj.remove = function (o) {
-			obj.children[0].remove(o);
+			if (!o) return;
+			o.traverse(m => {
+				//console.log('dispose geometry!')
+				if (m.geometry) m.geometry.dispose();
+				if (m.material) {
+					if (m.material.isMaterial) {
+						cleanMaterial(m.material)
+					} else {
+						// an array of materials
+						for (const material of m.material) cleanMaterial(material)
+					}
+				}
+				if (m.dispose) m.dispose();
+			})
+
+			obj.scaleGroup.remove(o);
 			tb.map.repaint = true;
 		}
 
 		//[jscastro] clone + assigning all the attributes
 		obj.duplicate = function (options) {
-			let dupe = obj.clone(true);
-			dupe.userData = options || obj.userData;
-			root._addMethods(dupe);
-			dupe.deepCopy(obj);
 
-			return dupe;
+			let dupe = obj.clone(true);	//clone the whole threebox object
+			dupe.getObjectByName("model").animations = obj.animations; //we must set this explicitly before addMethods
+			if (dupe.userData.feature) dupe.userData.feature.properties.uuid = dupe.uuid;
+			root._addMethods(dupe); // add methods
+
+			if (!options || options.scale == obj.userData.scale) {
+				//no options, no changes, just return the same object
+				dupe.copyAnchor(obj); // copy anchors
+				//[jscastro] we add by default a tooltip that can be overriden later or hide it with threebox `enableTooltips`
+				return dupe;
+			} else {
+				dupe.userData = options;
+				dupe.userData.isGeoGroup = true;
+				dupe.remove(dupe.boxGroup);
+				// [jscastro] rotate and scale the model
+				const r = utils.types.rotation(options.rotation, [0, 0, 0]);
+				const s = utils.types.scale(options.scale, [1, 1, 1]);
+				// rotate and scale
+				dupe.model.rotation.set(r[0], r[1], r[2]);
+				dupe.model.scale.set(s[0], s[1], s[2]);
+				//[jscastro] calculate automatically the pivotal center of the object
+				dupe.setAnchor(options.anchor);
+				//[jscastro] override the center calculated if the object has adjustments
+				dupe.setCenter(options.adjustment);
+				return dupe;
+
+			}
+
 		}
 
-		obj.deepCopy = function (o) {
+		//[jscastro] copy anchor values
+		obj.copyAnchor = function (o) {
 
 			obj.anchor = o.anchor;
 			obj.none = { x: 0, y: 0, z: 0 };
@@ -639,7 +724,6 @@ Objects.prototype = {
 			obj.left = o.left;
 			obj.right = o.right;
 
-			return obj;
 		}
 
 		obj.dispose = function () {
@@ -649,10 +733,10 @@ Objects.prototype = {
 			obj.traverse(o => {
 				//don't dispose th object itself as it will be recursive
 				if (o.parent && o.parent.name == "world") return;
-				if (o.isMesh) {
-					//console.log('dispose geometry!')
-					o.geometry.dispose();
+				//console.log('dispose geometry!')
+				if (o.geometry) o.geometry.dispose();
 
+				if (o.material) {
 					if (o.material.isMaterial) {
 						cleanMaterial(o.material)
 					} else {
@@ -791,7 +875,9 @@ Objects.prototype = {
 			sides: 20,
 			units: 'scene',
 			material: 'MeshBasicMaterial',
-			anchor: 'bottom-left'
+			anchor: 'bottom-left',
+			bbox: false,
+			tooltip: false
 		},
 
 		label: {
@@ -816,7 +902,9 @@ Objects.prototype = {
 			sides: 6,
 			units: 'scene',
 			material: 'MeshBasicMaterial',
-			anchor: 'center'
+			anchor: 'center',
+			bbox: false,
+			tooltip: false
 		},
 
 		extrusion: {
@@ -835,13 +923,17 @@ Objects.prototype = {
 			scale: 1,
 			rotation: 0,
 			defaultAnimation: 0,
-			anchor: 'bottom-left'
+			anchor: 'bottom-left',
+			bbox: false,
+			tooltip: false
 		},
 
 		Object3D: {
 			obj: null,
 			units: 'scene',
-			anchor: 'bottom-left'
+			anchor: 'bottom-left',
+			bbox: false,
+			tooltip: false
 		}
 	},
 

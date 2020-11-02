@@ -14,7 +14,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <LastActiveSolutionConfig>Debug|Any CPU</LastActiveSolutionConfig>
     <StartWebBrowser>True</StartWebBrowser>
-    <LaunchUrl>/examples/15-performance.html</LaunchUrl>
+    <LaunchUrl>/examples/09-raycaster.html</LaunchUrl>
     <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
     <NodejsPort>8080</NodejsPort>
   </PropertyGroup>
@@ -28,7 +28,9 @@
     <Content Include="docs\EiffelShadow.gif" />
     <Content Include="docs\LabelsOnHeight.gif" />
     <Content Include="docs\MapboxShadow.gif" />
+    <Content Include="docs\performance.gif" />
     <Content Include="docs\soldieranimation.jpg" />
+    <Content Include="docs\StyleChange.gif" />
     <Content Include="docs\Wireframes.gif" />
     <Content Include="examples\01-basic.html" />
     <Content Include="examples\02-line.html" />

@@ -4,15 +4,23 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 #### :sparkles: Enhancements
 
+- [**#24**](https://github.com/jscastro76/threebox/issues/24) Refactor `obj.deepCopy`, these members must be properties found by name
 - [**#54**](https://github.com/jscastro76/threebox/issues/54) vue and threebox,map not defined.
 - [**#63**](https://github.com/jscastro76/threebox/issues/63) `CSS2DObject` is not disposing properly.
+- [**#66**](https://github.com/jscastro76/threebox/issues/66) `tb.dispose` must now call `tb.clear` and return the async value
+- [**#68**](https://github.com/jscastro76/threebox/issues/68) add new methods to remove label & tooltip
+- [**#71**](https://github.com/jscastro76/threebox/issues/71) Defer default boundingBox and tooltip creation.
 - Update example [15-performance.html](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html) to avoid dupplicated calls when dragging the count GUI control.
 
 #### :beetle: Bug fixes
-
-- [**#61**](https://github.com/jscastro76/threebox/issues/61) .userData not refreshed properly on obj.duplicate.
-- [**#62**](https://github.com/jscastro76/threebox/issues/62) Memory Leak on tb.remove(). Tested
+- [**#61**](https://github.com/jscastro76/threebox/issues/61) `.userData` not refreshed properly on `obj.duplicate`.
+- [**#62**](https://github.com/jscastro76/threebox/issues/62) Memory Leak on `tb.remove()`. Tested
 - [**#64**](https://github.com/jscastro76/threebox/issues/64) Cache instance of a loaded model is disposed when the world children is.
+- [**#65**](https://github.com/jscastro76/threebox/issues/65) addTooltip and addLabel don't remove previous objects.
+- [**#67**](https://github.com/jscastro76/threebox/issues/67) clones have `boundingBoxShadow` line in white.
+- [**#69**](https://github.com/jscastro76/threebox/issues/69) After #56 the labels and tooltips are wrongly positioned.
+- [**#70**](https://github.com/jscastro76/threebox/issues/70) After #56 object boundingBox has the original cached size.
+- [**#72**](https://github.com/jscastro76/threebox/issues/72) After #56 animations are not being cloned.
 
 <br>
 

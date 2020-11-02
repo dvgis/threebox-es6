@@ -461,7 +461,10 @@ Threebox.prototype = {
 
 	// Objects
 
-	sphere: sphere,
+	sphere: function (options) {
+		this.setDefaultView(options, this.options);
+		return sphere(options, this.world)
+	},
 
 	line: line,
 
@@ -469,16 +472,18 @@ Threebox.prototype = {
 
 	tooltip: tooltip,
 
-	tube: function (obj) {
-		return tube(obj, this.world)
+	tube: function (options) {
+		this.setDefaultView(options, this.options);
+		return tube(options, this.world)
 	},
 
-	Object3D: function (obj, o) {
-		return Object3D(obj, o)
+	Object3D: function (options, o) {
+		this.setDefaultView(options, this.options);
+		return Object3D(options, o)
 	},
 
 	loadObj: async function loadObj(options, cb) {
-
+		this.setDefaultView(options, this.options);
 		//[jscastro] new added cache for 3D Objects
 		let cache = this.objectsCache.get(options.obj);
 		if (cache) {
@@ -786,21 +791,24 @@ Threebox.prototype = {
 	//[jscastro] method to fully dispose the resources, watch out is you call this without navigating to other page
 	dispose: async function () {
 
-		console.log(window.tb.memory());
+		console.log(this.memory());
 		//console.log(window.performance.memory);
 
-		return new Promise(disposed => {
-			this.clear(null, true);
-			this.map.remove();
-			this.map = {};
-			this.scene.remove(this.world);
-			this.scene.dispose();
-			this.world.children = [];
-			this.world = null;
-			this.labelRenderer.dispose();
-			console.log(window.tb.memory());
-			this.renderer.dispose();
-			disposed('dispose finished');
+		return new Promise((resolve) => {
+			resolve(
+				this.clear(null, true).then((resolve) => {
+					this.map.remove();
+					this.map = {};
+					this.scene.remove(this.world);
+					this.scene.dispose();
+					this.world.children = [];
+					this.world = null;
+					this.labelRenderer.dispose();
+					console.log(this.memory());
+					this.renderer.dispose();
+					return resolve;
+				})
+			);
 			//console.log(window.performance.memory);
 		});
 
@@ -847,6 +855,11 @@ Threebox.prototype = {
 		this.scene.add(this.lights.hemiLight);
 		this.setSunlight();
 
+	},
+
+	setDefaultView: function (options, defOptions) {
+		options.bbox = options.bbox || defOptions.enableSelectingObjects;
+		options.tooltip = options.tooltip || defOptions.enableTooltips;
 	},
 
 	memory: function () { return this.renderer.info.memory },

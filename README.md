@@ -17,7 +17,7 @@ Current release is [**2.0.7**](https://github.com/jscastro76/threebox/releases/t
 
 ## ONLY in this Threebox fork
 
-|Models built-in & custom animations |MouseOver/Mouseout, Selected, Drag&Drop, Drag&Rotate, Wireframe 
+|Models built-in & custom animations |Mouse over/out, Selected, Drag&Drop, Drag&Rotate, Wireframe 
 |---------|-----------------------
 |<img alt="threebox" src="./docs/AnimationVideo.gif" width="100%">|<img alt="threebox" src="./docs/Wireframes.gif" width="100%" >
 
@@ -25,9 +25,13 @@ Current release is [**2.0.7**](https://github.com/jscastro76/threebox/releases/t
 |----------|-------
 |<img alt="threebox" src="./docs/LabelsOnHeight.gif" width="100%">|<img alt="threebox" src="./docs/Depth.gif" width="100%">
 
-|Models built-in shadows|Sunlight illumination for a given datetime and lnglat
+|Models built-in shadows|Optimized performance through cache
 |----------|-------
-|<img alt="threebox" src="./docs/MapboxShadow.gif" width="100%">|<img alt="threebox" src="./docs/EiffelShadow.gif" width="100%">
+|<img alt="threebox" src="./docs/MapboxShadow.gif" width="100%">|<img alt="threebox" src="./docs/Performance.gif" width="100%">
+
+|Runtime style change|Sunlight illumination for a given datetime and lnglat
+|----------|-------
+|<img alt="threebox" src="./docs/StyleChange.gif" width="100%">|<img alt="threebox" src="./docs/EiffelShadow.gif" width="100%">
 
 <br>
 

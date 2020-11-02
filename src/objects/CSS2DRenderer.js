@@ -17,19 +17,12 @@ THREE.CSS2DObject = function (element) {
 	this.dispose = function () {
 		this.remove();
 		this.element = null;
-		if (this.parent) this.parent.remove(this);
 	}
 
 	this.remove = function () {
-		this.traverse(function (object) {
-
-			if (object.element instanceof Element && object.element.parentNode !== null) {
-
-				object.element.parentNode.removeChild(object.element);
-
-			}
-
-		});
+		if (this.element instanceof Element && this.element.parentNode !== null) {
+			this.element.parentNode.removeChild(this.element);
+		}
 	}
 
 	this.addEventListener('removed', function () {

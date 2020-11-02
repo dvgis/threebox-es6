@@ -83,32 +83,20 @@ function loadObj(options, cb, promise) {
 			if (options.normalize) { normalizeSpecular(obj); }
 			obj.name = "model";
 			var projScaleGroup = new THREE.Group();
-			projScaleGroup.name = "group";
+			projScaleGroup.name = "scaleGroup";
 			projScaleGroup.add(obj)
 			var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, options);
-			userScaleGroup.name = "object";
-			//[jscastro] assign the animations to the userScaleGroup before enrolling it in AnimationsManager through _addMethods
-			userScaleGroup.animations = animations;
-
+			userScaleGroup.name = "threeboxObject";
 			Objects.prototype._addMethods(userScaleGroup);
 			//[jscastro] calculate automatically the pivotal center of the object
 			userScaleGroup.setAnchor(options.anchor);
 			//[jscastro] override the center calculated if the object has adjustments
 			userScaleGroup.setCenter(options.adjustment);
-
-			let anim = userScaleGroup.animations;
-
-			// [jscastro] after adding methods create the bounding box at userScaleGroup but add it to its children for positioning
-			let boxGrid = userScaleGroup.drawBoundingBox();
-			projScaleGroup.add(boxGrid);
-
-			//[jscastro] we add by default a tooltip that can be override later or hide it with threebox `enableTooltips`
-			userScaleGroup.addTooltip(userScaleGroup.uuid, true, userScaleGroup.anchor);
-
-			cb(userScaleGroup);
+			//[jscastro] return to cache
 			promise(userScaleGroup);
-
-			// [jscastro] initialize the default animation to avoid issues with position
+			//[jscastro] then return to the client-side callback
+			cb(userScaleGroup);
+			// [jscastro] initialize the default animation to avoid issues with skeleton position
 			userScaleGroup.idle();
 
 		}, () => (null), error => {

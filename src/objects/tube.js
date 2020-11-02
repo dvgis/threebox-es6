@@ -4,27 +4,19 @@ var Objects = require('./objects.js');
 var THREE = require("../three.js");
 var Object3D = require('./Object3D.js');
 
-function tube(obj, world){
+function tube(opt, world){
 
 	// validate and prep input geometry
-	var obj = utils._validate(obj, Objects.prototype._defaults.tube);
-    var straightProject = utils.lnglatsToWorld(obj.geometry);
-	var normalized = utils.normalizeVertices(straightProject);
-
-	var crossSection = tube.prototype.defineCrossSection(obj);
-	var vertices = tube.prototype.buildVertices(crossSection, normalized.vertices, world);
-	var geom = tube.prototype.buildFaces(vertices, normalized.vertices, obj);
-
-	var mat = material(obj);
-
-    var mesh = new THREE.Mesh( geom, mat );
-    //mesh.position.copy(normalized.position);
-
+	opt = utils._validate(opt, Objects.prototype._defaults.tube);
+    let straightProject = utils.lnglatsToWorld(opt.geometry);
+	let normalized = utils.normalizeVertices(straightProject);
+	let crossSection = tube.prototype.defineCrossSection(opt);
+	let vertices = tube.prototype.buildVertices(crossSection, normalized.vertices, world);
+	let geom = tube.prototype.buildFaces(vertices, normalized.vertices, opt);
+	let mat = material(opt);
+	let obj = new THREE.Mesh(geom, mat);
 	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
-	return new Object3D({ obj: mesh, units: obj.units, anchor: obj.anchor, adjustment: obj.adjustment });
-
-	//return mesh
-
+	return new Object3D({ obj: obj, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip });
 }
 
 tube.prototype = {

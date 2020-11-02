@@ -53,7 +53,7 @@ Sets up a threebox scene inside a [*Mapbox GL* custom layer's onAdd function](ht
 | `realSunlight`    | no       | false      | boolean | It sets lights that simulate Sun position for the map center coords (`map.getCenter`) and user local datetime (`new Date()`). This sunlight can be updated through `tb.setSunlight` method. It calls internally to suncalc module. |
 | `passiveRendering`     | no       | true   | boolean  | Color of line. Unlike other Threebox objects, this color will render on screen precisely as specified, regardless of scene lighting |
 | `enableSelectingFeatures`     | no       | false   | boolean  | Enables the Mouseover and Selection of fill-extrusion features. This will fire the event `SelectedFeatureChange` |
-| `enableSelectingObjects`     | no       | false   | boolean  | Enables the Mouseover and Selection of 3D objects. This will fire the event `SelectedChange`|
+| `enableSelectingObjects`     | no       | false   | boolean  | Enables the Mouseover and Selection of 3D objects. This will fire the event `SelectedChange`. This value will set the `options.bbx` value of the objects created.|
 | `enableDraggingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'translate'`|
 | `enableRotatingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'rotate'`|
 | `enableToltips`     | no       | false   | boolean  | Enables the default tooltips on fill-extrusion features and 3D Objects`|
@@ -682,6 +682,7 @@ Add a sphere to the map. Internally, calls `THREE.Mesh` with a `THREE.SphereGeom
 | `material`     | no       | MeshLambertMaterial   | threeMaterial  | [THREE material](https://github.com/mrdoob/three.js/tree/master/src/materials) to use. Can be invoked with a text string, or a predefined material object via THREE itself.|   
 | `anchor`     | no       | `bottom-left`   | string | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` |
 | `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
+| `bbox`     | no       | false   | boolean  | this value will define if the bounding box for overed and selected objects is shown. It's set automatically by Threebox option value `enableSelectingObjects`|
 
 <br>
 
@@ -722,6 +723,7 @@ Extrude a tube along a specific lineGeometry, with an equilateral polygon as cro
 | `opacity`     | no       | 1   | Number  | Tube opacity |                                                                                                                                                   
 | `anchor`     | no       | `bottom-left`   | string | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` |
 | `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
+| `bbox`     | no       | false   | boolean  | this value will define if the bounding box for overed and selected objects is shown. It's set automatically by Threebox option value `enableSelectingObjects`|
 
 <br>
 
@@ -739,6 +741,7 @@ Add any geometry as [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Obj
 | `units`    | no       | `scene`      | string ("scene" or "meters") | Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
 | `anchor`     | no       | `bottom-left`   | string | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` |
 | `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
+| `bbox`     | no       | false   | boolean  | this value will define if the bounding box for overed and selected objects is shown. It's set automatically by Threebox option value `enableSelectingObjects`|
 
 This method enriches the Object in the same way is done at 3D Models through `tb.loadObj`.
 
@@ -771,17 +774,26 @@ Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](
 
 #### addTooltip
 ```js
-obj.addTooltip(tooltipText [, mapboxSyle = false, center = obj.anchor])
+obj.addTooltip(tooltipText [, mapboxSyle = false, center = obj.anchor, custom = true])
 ```
 This method creates a browser-like tooltip for the object using the tooltipText. 
 If `mapboxStyle` is true, it applies the same styles the *Mapbox GL* popups.
 `center` defines the object center of position and rotation that in 3D objects is defined through `options.adjustment` param. As the tooltip is 
 calculated based on the center of the object, this value will change the position of the object.
 Its position is always relative to the object that contains it and rerendered whenever that label is visible.
+`custom` is always true, unless the tooltip is automatically generated by Threebox.
 
 Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
 
 *TODO: In next versions of Threebox, this object position will be configurable. In this versión it's positioned at the center of the object.*
+
+<br>
+
+#### copyAnchor
+```js
+obj.copyAnchor(anchor)
+```
+Copies the anchor properties, internally used in `obj.duplicate`. 
 
 <br>
 
@@ -806,8 +818,15 @@ calculated based on the center of the object, this value will change the positio
 Its position is always relative to the object that contains it and rerendered whenever that label is visible.
 Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
 
+<br/>
 
+#### duplicate
+```js
+obj.duplicate()
+```
+Returns a clone of the object. Improves around a 95% the performance when handling many identical objects, by reusing materials and geometries.
 
+<br>
 
 #### set
 ```js
@@ -1276,14 +1295,6 @@ Stops all of object's current animations.
 
 <br>
 
-
-#### duplicate
-```js
-obj.duplicate()
-```
-Returns a clone of the object. Greatly improves performance when handling many identical objects, by reusing materials and geometries.
-
-<br>
 
 - - -
 
