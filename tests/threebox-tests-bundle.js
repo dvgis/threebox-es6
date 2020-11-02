@@ -9406,7 +9406,7 @@ Threebox.prototype = {
 	// Objects
 
 	sphere: function (options) {
-		options.bbox = this.options.enableSelectingObjects;
+		this.setDefaultView(options, this.options);
 		return sphere(options, this.world)
 	},
 
@@ -9417,17 +9417,17 @@ Threebox.prototype = {
 	tooltip: tooltip,
 
 	tube: function (options) {
-		options.bbox = this.options.enableSelectingObjects;
+		this.setDefaultView(options, this.options);
 		return tube(options, this.world)
 	},
 
 	Object3D: function (options, o) {
-		options.bbox = this.options.enableSelectingObjects;
+		this.setDefaultView(options, this.options);
 		return Object3D(options, o)
 	},
 
 	loadObj: async function loadObj(options, cb) {
-		options.bbox = this.options.enableSelectingObjects;
+		this.setDefaultView(options, this.options);
 		//[jscastro] new added cache for 3D Objects
 		let cache = this.objectsCache.get(options.obj);
 		if (cache) {
@@ -9799,6 +9799,11 @@ Threebox.prototype = {
 		this.scene.add(this.lights.hemiLight);
 		this.setSunlight();
 
+	},
+
+	setDefaultView: function (options, defOptions) {
+		options.bbox = options.bbox || defOptions.enableSelectingObjects;
+		options.tooltip = options.tooltip || defOptions.enableTooltips;
 	},
 
 	memory: function () { return this.renderer.info.memory },
@@ -10712,30 +10717,22 @@ module.exports = exports = LabelRenderer;
 var Objects = require('./objects.js');
 var utils = require("../utils/utils.js");
 
-function Object3D(options) {
-	options = utils._validate(options, Objects.prototype._defaults.Object3D);
+function Object3D(opt) {
+	opt = utils._validate(opt, Objects.prototype._defaults.Object3D);
 
 	// [jscastro] full refactor of Object3D to behave exactly like 3D Models loadObj
-	var obj = options.obj;
+	var obj = opt.obj;
+	obj.name = "model";
 	var projScaleGroup = new THREE.Group();
 	projScaleGroup.add(obj);
-	var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, options);
-	options.obj.name = "model";
-	//userScaleGroup.model = options.obj;
-
+	projScaleGroup.name = "scaleGroup";
+	var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, opt);
+	opt.obj.name = "model";
 	Objects.prototype._addMethods(userScaleGroup);
 	//[jscastro] calculate automatically the pivotal center of the object
-	userScaleGroup.setAnchor(options.anchor);
+	userScaleGroup.setAnchor(opt.anchor);
 	//[jscastro] override the center calculated if the object has adjustments
-	userScaleGroup.setCenter(options.adjustment);
-
-	// [jscastro] after adding methods create the bounding box at userScaleGroup but add it to its children for positioning
-	let boxGrid = userScaleGroup.drawBoundingBox();
-	projScaleGroup.add(boxGrid);
-
-	// [jscastro] we add by default a tooltip that can be override later or hide it with threebox `enableTooltips`
-	userScaleGroup.addTooltip(userScaleGroup.uuid, true, userScaleGroup.anchor);
-
+	userScaleGroup.setCenter(opt.adjustment);
 	userScaleGroup.visibility = true;
 
 	return userScaleGroup
@@ -10904,10 +10901,9 @@ function Label(obj) {
 	label.visible = obj.alwaysVisible;
 	label.alwaysVisible = obj.alwaysVisible;
 	var projScaleGroup = new THREE.Group();
-	projScaleGroup.name = "group";
+	projScaleGroup.name = "scaleGroup";
 	projScaleGroup.add(label);
 	var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, obj);
-	userScaleGroup.name = "object";
 	Objects.prototype._addMethods(userScaleGroup);
 	userScaleGroup.visibility = obj.alwaysVisible;
 
@@ -25132,13 +25128,20 @@ Objects.prototype = {
 
 			//[jscastro] added property for the internal 3D model
 			Object.defineProperty(obj, 'model', {
-				get() { return obj.getObjectByName("model"); }
+				get() {
+					return obj.getObjectByName("model");
+				}
 			});
 
 			let _animations;
 			//[jscastro] added property for the internal 3D model
 			Object.defineProperty(obj, 'animations', {
-				get() { return obj.model.animations },
+				get() {
+					const model = obj.model;
+					if (model) {
+						return model.animations
+					} else return null;
+				},
 				//set(value) { _animations = value}
 			});
 
@@ -25299,7 +25302,8 @@ Objects.prototype = {
 				//obj.boundingBoxShadow = boxShadow;
 
 				boxGroup.visible = false; // visibility is managed from the parent
-				return boxGroup;
+				obj.scaleGroup.add(boxGroup);
+				obj.setBoundingBoxShadowFloor();
 			}
 
 			//[jscastro] added method to position the shadow box on the floor depending the object height
@@ -25427,7 +25431,7 @@ Objects.prototype = {
 				if (HTMLElement) {
 					//we add it to the first children to get same boxing and position
 					//obj.children[0].add(obj.drawLabel(text, height));
-					obj.children[0].add(obj.drawLabelHTML(HTMLElement, visible, center));
+					obj.scaleGroup.add(obj.drawLabelHTML(HTMLElement, visible, center));
 				}
 			}
 
@@ -25435,7 +25439,7 @@ Objects.prototype = {
 			obj.removeLabel = function () {
 				if (obj.label) {
 					obj.label.dispose();
-					let g = obj.children[0].children;
+					let g = obj.scaleGroup.children;
 					g.splice(g.indexOf(obj.label), 1);
 				}
 			}
@@ -25457,7 +25461,7 @@ Objects.prototype = {
 			}
 
 			//[jscastro] add tooltip method 
-			obj.addTooltip = function (tooltipText, mapboxStyle = false, center = obj.anchor) {
+			obj.addTooltip = function (tooltipText, mapboxStyle = false, center = obj.anchor, custom = true) {
 				if (tooltipText) {
 					let divToolTip = root.drawTooltip(tooltipText, mapboxStyle);
 					const box = obj.box3();
@@ -25468,8 +25472,9 @@ Objects.prototype = {
 					tooltip.name = "tooltip";
 					tooltip.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z); //top-centered
 					tooltip.visible = false; //only visible on mouseover or selected
+					tooltip.custom = custom;
 					//we add it to the first children to get same boxing and position
-					obj.children[0].add(tooltip);
+					obj.scaleGroup.add(tooltip);
 				}
 			}
 
@@ -25477,7 +25482,7 @@ Objects.prototype = {
 			obj.removeTooltip = function () {
 				if (obj.tooltip) {
 					obj.tooltip.dispose();
-					let g = obj.children[0].children;
+					let g = obj.scaleGroup.children;
 					g.splice(g.indexOf(obj.tooltip), 1);
 				}
 			}
@@ -25570,7 +25575,7 @@ Objects.prototype = {
 				get() { return _selected; },
 				set(value) {
 					if (value) {
-						if (obj.boundingBox) {
+						if (obj.boxGroup) {
 							obj.boundingBox.material = Objects.prototype._defaults.materials.boxSelectedMaterial;
 							obj.boundingBox.parent.visible = true;
 							obj.boundingBox.layers.enable(1);
@@ -25579,11 +25584,12 @@ Objects.prototype = {
 						if (obj.label && !obj.label.alwaysVisible) obj.label.visible = true;
 					}
 					else {
-						if (obj.boundingBox) {
+						if (obj.boxGroup) {
 							obj.boundingBox.parent.visible = false;
 							obj.boundingBox.layers.disable(1);
 							obj.boundingBoxShadow.layers.disable(1);
 							obj.boundingBox.material = Objects.prototype._defaults.materials.boxNormalMaterial;
+							obj.remove(obj.boxGroup);
 						}
 						if (obj.label && !obj.label.alwaysVisible) obj.label.visible = false;
 					}
@@ -25604,11 +25610,9 @@ Objects.prototype = {
 				set(value) {
 					if (value) {
 						if (!obj.selected) {
-							if (obj.userData.bbox && !obj.boundingBox) {
-								obj.scaleGroup.add(obj.drawBoundingBox());
-							}
-
-							if (obj.boundingBox) {
+							if (obj.userData.bbox && !obj.boundingBox) obj.drawBoundingBox();
+							if (obj.userData.tooltip && !obj.tooltip) obj.addTooltip(obj.uuid, true, obj.anchor, false);
+							if (obj.boxGroup) {
 								obj.boundingBox.material = Objects.prototype._defaults.materials.boxOverMaterial;
 								obj.boundingBox.parent.visible = true;
 								obj.boundingBox.layers.enable(1);
@@ -25627,7 +25631,8 @@ Objects.prototype = {
 								obj.boundingBox.layers.disable(1);
 								obj.boundingBoxShadow.layers.disable(1);
 								obj.boundingBox.material = Objects.prototype._defaults.materials.boxNormalMaterial;
-								obj.remove(obj.boundingBox);
+								obj.remove(obj.boxGroup);
+								if (!obj.tooltip.custom) obj.removeTooltip();
 							}
 							if (obj.label && !obj.label.alwaysVisible) { obj.label.visible = false; }
 						}
@@ -25923,7 +25928,8 @@ Objects.prototype = {
 			units: 'scene',
 			material: 'MeshBasicMaterial',
 			anchor: 'bottom-left',
-			bbox: false
+			bbox: false,
+			tooltip: false
 		},
 
 		label: {
@@ -25949,7 +25955,8 @@ Objects.prototype = {
 			units: 'scene',
 			material: 'MeshBasicMaterial',
 			anchor: 'center',
-			bbox: false
+			bbox: false,
+			tooltip: false
 		},
 
 		extrusion: {
@@ -25969,14 +25976,16 @@ Objects.prototype = {
 			rotation: 0,
 			defaultAnimation: 0,
 			anchor: 'bottom-left',
-			bbox: false
+			bbox: false,
+			tooltip: false
 		},
 
 		Object3D: {
 			obj: null,
 			units: 'scene',
 			anchor: 'bottom-left',
-			bbox: false
+			bbox: false,
+			tooltip: false
 		}
 	},
 
@@ -25997,12 +26006,11 @@ var Object3D = require('./Object3D.js');
 function Sphere(opt) {
 
 	opt = utils._validate(opt, Objects.prototype._defaults.sphere);
-	var geometry = new THREE.SphereBufferGeometry(opt.radius, opt.sides, opt.sides);
-	var mat = material(opt)
-	var output = new THREE.Mesh(geometry, mat);
-
+	let geometry = new THREE.SphereBufferGeometry(opt.radius, opt.sides, opt.sides);
+	let mat = material(opt)
+	let output = new THREE.Mesh(geometry, mat);
 	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
-	return new Object3D({ obj: output, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox });
+	return new Object3D({ obj: output, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip });
 
 }
 
@@ -26026,10 +26034,9 @@ function Tooltip(obj) {
 		tooltip.visible = false;
 		tooltip.name = "tooltip";
 		var projScaleGroup = new THREE.Group();
-		projScaleGroup.name = "group";
+		projScaleGroup.name = "scaleGroup";
 		projScaleGroup.add(tooltip);
 		var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, obj);
-		userScaleGroup.name = "object";
 		Objects.prototype._addMethods(userScaleGroup);
 		return userScaleGroup;
 	}
@@ -26047,24 +26054,16 @@ var Object3D = require('./Object3D.js');
 function tube(opt, world){
 
 	// validate and prep input geometry
-	var opt = utils._validate(opt, Objects.prototype._defaults.tube);
-    var straightProject = utils.lnglatsToWorld(opt.geometry);
-	var normalized = utils.normalizeVertices(straightProject);
-
-	var crossSection = tube.prototype.defineCrossSection(opt);
-	var vertices = tube.prototype.buildVertices(crossSection, normalized.vertices, world);
-	var geom = tube.prototype.buildFaces(vertices, normalized.vertices, opt);
-
-	var mat = material(opt);
-
-    var mesh = new THREE.Mesh( geom, mat );
-    //mesh.position.copy(normalized.position);
-
+	opt = utils._validate(opt, Objects.prototype._defaults.tube);
+    let straightProject = utils.lnglatsToWorld(opt.geometry);
+	let normalized = utils.normalizeVertices(straightProject);
+	let crossSection = tube.prototype.defineCrossSection(opt);
+	let vertices = tube.prototype.buildVertices(crossSection, normalized.vertices, world);
+	let geom = tube.prototype.buildFaces(vertices, normalized.vertices, opt);
+	let mat = material(opt);
+	let obj = new THREE.Mesh(geom, mat);
 	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
-	return new Object3D({ obj: mesh, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox });
-
-	//return mesh
-
+	return new Object3D({ obj: obj, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip });
 }
 
 tube.prototype = {
