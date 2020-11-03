@@ -1,17 +1,18 @@
 {
     "name": "threebox",
     "version": "2.0.7",
-    "description": "A Mapbox GL JS plugin that combines the power of the Three.js 3D library with Mapbox geospatial tools.",
+    "description": "A Three.js plugin for Mapbox GL JS, using the CustomLayerInterface feature. Provides convenient methods to manage objects in lnglat coordinates, and to synchronize the map and scene cameras.",
     "main": "main.js",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/jscastro76/threebox.git"
     },
-    "author": "@peterqliu, @kronick & @jscastro76",
+    "author": " @jscastro76, @peterqliu, @kronick",
     "license": "MIT",
     "bugs": {
         "url": "https://github.com/jscastro76/threebox/issues"
     },
+    "homepage": "https://github.com/jscastro76/threebox#readme",
     "scripts": {
         "build": "browserify -g ./node_modules/uglifyify exports.js > dist/threebox.min.js",
         "dev": "watchify exports.js --verbose -o dist/threebox.js ",
@@ -30,12 +31,16 @@
         "watchify": "^3.11.1",
         "browserify": "^16.5.1"
     },
-    "homepage": "https://github.com/jscastro76/threebox#readme",
     "directories": {
         "doc": "docs",
         "example": "examples",
         "test": "tests"
     },
     "devDependencies": {},
-    "keywords": []
+    "keywords": [
+        "three.js",
+        "mapbox",
+        "mapbox-gl-js",
+        "3D"
+    ]
 }
