@@ -2,7 +2,7 @@
  * @author jscastro / https://github.com/jscastro76
  */
 
-var THREE = require("./CSS2DRenderer.js");
+const THREE = require("./CSS2DRenderer.js");
 
 function LabelRenderer(map) {
 

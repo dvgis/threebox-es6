@@ -1,6 +1,6 @@
-var THREE = require("../three.js");
-var utils = require("../utils/utils.js");
-var Objects = require('./objects.js');
+const THREE = require("../three.js");
+const utils = require("../utils/utils.js");
+const Objects = require('./objects.js');
 
 function line(obj){
 
@@ -14,7 +14,6 @@ function line(obj){
 
 	var geometry = new THREE.LineGeometry();
 	geometry.setPositions( flattenedArray );
-	// geometry.setColors( colors );
 
 	// Material
 	matLine = new THREE.LineMaterial( {

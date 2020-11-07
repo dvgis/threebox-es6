@@ -2,14 +2,11 @@
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
  */
-
-var utils = require("../utils/utils.js");
-var material = require("../utils/material.js");
+const utils = require("../utils/utils.js");
+const material = require("../utils/material.js");
 const THREE = require('../three.js');
-
 const AnimationManager = require("../animation/AnimationManager.js");
 const CSS2D = require("./CSS2DRenderer.js");
-
 
 function Objects(){
 
@@ -733,6 +730,8 @@ Objects.prototype = {
 			obj.traverse(o => {
 				//don't dispose th object itself as it will be recursive
 				if (o.parent && o.parent.name == "world") return;
+				if (o.name === "threeboxObject") return;
+
 				//console.log('dispose geometry!')
 				if (o.geometry) o.geometry.dispose();
 
@@ -785,20 +784,22 @@ Objects.prototype = {
 	},
 
 	_makeGroup: function (obj, options) {
+		let projScaleGroup = new THREE.Group();
+		projScaleGroup.name = "scaleGroup";
+		projScaleGroup.add(obj)
+
 		var geoGroup = new THREE.Group();
 		geoGroup.userData = options || {};
 		geoGroup.userData.isGeoGroup = true;
 		if (geoGroup.userData.feature) {
 			geoGroup.userData.feature.properties.uuid = geoGroup.uuid;
 		}
-		var isArrayOfObjects = obj.length;
+		var isArrayOfObjects = projScaleGroup.length;
+		if (isArrayOfObjects) for (o of projScaleGroup) geoGroup.add(o)
+		else geoGroup.add(projScaleGroup);
 
-		if (isArrayOfObjects) for (o of obj) geoGroup.add(o)
-
-
-		else geoGroup.add(obj);
-
-		utils._flipMaterialSides(obj);
+		//utils._flipMaterialSides(projScaleGroup);
+		geoGroup.name = "threeboxObject";
 
 		return geoGroup
 	},

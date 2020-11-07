@@ -1,7 +1,9 @@
+/**
+ * @author peterqliu / https://github.com/peterqliu
+ * @author jscastro / https://github.com/jscastro76
+*/
 const THREE = require('../three.js');
-var threebox = require('../Threebox.js');
-var utils = require("../utils/utils.js");
-var validate = require("../utils/validate.js");
+const utils = require("../utils/utils.js");
 
 function AnimationManager(map) {
 
@@ -85,7 +87,7 @@ AnimationManager.prototype = {
 			//if duration is set, animate to the new state
 			if (options.duration > 0) {
 
-				var newParams = {
+				let newParams = {
 					start: Date.now(),
 					expiration: Date.now() + options.duration,
 					endState: {}
@@ -93,13 +95,13 @@ AnimationManager.prototype = {
 
 				utils.extend(options, newParams);
 
-				var translating = options.coords;
-				var rotating = options.rotation;
-				var scaling = options.scale || options.scaleX || options.scaleY || options.scaleZ;
+				let translating = options.coords;
+				let rotating = options.rotation;
+				let scaling = options.scale || options.scaleX || options.scaleY || options.scaleZ;
 
 				if (rotating) {
 
-					var r = obj.rotation;
+					let r = obj.rotation;
 					options.startRotation = [r.x, r.y, r.z];
 
 
@@ -111,7 +113,7 @@ AnimationManager.prototype = {
 				}
 
 				if (scaling) {
-					var s = obj.scale;
+					let s = obj.scale;
 					options.startScale = [s.x, s.y, s.z];
 					options.endState.scale = utils.types.scale(options.scale, options.startScale);
 
@@ -123,7 +125,7 @@ AnimationManager.prototype = {
 
 				if (translating) options.pathCurve = new THREE.CatmullRomCurve3(utils.lnglatsToWorld([obj.coordinates, options.coords]));
 
-				var entry = {
+				let entry = {
 					type: 'set',
 					parameters: options
 				}
@@ -161,7 +163,7 @@ AnimationManager.prototype = {
 
 		obj.followPath = function (options, cb) {
 
-			var entry = {
+			let entry = {
 				type: 'followPath',
 				parameters: utils._validate(options, defaults.followPath)
 			};
@@ -188,22 +190,22 @@ AnimationManager.prototype = {
 
 		obj._setObject = function (options) {
 
-			var p = options.position; // lnglat
-			var r = options.rotation; // radians
-			var s = options.scale; // 
-			var w = options.worldCoordinates; //Vector3
-			var q = options.quaternion; // [axis, angle in rads]
-			var t = options.translate; //[jscastro] lnglat + height for 3D objects
+			let p = options.position; // lnglat
+			let r = options.rotation; // radians
+			let s = options.scale; // 
+			let w = options.worldCoordinates; //Vector3
+			let q = options.quaternion; // [axis, angle in rads]
+			let t = options.translate; //[jscastro] lnglat + height for 3D objects
 
 			if (p) {
 				this.coordinates = p;
-				var c = utils.projectToWorld(p);
+				let c = utils.projectToWorld(p);
 				this.position.copy(c)
 			}
 
 			if (t) {
 				this.coordinates = [this.coordinates[0] + t[0], this.coordinates[1] + t[1], this.coordinates[2] + t[2]];
-				var c = utils.projectToWorld(t);
+				let c = utils.projectToWorld(t);
 				this.translateX(c.x);
 				this.translateY(c.y);
 				this.translateZ(c.z);
@@ -225,7 +227,7 @@ AnimationManager.prototype = {
 		obj.playDefault = function (options) {
 			if (obj.mixer && obj.hasDefaultAnimation) {
 
-				var newParams = {
+				let newParams = {
 					start: Date.now(),
 					expiration: Date.now() + options.duration,
 					endState: {}
@@ -233,7 +235,7 @@ AnimationManager.prototype = {
 
 				utils.extend(options, newParams);
 
-				var entry = {
+				let entry = {
 					type: 'playDefault',
 					parameters: options
 				};
@@ -311,25 +313,25 @@ AnimationManager.prototype = {
 
 		if (this.previousFrameTime === undefined) this.previousFrameTime = now;
 
-		var dimensions = ['X', 'Y', 'Z'];
+		let dimensions = ['X', 'Y', 'Z'];
 
 		//[jscastro] when function expires this produces an error
 		if (!this.enrolledObjects) return false;
 
 		//iterate through objects in queue. count in reverse so we can cull objects without frame shifting
-		for (var a = this.enrolledObjects.length - 1; a >= 0; a--) {
+		for (let a = this.enrolledObjects.length - 1; a >= 0; a--) {
 
-			var object = this.enrolledObjects[a];
+			let object = this.enrolledObjects[a];
 
 			if (!object.animationQueue || object.animationQueue.length === 0) continue;
 
 			//[jscastro] now multiple animations on a single object is possible
-			for (var i = object.animationQueue.length - 1; i >= 0; i--) {
+			for (let i = object.animationQueue.length - 1; i >= 0; i--) {
 
 				//focus on first item in queue
-				var item = object.animationQueue[i];
+				let item = object.animationQueue[i];
 				if (!item) continue;
-				var options = item.parameters;
+				let options = item.parameters;
 
 				// if an animation is past its expiration date, cull it
 				if (!options.expiration) {
@@ -344,7 +346,7 @@ AnimationManager.prototype = {
 				}
 
 				//if finished, jump to end state and flag animation entry for removal next time around. Execute callback if there is one
-				var expiring = now >= options.expiration;
+				let expiring = now >= options.expiration;
 
 				if (expiring) {
 					options.expiration = false;
@@ -358,11 +360,11 @@ AnimationManager.prototype = {
 
 				else {
 
-					var timeProgress = (now - options.start) / options.duration;
+					let timeProgress = (now - options.start) / options.duration;
 
 					if (item.type === 'set') {
 
-						var objectState = {};
+						let objectState = {};
 
 						if (options.pathCurve) objectState.worldCoordinates = options.pathCurve.getPoint(timeProgress);
 
@@ -383,24 +385,24 @@ AnimationManager.prototype = {
 
 					if (item.type === 'followPath') {
 
-						var position = options.pathCurve.getPointAt(timeProgress);
+						let position = options.pathCurve.getPointAt(timeProgress);
 						objectState = { worldCoordinates: position };
 
 						// if we need to track heading
 						if (options.trackHeading) {
 
-							var tangent = options.pathCurve
+							let tangent = options.pathCurve
 								.getTangentAt(timeProgress)
 								.normalize();
 
-							var axis = new THREE.Vector3(0, 0, 0);
-							var up = new THREE.Vector3(0, 1, 0);
+							let axis = new THREE.Vector3(0, 0, 0);
+							let up = new THREE.Vector3(0, 1, 0);
 
 							axis
 								.crossVectors(up, tangent)
 								.normalize();
 
-							var radians = Math.acos(up.dot(tangent));
+							let radians = Math.acos(up.dot(tangent));
 
 							objectState.quaternion = [axis, radians];
 

@@ -1,7 +1,9 @@
+/**
+ * @author jscastro / https://github.com/jscastro76
+ */
 const utils = require("../utils/utils.js");
 const Objects = require('./objects.js');
 const CSS2D = require('./CSS2DRenderer.js');
-var THREE = require("../three.js");
 
 function Label(obj) {
 
@@ -13,10 +15,7 @@ function Label(obj) {
 	label.name = "label";
 	label.visible = obj.alwaysVisible;
 	label.alwaysVisible = obj.alwaysVisible;
-	var projScaleGroup = new THREE.Group();
-	projScaleGroup.name = "scaleGroup";
-	projScaleGroup.add(label);
-	var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, obj);
+	var userScaleGroup = Objects.prototype._makeGroup(label, obj);
 	Objects.prototype._addMethods(userScaleGroup);
 	userScaleGroup.visibility = obj.alwaysVisible;
 

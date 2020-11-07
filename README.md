@@ -84,15 +84,23 @@ All the [**Threebox Documentation**](/docs/Threebox.md) has been completely upda
 - Three.r117 (already bundled into the Threebox build). If desired, other versions can be swapped in and rebuilt [here](https://github.com/jscastro76/threebox/blob/master/src/three.js), though compatibility is not guaranteed. **(WARNING: v118.3 breaks compatibility in some cases)**
 - Mapbox-gl-js v1.11.1.
 
-
 <br>
 
 - - -
 
 ## Getting started
 
-Download the bundle from [`dist/threebox.js`](dist/threebox.js) or [`dist/threebox.min.js`](dist/threebox.min.js) and add include it in a `<script>` tag on your page.
+You can use threebox in two different ways. 
 
+#### NPM install
+Add threebox to your project via npm:
+
+`npm install threebox-plugin`
+
+#### Use the bundle
+Download the bundle from [`dist/threebox.js`](dist/threebox.js) or [`dist/threebox.min.js`](dist/threebox.min.js) and include it in a `<script>` tag on your page.
+
+#### Test the samples 
 Several introductory examples are [here](https://github.com/jscastro76/threebox/tree/master/examples). To run them, create a `config.js` file with your Mapbox-gl-js access token, alongside and in the format of [the template](https://github.com/jscastro76/threebox/blob/master/examples/config_template.js).
 
 <br>
@@ -100,11 +108,16 @@ Several introductory examples are [here](https://github.com/jscastro76/threebox/
 - - -
 
 ## Contributing
+- Clone the [Github repo](https://github.com/jscastro76/threebox/).
+- Build the library with `npm run build` to get the minimized version, or `npm run dev` to get the development version and rebuild continuously as you develop. 
+- Both commands will output a bundle in [`dist/`](dist/) folder.
 
-Build the library with `npm run build`, or `npm run dev` to rebuild continuously as you develop. 
-Both commands will output a bundle in `/dist/threebox.js`.
+#### Unit tests
+Tests live [here](/tests). 
+- Build first the test bundle with `npm run test`, this will create [`tests\threebox-tests-bundle.js`](tests/threebox-tests-bundle.js)  
+- Then in your preferred browser navigate to `threebox-tests.html` and check the console for test results.
 
-### Sample to build the project in Visual Studio
+#### How to build the project in Visual Studio
 Sample to get a full build from scratch for Visual Studio:
 - Install [Node.js](https://nodejs.org/en/) 
 - Clone the repo and open a new Project using main.js
@@ -116,7 +129,5 @@ Sample to get a full build from scratch for Visual Studio:
 - execute `.npm [ProjectName] [LocalPath] install azure@4.2.3`
 - execute `.npm [ProjectName] run dev` or `.npm run build
 `
-
-Tests live [here](/tests) -- run `threebox-tests.html` and check the console for test results.
 
 

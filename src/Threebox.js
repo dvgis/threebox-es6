@@ -3,24 +3,23 @@
  * @author jscastro / https://github.com/jscastro76
  */
 
-var THREE = require("./three.js");
-var CameraSync = require("./camera/CameraSync.js");
-var utils = require("./utils/utils.js");
-var SunCalc = require("./utils/suncalc.js");
-var AnimationManager = require("./animation/AnimationManager.js");
-var ThreeboxConstants = require("./utils/constants.js");
-
-var Objects = require("./objects/objects.js");
-var material = require("./utils/material.js");
-var sphere = require("./objects/sphere.js");
-var label = require("./objects/label.js");
-var tooltip = require("./objects/tooltip.js");
-var loader = require("./objects/loadObj.js");
-var Object3D = require("./objects/Object3D.js");
-var line = require("./objects/line.js");
-var tube = require("./objects/tube.js");
-var LabelRenderer = require("./objects/LabelRenderer.js");
-var BuildingShadows = require("./objects/effects/BuildingShadows.js");
+const THREE = require("./three.js");
+const CameraSync = require("./camera/CameraSync.js");
+const utils = require("./utils/utils.js");
+const SunCalc = require("./utils/suncalc.js");
+const AnimationManager = require("./animation/AnimationManager.js");
+const ThreeboxConstants = require("./utils/constants.js");
+const Objects = require("./objects/objects.js");
+const material = require("./utils/material.js");
+const sphere = require("./objects/sphere.js");
+const label = require("./objects/label.js");
+const tooltip = require("./objects/tooltip.js");
+const loader = require("./objects/loadObj.js");
+const Object3D = require("./objects/Object3D.js");
+const line = require("./objects/line.js");
+const tube = require("./objects/tube.js");
+const LabelRenderer = require("./objects/LabelRenderer.js");
+const BuildingShadows = require("./objects/effects/BuildingShadows.js");
 
 function Threebox(map, glContext, options){
 
@@ -186,7 +185,6 @@ Threebox.prototype = {
 				}
 			}
 
-
 			function unselectObject(o) {
 				//deselect, reset and return
 				o.selected = false;
@@ -216,7 +214,7 @@ Threebox.prototype = {
 			}
 
 			map.onContextMenu = function (e) {
-				alert('contextMenu');
+				alert('contextMenu'); //TODO: implement a callback
 			}
 
 			// onclick function
@@ -460,7 +458,6 @@ Threebox.prototype = {
 	},
 
 	// Objects
-
 	sphere: function (options) {
 		this.setDefaultView(options, this.options);
 		return sphere(options, this.world)
@@ -640,8 +637,9 @@ Threebox.prototype = {
 
 	//[jscastro] mapbox setStyle removes all the layers, including custom layers, so tb.world must be cleaned up too
 	setStyle: function (styleId, options) {
-		this.map.setStyle(styleId, options);
-		this.clear(null, true);
+		this.clear().then(() => {
+			this.map.setStyle(styleId, options);
+		});
 	},
 
 	//[jscastro] method to toggle Layer visibility
@@ -680,7 +678,7 @@ Threebox.prototype = {
 	},
 
 	remove: function (obj) {
-		obj.dispose()
+		if (obj.dispose) obj.dispose();
 		this.world.remove(obj);
 		obj = null;
 	},
@@ -699,6 +697,15 @@ Threebox.prototype = {
 					this.remove(obj);
 				}
 			}
+			if (dispose) {
+				this.objectsCache.forEach((value) => {
+					value.promise.then(obj => {
+						obj.dispose();
+						obj = null;
+					})
+				})
+			}
+
 			resolve("clear");
 		});
 	},
@@ -803,6 +810,7 @@ Threebox.prototype = {
 					this.scene.dispose();
 					this.world.children = [];
 					this.world = null;
+					this.objectsCache.clear();
 					this.labelRenderer.dispose();
 					console.log(this.memory());
 					this.renderer.dispose();

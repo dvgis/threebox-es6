@@ -32,7 +32,7 @@ These are the examples included in Threebox.
 - - - -
 
 #### [06-object3d.html](https://github.com/jscastro76/threebox/blob/master/examples/06-object3d.html) 
-<img alt="threebox" src="images/object3d.png" width="50%">
+<img alt="threebox" src="images/object3D.png" width="50%">
 - This sample loads a 3D `.glb` model of a soldier. <br /><br/>
 - - - -
 

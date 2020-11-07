@@ -1,7 +1,11 @@
-var utils = require("../utils/utils.js");
-var material = require("../utils/material.js");
-var Objects = require('./objects.js');
-var Object3D = require('./Object3D.js');
+/**
+ * @author peterqliu / https://github.com/peterqliu
+ * @author jscastro / https://github.com/jscastro76
+*/
+const utils = require("../utils/utils.js");
+const material = require("../utils/material.js");
+const Objects = require('./objects.js');
+const Object3D = require('./Object3D.js');
 
 function Sphere(opt) {
 

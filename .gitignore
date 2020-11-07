@@ -10,7 +10,7 @@
 /.vs/ThreeboxSolution/v16
 /tests/node_modules
 /tests/obj/Debug
-/threebox-new.njsproj
+/ThreeboxSolution.njsproj
 /server.js
 /ThreeboxSolution.sln
 /ThreeboxSolution/

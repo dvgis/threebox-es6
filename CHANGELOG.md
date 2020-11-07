@@ -1,3 +1,26 @@
+## 2.0.8
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+
+- [**#73**](https://github.com/jscastro76/threebox/issues/73) `tb.dispose` must clean `tb.objectsCache`
+- [**#74**](https://github.com/jscastro76/threebox/issues/74) Question: Why is this library not available on npm ?
+- [**#75**](https://github.com/jscastro76/threebox/issues/75) Publish in npm 
+- [**#76**](https://github.com/jscastro76/threebox/issues/76) Refactor Objects.prototype._makeGroup
+- [**#78**](https://github.com/jscastro76/threebox/issues/78) refactor var to const and let 
+- [**#80**](https://github.com/jscastro76/threebox/issues/80) Update example [15-performance.html](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html) Add built-in animation to example 15-performance.html windmill.
+
+#### :beetle: Bug fixes
+
+- [**#77**](https://github.com/jscastro76/threebox/issues/77) example 05-logistics raises an error removing the line
+- [**#79**](https://github.com/jscastro76/threebox/issues/79) Some examples are not using `renderingMode: 3d` in the layer creation 
+
+<br>
+
+- - - 
+
+
 ## 2.0.7
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 

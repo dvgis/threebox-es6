@@ -8947,24 +8947,23 @@ function config (name) {
  * @author jscastro / https://github.com/jscastro76
  */
 
-var THREE = require("./three.js");
-var CameraSync = require("./camera/CameraSync.js");
-var utils = require("./utils/utils.js");
-var SunCalc = require("./utils/suncalc.js");
-var AnimationManager = require("./animation/AnimationManager.js");
-var ThreeboxConstants = require("./utils/constants.js");
-
-var Objects = require("./objects/objects.js");
-var material = require("./utils/material.js");
-var sphere = require("./objects/sphere.js");
-var label = require("./objects/label.js");
-var tooltip = require("./objects/tooltip.js");
-var loader = require("./objects/loadObj.js");
-var Object3D = require("./objects/Object3D.js");
-var line = require("./objects/line.js");
-var tube = require("./objects/tube.js");
-var LabelRenderer = require("./objects/LabelRenderer.js");
-var BuildingShadows = require("./objects/effects/BuildingShadows.js");
+const THREE = require("./three.js");
+const CameraSync = require("./camera/CameraSync.js");
+const utils = require("./utils/utils.js");
+const SunCalc = require("./utils/suncalc.js");
+const AnimationManager = require("./animation/AnimationManager.js");
+const ThreeboxConstants = require("./utils/constants.js");
+const Objects = require("./objects/objects.js");
+const material = require("./utils/material.js");
+const sphere = require("./objects/sphere.js");
+const label = require("./objects/label.js");
+const tooltip = require("./objects/tooltip.js");
+const loader = require("./objects/loadObj.js");
+const Object3D = require("./objects/Object3D.js");
+const line = require("./objects/line.js");
+const tube = require("./objects/tube.js");
+const LabelRenderer = require("./objects/LabelRenderer.js");
+const BuildingShadows = require("./objects/effects/BuildingShadows.js");
 
 function Threebox(map, glContext, options){
 
@@ -9130,7 +9129,6 @@ Threebox.prototype = {
 				}
 			}
 
-
 			function unselectObject(o) {
 				//deselect, reset and return
 				o.selected = false;
@@ -9160,7 +9158,7 @@ Threebox.prototype = {
 			}
 
 			map.onContextMenu = function (e) {
-				alert('contextMenu');
+				alert('contextMenu'); //TODO: implement a callback
 			}
 
 			// onclick function
@@ -9404,7 +9402,6 @@ Threebox.prototype = {
 	},
 
 	// Objects
-
 	sphere: function (options) {
 		this.setDefaultView(options, this.options);
 		return sphere(options, this.world)
@@ -9584,8 +9581,9 @@ Threebox.prototype = {
 
 	//[jscastro] mapbox setStyle removes all the layers, including custom layers, so tb.world must be cleaned up too
 	setStyle: function (styleId, options) {
-		this.map.setStyle(styleId, options);
-		this.clear(null, true);
+		this.clear().then(() => {
+			this.map.setStyle(styleId, options);
+		});
 	},
 
 	//[jscastro] method to toggle Layer visibility
@@ -9624,7 +9622,7 @@ Threebox.prototype = {
 	},
 
 	remove: function (obj) {
-		obj.dispose()
+		if (obj.dispose) obj.dispose();
 		this.world.remove(obj);
 		obj = null;
 	},
@@ -9643,6 +9641,15 @@ Threebox.prototype = {
 					this.remove(obj);
 				}
 			}
+			if (dispose) {
+				this.objectsCache.forEach((value) => {
+					value.promise.then(obj => {
+						obj.dispose();
+						obj = null;
+					})
+				})
+			}
+
 			resolve("clear");
 		});
 	},
@@ -9747,6 +9754,7 @@ Threebox.prototype = {
 					this.scene.dispose();
 					this.world.children = [];
 					this.world = null;
+					this.objectsCache.clear();
 					this.labelRenderer.dispose();
 					console.log(this.memory());
 					this.renderer.dispose();
@@ -9828,10 +9836,12 @@ module.exports = exports = Threebox;
 
 
 },{"./animation/AnimationManager.js":74,"./camera/CameraSync.js":75,"./objects/LabelRenderer.js":77,"./objects/Object3D.js":78,"./objects/effects/BuildingShadows.js":80,"./objects/label.js":81,"./objects/line.js":82,"./objects/loadObj.js":83,"./objects/objects.js":89,"./objects/sphere.js":90,"./objects/tooltip.js":91,"./objects/tube.js":92,"./three.js":93,"./utils/constants.js":94,"./utils/material.js":95,"./utils/suncalc.js":96,"./utils/utils.js":97}],74:[function(require,module,exports){
+/**
+ * @author peterqliu / https://github.com/peterqliu
+ * @author jscastro / https://github.com/jscastro76
+*/
 const THREE = require('../three.js');
-var threebox = require('../Threebox.js');
-var utils = require("../utils/utils.js");
-var validate = require("../utils/validate.js");
+const utils = require("../utils/utils.js");
 
 function AnimationManager(map) {
 
@@ -9915,7 +9925,7 @@ AnimationManager.prototype = {
 			//if duration is set, animate to the new state
 			if (options.duration > 0) {
 
-				var newParams = {
+				let newParams = {
 					start: Date.now(),
 					expiration: Date.now() + options.duration,
 					endState: {}
@@ -9923,13 +9933,13 @@ AnimationManager.prototype = {
 
 				utils.extend(options, newParams);
 
-				var translating = options.coords;
-				var rotating = options.rotation;
-				var scaling = options.scale || options.scaleX || options.scaleY || options.scaleZ;
+				let translating = options.coords;
+				let rotating = options.rotation;
+				let scaling = options.scale || options.scaleX || options.scaleY || options.scaleZ;
 
 				if (rotating) {
 
-					var r = obj.rotation;
+					let r = obj.rotation;
 					options.startRotation = [r.x, r.y, r.z];
 
 
@@ -9941,7 +9951,7 @@ AnimationManager.prototype = {
 				}
 
 				if (scaling) {
-					var s = obj.scale;
+					let s = obj.scale;
 					options.startScale = [s.x, s.y, s.z];
 					options.endState.scale = utils.types.scale(options.scale, options.startScale);
 
@@ -9953,7 +9963,7 @@ AnimationManager.prototype = {
 
 				if (translating) options.pathCurve = new THREE.CatmullRomCurve3(utils.lnglatsToWorld([obj.coordinates, options.coords]));
 
-				var entry = {
+				let entry = {
 					type: 'set',
 					parameters: options
 				}
@@ -9991,7 +10001,7 @@ AnimationManager.prototype = {
 
 		obj.followPath = function (options, cb) {
 
-			var entry = {
+			let entry = {
 				type: 'followPath',
 				parameters: utils._validate(options, defaults.followPath)
 			};
@@ -10018,22 +10028,22 @@ AnimationManager.prototype = {
 
 		obj._setObject = function (options) {
 
-			var p = options.position; // lnglat
-			var r = options.rotation; // radians
-			var s = options.scale; // 
-			var w = options.worldCoordinates; //Vector3
-			var q = options.quaternion; // [axis, angle in rads]
-			var t = options.translate; //[jscastro] lnglat + height for 3D objects
+			let p = options.position; // lnglat
+			let r = options.rotation; // radians
+			let s = options.scale; // 
+			let w = options.worldCoordinates; //Vector3
+			let q = options.quaternion; // [axis, angle in rads]
+			let t = options.translate; //[jscastro] lnglat + height for 3D objects
 
 			if (p) {
 				this.coordinates = p;
-				var c = utils.projectToWorld(p);
+				let c = utils.projectToWorld(p);
 				this.position.copy(c)
 			}
 
 			if (t) {
 				this.coordinates = [this.coordinates[0] + t[0], this.coordinates[1] + t[1], this.coordinates[2] + t[2]];
-				var c = utils.projectToWorld(t);
+				let c = utils.projectToWorld(t);
 				this.translateX(c.x);
 				this.translateY(c.y);
 				this.translateZ(c.z);
@@ -10055,7 +10065,7 @@ AnimationManager.prototype = {
 		obj.playDefault = function (options) {
 			if (obj.mixer && obj.hasDefaultAnimation) {
 
-				var newParams = {
+				let newParams = {
 					start: Date.now(),
 					expiration: Date.now() + options.duration,
 					endState: {}
@@ -10063,7 +10073,7 @@ AnimationManager.prototype = {
 
 				utils.extend(options, newParams);
 
-				var entry = {
+				let entry = {
 					type: 'playDefault',
 					parameters: options
 				};
@@ -10141,25 +10151,25 @@ AnimationManager.prototype = {
 
 		if (this.previousFrameTime === undefined) this.previousFrameTime = now;
 
-		var dimensions = ['X', 'Y', 'Z'];
+		let dimensions = ['X', 'Y', 'Z'];
 
 		//[jscastro] when function expires this produces an error
 		if (!this.enrolledObjects) return false;
 
 		//iterate through objects in queue. count in reverse so we can cull objects without frame shifting
-		for (var a = this.enrolledObjects.length - 1; a >= 0; a--) {
+		for (let a = this.enrolledObjects.length - 1; a >= 0; a--) {
 
-			var object = this.enrolledObjects[a];
+			let object = this.enrolledObjects[a];
 
 			if (!object.animationQueue || object.animationQueue.length === 0) continue;
 
 			//[jscastro] now multiple animations on a single object is possible
-			for (var i = object.animationQueue.length - 1; i >= 0; i--) {
+			for (let i = object.animationQueue.length - 1; i >= 0; i--) {
 
 				//focus on first item in queue
-				var item = object.animationQueue[i];
+				let item = object.animationQueue[i];
 				if (!item) continue;
-				var options = item.parameters;
+				let options = item.parameters;
 
 				// if an animation is past its expiration date, cull it
 				if (!options.expiration) {
@@ -10174,7 +10184,7 @@ AnimationManager.prototype = {
 				}
 
 				//if finished, jump to end state and flag animation entry for removal next time around. Execute callback if there is one
-				var expiring = now >= options.expiration;
+				let expiring = now >= options.expiration;
 
 				if (expiring) {
 					options.expiration = false;
@@ -10188,11 +10198,11 @@ AnimationManager.prototype = {
 
 				else {
 
-					var timeProgress = (now - options.start) / options.duration;
+					let timeProgress = (now - options.start) / options.duration;
 
 					if (item.type === 'set') {
 
-						var objectState = {};
+						let objectState = {};
 
 						if (options.pathCurve) objectState.worldCoordinates = options.pathCurve.getPoint(timeProgress);
 
@@ -10213,24 +10223,24 @@ AnimationManager.prototype = {
 
 					if (item.type === 'followPath') {
 
-						var position = options.pathCurve.getPointAt(timeProgress);
+						let position = options.pathCurve.getPointAt(timeProgress);
 						objectState = { worldCoordinates: position };
 
 						// if we need to track heading
 						if (options.trackHeading) {
 
-							var tangent = options.pathCurve
+							let tangent = options.pathCurve
 								.getTangentAt(timeProgress)
 								.normalize();
 
-							var axis = new THREE.Vector3(0, 0, 0);
-							var up = new THREE.Vector3(0, 1, 0);
+							let axis = new THREE.Vector3(0, 0, 0);
+							let up = new THREE.Vector3(0, 1, 0);
 
 							axis
 								.crossVectors(up, tangent)
 								.normalize();
 
-							var radians = Math.acos(up.dot(tangent));
+							let radians = Math.acos(up.dot(tangent));
 
 							objectState.quaternion = [axis, radians];
 
@@ -10267,17 +10277,21 @@ const defaults = {
     }
 }
 module.exports = exports = AnimationManager;
-},{"../Threebox.js":73,"../three.js":93,"../utils/utils.js":97,"../utils/validate.js":98}],75:[function(require,module,exports){
-var THREE = require("../three.js");
-var utils = require("../utils/utils.js");
-var ThreeboxConstants = require("../utils/constants.js");
+},{"../three.js":93,"../utils/utils.js":97}],75:[function(require,module,exports){
+/**
+ * @author peterqliu / https://github.com/peterqliu
+ * @author jscastro / https://github.com/jscastro76
+ */
+const THREE = require("../three.js");
+const utils = require("../utils/utils.js");
+const ThreeboxConstants = require("../utils/constants.js");
 
 function CameraSync(map, camera, world) {
     this.map = map;
     this.camera = camera;
     this.active = true;
 
-    this.camera.matrixAutoUpdate = false;   // We're in charge of the camera now!
+    this.camera.matrixAutoUpdate = false; // We're in charge of the camera now!
 
     // Postion and configure the world group so we can scale it appropriately when the camera zooms
     this.world = world || new THREE.Group();
@@ -10292,10 +10306,10 @@ function CameraSync(map, camera, world) {
     };
 
     // Listen for move events from the map and update the Three.js camera
-    var _this = this;
+    let _this = this; // keep the function on _this
     this.map
         .on('move', function () {
-            _this.updateCamera()
+            _this.updateCamera();
         })
         .on('resize', function () {
             _this.setupCamera();
@@ -10351,19 +10365,19 @@ CameraSync.prototype = {
 
         // Unlike the Mapbox GL JS camera, separate camera translation and rotation out into its world matrix
         // If this is applied directly to the projection matrix, it will work OK but break raycasting
-        var cameraWorldMatrix = this.calcCameraMatrix(t._pitch, t.angle);
+        let cameraWorldMatrix = this.calcCameraMatrix(t._pitch, t.angle);
         this.camera.matrixWorld.copy(cameraWorldMatrix);
 
-        var zoomPow = t.scale * this.state.worldSizeRatio;
+        let zoomPow = t.scale * this.state.worldSizeRatio;
         // Handle scaling and translation of objects in the map in the world's matrix transform, not the camera
-        var scale = new THREE.Matrix4;
-        var translateMap = new THREE.Matrix4;
-        var rotateMap = new THREE.Matrix4;
+        let scale = new THREE.Matrix4;
+        let translateMap = new THREE.Matrix4;
+        let rotateMap = new THREE.Matrix4;
 
         scale.makeScale(zoomPow, zoomPow, zoomPow);
 
-        var x = t.x || t.point.x;
-        var y = t.y || t.point.y;
+        let x = t.x || t.point.x;
+        let y = t.y || t.point.y;
         translateMap.makeTranslation(-x, y, 0);
         rotateMap.makeRotationZ(Math.PI);
 
@@ -10621,7 +10635,7 @@ module.exports = exports = { CSS2DRenderer: THREE.CSS2DRenderer, CSS2DObject: TH
  * @author jscastro / https://github.com/jscastro76
  */
 
-var THREE = require("./CSS2DRenderer.js");
+const THREE = require("./CSS2DRenderer.js");
 
 function LabelRenderer(map) {
 
@@ -10714,19 +10728,20 @@ function LabelRenderer(map) {
 
 module.exports = exports = LabelRenderer;
 },{"./CSS2DRenderer.js":76}],78:[function(require,module,exports){
-var Objects = require('./objects.js');
-var utils = require("../utils/utils.js");
+/**
+ * @author peterqliu / https://github.com/peterqliu
+ * @author jscastro / https://github.com/jscastro76
+ */
+const Objects = require('./objects.js');
+const utils = require("../utils/utils.js");
 
 function Object3D(opt) {
 	opt = utils._validate(opt, Objects.prototype._defaults.Object3D);
 
 	// [jscastro] full refactor of Object3D to behave exactly like 3D Models loadObj
-	var obj = opt.obj;
+	let obj = opt.obj;
 	obj.name = "model";
-	var projScaleGroup = new THREE.Group();
-	projScaleGroup.add(obj);
-	projScaleGroup.name = "scaleGroup";
-	var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, opt);
+	let userScaleGroup = Objects.prototype._makeGroup(obj, opt);
 	opt.obj.name = "model";
 	Objects.prototype._addMethods(userScaleGroup);
 	//[jscastro] calculate automatically the pivotal center of the object
@@ -10737,7 +10752,6 @@ function Object3D(opt) {
 
 	return userScaleGroup
 }
-
 
 module.exports = exports = Object3D;
 },{"../utils/utils.js":97,"./objects.js":89}],79:[function(require,module,exports){
@@ -10885,10 +10899,12 @@ class BuildingShadows {
 
 module.exports = exports = BuildingShadows;
 },{"../../utils/suncalc.js":96}],81:[function(require,module,exports){
+/**
+ * @author jscastro / https://github.com/jscastro76
+ */
 const utils = require("../utils/utils.js");
 const Objects = require('./objects.js');
 const CSS2D = require('./CSS2DRenderer.js');
-var THREE = require("../three.js");
 
 function Label(obj) {
 
@@ -10900,10 +10916,7 @@ function Label(obj) {
 	label.name = "label";
 	label.visible = obj.alwaysVisible;
 	label.alwaysVisible = obj.alwaysVisible;
-	var projScaleGroup = new THREE.Group();
-	projScaleGroup.name = "scaleGroup";
-	projScaleGroup.add(label);
-	var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, obj);
+	var userScaleGroup = Objects.prototype._makeGroup(label, obj);
 	Objects.prototype._addMethods(userScaleGroup);
 	userScaleGroup.visibility = obj.alwaysVisible;
 
@@ -10912,10 +10925,10 @@ function Label(obj) {
 
 
 module.exports = exports = Label;
-},{"../three.js":93,"../utils/utils.js":97,"./CSS2DRenderer.js":76,"./objects.js":89}],82:[function(require,module,exports){
-var THREE = require("../three.js");
-var utils = require("../utils/utils.js");
-var Objects = require('./objects.js');
+},{"../utils/utils.js":97,"./CSS2DRenderer.js":76,"./objects.js":89}],82:[function(require,module,exports){
+const THREE = require("../three.js");
+const utils = require("../utils/utils.js");
+const Objects = require('./objects.js');
 
 function line(obj){
 
@@ -10929,7 +10942,6 @@ function line(obj){
 
 	var geometry = new THREE.LineGeometry();
 	geometry.setPositions( flattenedArray );
-	// geometry.setColors( colors );
 
 	// Material
 	matLine = new THREE.LineMaterial( {
@@ -11908,8 +11920,12 @@ THREE.Wireframe.prototype = Object.assign( Object.create( THREE.Mesh.prototype )
 } );
 
 },{"../three.js":93,"../utils/utils.js":97,"./objects.js":89}],83:[function(require,module,exports){
-var utils = require("../utils/utils.js");
-var Objects = require('./objects.js');
+/**
+ * @author peterqliu / https://github.com/peterqliu
+ * @author jscastro / https://github.com/jscastro76
+ */
+const utils = require("../utils/utils.js");
+const Objects = require('./objects.js');
 const OBJLoader = require("./loaders/OBJLoader.js");
 const MTLLoader = require("./loaders/MTLLoader.js");
 const FBXLoader = require("./loaders/FBXLoader.js");
@@ -11924,15 +11940,11 @@ const daeLoader = new ColladaLoader();
 function loadObj(options, cb, promise) {
 
 	if (options === undefined) return console.error("Invalid options provided to loadObj()");
-
 	options = utils._validate(options, Objects.prototype._defaults.loadObj);
-
 	this.loaded = false;
 
-	//console.time('loadObj Start ');
 	const modelComplete = (m) => {
 		console.log("Model complete!", m);
-
 		if (--remaining === 0) this.loaded = true;
 	}
 	var loader;
@@ -11985,18 +11997,14 @@ function loadObj(options, cb, promise) {
 			}
 			obj.animations = animations;
 			// [jscastro] options.rotation was wrongly used
-			var r = utils.types.rotation(options.rotation, [0, 0, 0]);
-			var s = utils.types.scale(options.scale, [1, 1, 1]);
+			const r = utils.types.rotation(options.rotation, [0, 0, 0]);
+			const s = utils.types.scale(options.scale, [1, 1, 1]);
 			obj.rotation.set(r[0], r[1], r[2]);
 			obj.scale.set(s[0], s[1], s[2]);
 			// [jscastro] normalize specular/metalness/shininess from meshes in FBX and GLB model as it would need 5 lights to illuminate them properly
 			if (options.normalize) { normalizeSpecular(obj); }
 			obj.name = "model";
-			var projScaleGroup = new THREE.Group();
-			projScaleGroup.name = "scaleGroup";
-			projScaleGroup.add(obj)
-			var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, options);
-			userScaleGroup.name = "threeboxObject";
+			let userScaleGroup = Objects.prototype._makeGroup(obj, options);
 			Objects.prototype._addMethods(userScaleGroup);
 			//[jscastro] calculate automatically the pivotal center of the object
 			userScaleGroup.setAnchor(options.anchor);
@@ -25054,14 +25062,11 @@ module.exports = exports = THREE.OBJLoader;
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
  */
-
-var utils = require("../utils/utils.js");
-var material = require("../utils/material.js");
+const utils = require("../utils/utils.js");
+const material = require("../utils/material.js");
 const THREE = require('../three.js');
-
 const AnimationManager = require("../animation/AnimationManager.js");
 const CSS2D = require("./CSS2DRenderer.js");
-
 
 function Objects(){
 
@@ -25785,6 +25790,8 @@ Objects.prototype = {
 			obj.traverse(o => {
 				//don't dispose th object itself as it will be recursive
 				if (o.parent && o.parent.name == "world") return;
+				if (o.name === "threeboxObject") return;
+
 				//console.log('dispose geometry!')
 				if (o.geometry) o.geometry.dispose();
 
@@ -25837,20 +25844,22 @@ Objects.prototype = {
 	},
 
 	_makeGroup: function (obj, options) {
+		let projScaleGroup = new THREE.Group();
+		projScaleGroup.name = "scaleGroup";
+		projScaleGroup.add(obj)
+
 		var geoGroup = new THREE.Group();
 		geoGroup.userData = options || {};
 		geoGroup.userData.isGeoGroup = true;
 		if (geoGroup.userData.feature) {
 			geoGroup.userData.feature.properties.uuid = geoGroup.uuid;
 		}
-		var isArrayOfObjects = obj.length;
+		var isArrayOfObjects = projScaleGroup.length;
+		if (isArrayOfObjects) for (o of projScaleGroup) geoGroup.add(o)
+		else geoGroup.add(projScaleGroup);
 
-		if (isArrayOfObjects) for (o of obj) geoGroup.add(o)
-
-
-		else geoGroup.add(obj);
-
-		utils._flipMaterialSides(obj);
+		//utils._flipMaterialSides(projScaleGroup);
+		geoGroup.name = "threeboxObject";
 
 		return geoGroup
 	},
@@ -25998,10 +26007,14 @@ Objects.prototype = {
 
 module.exports = exports = Objects;
 },{"../animation/AnimationManager.js":74,"../three.js":93,"../utils/material.js":95,"../utils/utils.js":97,"./CSS2DRenderer.js":76}],90:[function(require,module,exports){
-var utils = require("../utils/utils.js");
-var material = require("../utils/material.js");
-var Objects = require('./objects.js');
-var Object3D = require('./Object3D.js');
+/**
+ * @author peterqliu / https://github.com/peterqliu
+ * @author jscastro / https://github.com/jscastro76
+*/
+const utils = require("../utils/utils.js");
+const material = require("../utils/material.js");
+const Objects = require('./objects.js');
+const Object3D = require('./Object3D.js');
 
 function Sphere(opt) {
 
@@ -26033,10 +26046,7 @@ function Tooltip(obj) {
 		let tooltip = new CSS2D.CSS2DObject(divToolTip);
 		tooltip.visible = false;
 		tooltip.name = "tooltip";
-		var projScaleGroup = new THREE.Group();
-		projScaleGroup.name = "scaleGroup";
-		projScaleGroup.add(tooltip);
-		var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, obj);
+		var userScaleGroup = Objects.prototype._makeGroup(tooltip, obj);
 		Objects.prototype._addMethods(userScaleGroup);
 		return userScaleGroup;
 	}
@@ -26045,11 +26055,15 @@ function Tooltip(obj) {
 
 module.exports = exports = Tooltip;
 },{"../three.js":93,"../utils/utils.js":97,"./CSS2DRenderer.js":76,"./objects.js":89}],92:[function(require,module,exports){
-var utils = require("../utils/utils.js");
-var material = require("../utils/material.js");
-var Objects = require('./objects.js');
-var THREE = require("../three.js");
-var Object3D = require('./Object3D.js');
+/**
+ * @author peterqliu / https://github.com/peterqliu
+ * @author jscastro / https://github.com/jscastro76
+*/
+const utils = require("../utils/utils.js");
+const material = require("../utils/material.js");
+const Objects = require('./objects.js');
+const THREE = require("../three.js");
+const Object3D = require('./Object3D.js');
 
 function tube(opt, world){
 
@@ -26128,7 +26142,7 @@ tube.prototype = {
 			// if first point in input line, rotate and translate it to position
 			if (!lastElbow) {
 
-				var elbow = crossSection.clone();
+				let elbow = crossSection.clone();
 
 				elbow
 					.lookAt(midpointToLookAt)
@@ -26144,16 +26158,16 @@ tube.prototype = {
 
 			else {
 
-				var elbow = [];
+				let elbow = [];
 				plane.position.copy(lineVertex);
 				plane.lookAt(midpointToLookAt.clone().add(lineVertex));
 				plane.updateMatrixWorld();
 
 				lastElbow.forEach(function(v3){
 
-					var raycaster = new THREE.Raycaster(v3, humerus);
+					let raycaster = new THREE.Raycaster(v3, humerus);
 
-					var intersection = raycaster
+					let intersection = raycaster
 						.intersectObject(plane)[0];
 
 					if (intersection) {
@@ -26175,13 +26189,13 @@ tube.prototype = {
 	},
 
 	defineCrossSection: function(obj){
-        var crossSection = new THREE.Geometry();
-        var count = obj.sides;
+        let crossSection = new THREE.Geometry();
+        let count = obj.sides;
 
-        for ( var i = 0; i < count; i ++ ) {
+        for ( let i = 0; i < count; i ++ ) {
 
-            var l = obj.radius;
-            var a = (i+0.5) / count * Math.PI;
+            let l = obj.radius;
+            let a = (i+0.5) / count * Math.PI;
 
             crossSection.vertices.push( 
             	new THREE.Vector3 ( 
@@ -26200,40 +26214,40 @@ tube.prototype = {
 
 	buildFaces: function(geom, spine, obj){
 
-		for (var i in spine) {
+		for (let i in spine) {
 
 			i = parseFloat(i);
-			var vertex = spine[i];
+			let vertex = spine[i];
 
 			if (i < spine.length - 1) {
 
-				for (var p = 0; p < obj.sides; p++) {
+				for (let p = 0; p < obj.sides; p++) {
 
-					var b1 = i * obj.sides + p;
-					var b2 = i * obj.sides + (p+1) % obj.sides
-					var t1 = b1 + obj.sides
-					var t2 = b2 + obj.sides;
+					let b1 = i * obj.sides + p;
+					let b2 = i * obj.sides + (p+1) % obj.sides
+					let t1 = b1 + obj.sides
+					let t2 = b2 + obj.sides;
 
-					var triangle1 = new THREE.Face3(t1, b1, b2);
-					var triangle2 = new THREE.Face3(t1, b2, t2);
+					let triangle1 = new THREE.Face3(t1, b1, b2);
+					let triangle2 = new THREE.Face3(t1, b2, t2);
 					geom.faces.push(triangle1, triangle2)
 				}				
 			}
 		}
 
 		//add endcaps
-		var v = geom.vertices.length;
+		let v = geom.vertices.length;
 
-		for (var c = 0; c+2<obj.sides; c++) {
-			var tri1 = new THREE.Face3(0, c+2, c+1);
-			var tri2 = new THREE.Face3(v-1, v-1-(c+2), v-1-(c+1))
+		for (let c = 0; c+2<obj.sides; c++) {
+			let tri1 = new THREE.Face3(0, c+2, c+1);
+			let tri2 = new THREE.Face3(v-1, v-1-(c+2), v-1-(c+1))
 			geom.faces.push(tri1, tri2)
 		}
 
 		//compute normals to get shading to work properly
 		geom.computeFaceNormals();
 
-		var bufferGeom = new THREE.BufferGeometry().fromGeometry(geom);
+		let bufferGeom = new THREE.BufferGeometry().fromGeometry(geom);
 		return geom
 	}
 }

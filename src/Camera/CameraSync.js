@@ -1,13 +1,17 @@
-var THREE = require("../three.js");
-var utils = require("../utils/utils.js");
-var ThreeboxConstants = require("../utils/constants.js");
+/**
+ * @author peterqliu / https://github.com/peterqliu
+ * @author jscastro / https://github.com/jscastro76
+ */
+const THREE = require("../three.js");
+const utils = require("../utils/utils.js");
+const ThreeboxConstants = require("../utils/constants.js");
 
 function CameraSync(map, camera, world) {
     this.map = map;
     this.camera = camera;
     this.active = true;
 
-    this.camera.matrixAutoUpdate = false;   // We're in charge of the camera now!
+    this.camera.matrixAutoUpdate = false; // We're in charge of the camera now!
 
     // Postion and configure the world group so we can scale it appropriately when the camera zooms
     this.world = world || new THREE.Group();
@@ -22,10 +26,10 @@ function CameraSync(map, camera, world) {
     };
 
     // Listen for move events from the map and update the Three.js camera
-    var _this = this;
+    let _this = this; // keep the function on _this
     this.map
         .on('move', function () {
-            _this.updateCamera()
+            _this.updateCamera();
         })
         .on('resize', function () {
             _this.setupCamera();
@@ -81,19 +85,19 @@ CameraSync.prototype = {
 
         // Unlike the Mapbox GL JS camera, separate camera translation and rotation out into its world matrix
         // If this is applied directly to the projection matrix, it will work OK but break raycasting
-        var cameraWorldMatrix = this.calcCameraMatrix(t._pitch, t.angle);
+        let cameraWorldMatrix = this.calcCameraMatrix(t._pitch, t.angle);
         this.camera.matrixWorld.copy(cameraWorldMatrix);
 
-        var zoomPow = t.scale * this.state.worldSizeRatio;
+        let zoomPow = t.scale * this.state.worldSizeRatio;
         // Handle scaling and translation of objects in the map in the world's matrix transform, not the camera
-        var scale = new THREE.Matrix4;
-        var translateMap = new THREE.Matrix4;
-        var rotateMap = new THREE.Matrix4;
+        let scale = new THREE.Matrix4;
+        let translateMap = new THREE.Matrix4;
+        let rotateMap = new THREE.Matrix4;
 
         scale.makeScale(zoomPow, zoomPow, zoomPow);
 
-        var x = t.x || t.point.x;
-        var y = t.y || t.point.y;
+        let x = t.x || t.point.x;
+        let y = t.y || t.point.y;
         translateMap.makeTranslation(-x, y, 0);
         rotateMap.makeRotationZ(Math.PI);
 

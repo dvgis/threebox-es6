@@ -1,16 +1,17 @@
-var Objects = require('./objects.js');
-var utils = require("../utils/utils.js");
+/**
+ * @author peterqliu / https://github.com/peterqliu
+ * @author jscastro / https://github.com/jscastro76
+ */
+const Objects = require('./objects.js');
+const utils = require("../utils/utils.js");
 
 function Object3D(opt) {
 	opt = utils._validate(opt, Objects.prototype._defaults.Object3D);
 
 	// [jscastro] full refactor of Object3D to behave exactly like 3D Models loadObj
-	var obj = opt.obj;
+	let obj = opt.obj;
 	obj.name = "model";
-	var projScaleGroup = new THREE.Group();
-	projScaleGroup.add(obj);
-	projScaleGroup.name = "scaleGroup";
-	var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, opt);
+	let userScaleGroup = Objects.prototype._makeGroup(obj, opt);
 	opt.obj.name = "model";
 	Objects.prototype._addMethods(userScaleGroup);
 	//[jscastro] calculate automatically the pivotal center of the object
@@ -21,6 +22,5 @@ function Object3D(opt) {
 
 	return userScaleGroup
 }
-
 
 module.exports = exports = Object3D;

@@ -76,6 +76,7 @@
 			map.addLayer({
 				id: 'custom_layer',
 				type: 'custom',
+				renderingMode: '3d',
 				onAdd: function (map, mbxContext) {
 					init();
 					initMesh();
@@ -96,14 +97,13 @@
 
 		// gui
 		var Method = {
-			INSTANCED: 'INSTANCED',
-			MERGED: 'MERGED',
-			NAIVE: 'NAIVE'
+			CLONED: 'CLONED'
 		};
 
 		var api = {
-			method: Method.NAIVE,
-			count: 100
+			method: Method.CLONED,
+			count: 100,
+			animation: true
 		};
 
 		var model = { obj: 'models/windmill_a/windmill_a.json', type: 'gltf', scale: 0.1 };
@@ -163,6 +163,12 @@
 					let obj = model.setCoords([lng, lat, alt]);
 					tb.add(obj);
 
+					if (api.animation) {
+						// play default animation, for 10 seconds
+						let opt = { animation: 0, duration: 10000 };
+						obj.playDefault(opt);
+					}
+
 					getGeometryTotalLength();
 
 					if (j == diff) {
@@ -183,6 +189,7 @@
 			gui = new GUI();
 			gui.add(api, 'method', Method).onChange(initMesh);
 			gui.add(api, 'count', 0, 10000).step(10).onChange(initMesh);
+			gui.add(api, 'animation').name('animation');
 
 			var perfFolder = gui.addFolder('Performance');
 
