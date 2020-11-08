@@ -140,10 +140,10 @@ Threebox.prototype = {
 			// Return the xy coordinates of the mouse position
 			function mousePos(e) {
 				var rect = canvas.getBoundingClientRect();
-				return new mapboxgl.Point(
-					e.originalEvent.clientX - rect.left - canvas.clientLeft,
-					e.originalEvent.clientY - rect.top - canvas.clientTop
-				);
+				return {
+					x: e.originalEvent.clientX - rect.left - canvas.clientLeft,
+					y: e.originalEvent.clientY - rect.top - canvas.clientTop
+				};
 			}
 
 			function unselectFeature(f, map) {
@@ -874,7 +874,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.7',
+	version: '2.0.8',
 
 }
 

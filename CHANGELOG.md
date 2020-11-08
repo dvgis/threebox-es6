@@ -13,6 +13,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 #### :beetle: Bug fixes
 
+- [**#42**](https://github.com/jscastro76/threebox/issues/77) Angular and Threebox. Solved an issue using a `mapboxgl.Point`line
 - [**#77**](https://github.com/jscastro76/threebox/issues/77) example 05-logistics raises an error removing the line
 - [**#79**](https://github.com/jscastro76/threebox/issues/79) Some examples are not using `renderingMode: 3d` in the layer creation 
 

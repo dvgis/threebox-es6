@@ -11,6 +11,10 @@ A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://d
 
 Current release is [**2.0.7**](https://github.com/jscastro76/threebox/releases/tag/v.2.0.7), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#207) for more details.
 
+Threebox is available as an [nmp package](https://www.npmjs.com/package/threebox-plugin)
+```js
+npm i threebox-plugin
+```
 <br>
 
 - - -
@@ -93,7 +97,7 @@ All the [**Threebox Documentation**](/docs/Threebox.md) has been completely upda
 You can use threebox in two different ways. 
 
 #### NPM install
-Add threebox to your project via npm:
+Add threebox to your project via [npm package](https://www.npmjs.com/package/threebox-plugin):
 
 `npm install threebox-plugin`
 
