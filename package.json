@@ -22,7 +22,7 @@
     },
     "dependencies": {
         "@turf/turf": "^5.1.6",
-        "browserify": "^16.5.1",
+        "browserify": "^16.5.2",
         "help": "^3.0.2",
         "tape": "^4.13.3",
         "turf": "^3.0.14",
