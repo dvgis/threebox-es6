@@ -67,8 +67,14 @@
 		let point = mapConfig.NYC;
 		let hour = document.getElementById("hour");
 
+		let styles = {
+			day: 'streets-v11',
+			night: 'dark-v10'
+		}
+		let selectedStyle = styles.day;
+
 		var map = new mapboxgl.Map({
-			style: 'mapbox://styles/mapbox/streets-v11',
+			style: 'mapbox://styles/mapbox/' + selectedStyle, //'mapbox://styles/mapbox/streets-v11',
 			center: point.center,
 			zoom: point.zoom,
 			pitch: point.pitch,
@@ -131,6 +137,7 @@
 			tb.setSunlight(date);
 			let dateTZ = dateToTimezone(date, point.timezone);
 			hour.innerHTML = "Sunlight on date/time: " + dateTZ.toLocaleString();
+			changeStyleWithDaylight(date, point.center);
 		})
 
 		let loaded = false;
@@ -145,6 +152,23 @@
 				loaded = true;
 			}
 		})
+
+		function changeStyleWithDaylight(date, origin) {
+			let sunTimes = tb.getSunTimes(date, origin);
+			if (date >= sunTimes.sunriseEnd && date <= sunTimes.sunsetStart) {
+				if (selectedStyle != styles.day) {
+					console.log("it's day");
+					tb.setStyle("mapbox://styles/mapbox/" + styles.day);
+					selectedStyle = styles.day;
+				}
+			} else {
+				if (selectedStyle != styles.night) {
+					console.log("it's night");
+					tb.setStyle("mapbox://styles/mapbox/" + styles.night);
+					selectedStyle = styles.night;
+				}
+			}
+		}
 
 	</script>
 </body>

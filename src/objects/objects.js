@@ -678,10 +678,13 @@ Objects.prototype = {
 
 			let dupe = obj.clone(true);	//clone the whole threebox object
 			dupe.getObjectByName("model").animations = obj.animations; //we must set this explicitly before addMethods
-			if (dupe.userData.feature) dupe.userData.feature.properties.uuid = dupe.uuid;
+			if (dupe.userData.feature) {
+				if (options && options.feature) dupe.userData.feature = options.feature;
+				dupe.userData.feature.properties.uuid = dupe.uuid;
+			}
 			root._addMethods(dupe); // add methods
 
-			if (!options || options.scale == obj.userData.scale) {
+			if (!options || utils.equal(options.scale, obj.userData.scale)) {
 				//no options, no changes, just return the same object
 				dupe.copyAnchor(obj); // copy anchors
 				//[jscastro] we add by default a tooltip that can be overriden later or hide it with threebox `enableTooltips`
@@ -885,8 +888,7 @@ Objects.prototype = {
 			htmlElement: null,
 			cssClass: " label3D",
 			alwaysVisible: false,
-			topMargin: -0.5,
-			feature: null
+			topMargin: -0.5
 		},
 
 		tooltip: {

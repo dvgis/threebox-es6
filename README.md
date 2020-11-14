@@ -9,7 +9,7 @@ A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://d
 - - -
 ## Current release
 
-Current release is [**2.0.7**](https://github.com/jscastro76/threebox/releases/tag/v.2.0.7), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#207) for more details.
+Current release is [**2.0.8**](https://github.com/jscastro76/threebox/releases/tag/v.2.0.8), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#208) for more details.
 
 Threebox is available as an [nmp package](https://www.npmjs.com/package/threebox-plugin)
 ```js
@@ -43,26 +43,25 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Update to Three.js v117.
 - Update to Mapbox-gl-js v1.11.1.
 - [15 examples](https://github.com/jscastro76/threebox/tree/master/examples) with new features.
-- Support for multiple format objects (FBX, GLTF/GLB, Collada + OBJ/MTL).
+- Support for multiple 3D format objects (FBX, GLTF/GLB, Collada, OBJ/MTL).
 - Support for CSS2D labels supporting rich HTML controls through a new LabelManager.
 - Support for CSS2D tooltips/title browser-like and mapbox-like.
-- Support for Objects3D auto-centering, bounding box and floor projection.
 - Support for built-in shadows and real Sun light positioning for a given datetime and lnglat coords.
-- Support for built-in Raycaster in loaded Objects3D and fill-extrusions together.
+- Support for built-in Raycaster in loaded Object3D and fill-extrusions together.
 - Support for built-in MouseOver/Mouseout, Selected, Drag&Drop, Drag&Rotate, Wireframe in loadedObjects including events.
-- Support for GeoJson standard features format import and export in different layers.
-- Support for Objects3D embedded animations, and combined animations on AnimationManager (i.e. translate + embedded).
+- Support for [GeoJson](https://geojson.org/) standard features format import and export in different layers.
+- Support for Object3D embedded animations, and combined animations on AnimationManager (i.e. translate + embedded).
 - Support for multi-floor design of spaces.
-- Support for style change through `setStyle` and keeping 3D models.
 - Support for Non-AABB Non Axes Aligned Bounding Box and real model size. 
-- Support for wireframing on Objects3D, removing them from the raycast.
+- Support for wireframing on Object3D, removing them from the raycast.
 - Support for `setLayerZoomRange` and `setLayoutProperty` on Custom Layers (not available in Mapbox).
-- Support for `removeLayer` considering 3D objects.
+- Support for `removeLayer` considering Object3D.
+- Support for style change through `setStyle` and keeping Object3D.
 - Support for partial and full dispose of Mapbox, Three and Threebox resources and memory.
+- Support for Object3D auto-centering, bounding box and floor projection.
 - Optimization for loading thousands of objects through cache.
 - Optimization of Camera perspective to have Raycast with pixel-precision level.
-- Adjusted positioning for Objects3D to set center and rotation axes by config.
-- Check out [v2.0.7 change log](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#207) for more detail.
+- Check out [v2.0.7 change log](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#208) for more detail.
 
 <br>
 

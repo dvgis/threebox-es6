@@ -269,6 +269,21 @@ This method can be used for both a Poligon feature for a Fill Extrusion or a Poi
 
 <br>
 
+#### getSunPosition 
+```js
+tb.getSunPosition(date, coords)
+```
+This method gets Sun light position (azimuth, altitude) based on `suncalc.js.` module which calculates the sun position for a given date, time, lng, lat combination. 
+
+<br>
+
+#### getSunTimes 
+```js
+tb.getSunTimes(date, coords)
+```
+This method gets Sun times based on `suncalc.js.` module which calculates the times for the different light phases (sunrise, sunset, etc..) from a given datetime, lng, lat and alt. This is used to change the map style based on day/night hour.
+<br>
+
 
 #### loadObj
 ```js
@@ -452,8 +467,6 @@ model/gltf+json gltf
 model/gltf-binary glb
 application/octet-stream fbx
 ```
-
-
 
 <br>
 

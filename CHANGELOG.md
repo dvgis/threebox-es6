@@ -4,18 +4,23 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 #### :sparkles: Enhancements
 
-- [**#73**](https://github.com/jscastro76/threebox/issues/73) `tb.dispose` must clean `tb.objectsCache`
-- [**#74**](https://github.com/jscastro76/threebox/issues/74) Question: Why is this library not available on npm ?
-- [**#75**](https://github.com/jscastro76/threebox/issues/75) Publish in npm 
-- [**#76**](https://github.com/jscastro76/threebox/issues/76) Refactor Objects.prototype._makeGroup
-- [**#78**](https://github.com/jscastro76/threebox/issues/78) refactor var to const and let 
-- [**#80**](https://github.com/jscastro76/threebox/issues/80) Update example [15-performance.html](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html) Add built-in animation to example 15-performance.html windmill.
+- #73 `tb.dispose` must clean `tb.objectsCache`
+- #74 Question: Why is this library not available on npm ?
+- #75 Publish in npm 
+- #76 Refactor Objects.prototype._makeGroup
+- #78 refactor var to const and let 
+- #80 Update example [15-performance.html](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html) Add built-in animation to example 15-performance.html windmill.
+- #82 Add a method `tb.getSunTimes`
+- #85 We need an object compare method
+- #87 Change `tb.getSunPosition` to accept lnglat coords instead of two params 
+- #88 Add night style change in 12-add3dmodel.html and 13-eiffel.html examples during night hours 
 
 #### :beetle: Bug fixes
 
-- [**#42**](https://github.com/jscastro76/threebox/issues/77) Angular and Threebox. Solved an issue using a `mapboxgl.Point`line
-- [**#77**](https://github.com/jscastro76/threebox/issues/77) example 05-logistics raises an error removing the line
-- [**#79**](https://github.com/jscastro76/threebox/issues/79) Some examples are not using `renderingMode: 3d` in the layer creation 
+- #42 Angular and Threebox. Solved an issue using a `mapboxgl.Point`line
+- #77 example 05-logistics raises an error removing the line
+- #79 Some examples are not using `renderingMode: 3d` in the layer creation 
+- #86 After #56 the feature that comes in userData is not being updated. 
 
 <br>
 

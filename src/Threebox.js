@@ -718,8 +718,13 @@ Threebox.prototype = {
 	},
 
 	//[jscastro] get the sun position (azimuth, altitude) from a given datetime, lng, lat
-	getSunPosition: function (date, lng, lat) {
-		return SunCalc.getPosition(date, lat, lng);  
+	getSunPosition: function (date, coords) {
+		return SunCalc.getPosition(date, coords[1], coords[0]);  
+	},
+
+	//[jscastro] get the sun times for sunrise, sunset, etc.. from a given datetime, lng, lat and alt
+	getSunTimes: function (date, coords) {
+		return SunCalc.getTimes(date, coords[1], coords[0], (coords[2] ? coords[2] : 0));
 	},
 
 	//[jscastro] set shadows for fill-extrusion layers
@@ -756,7 +761,7 @@ Threebox.prototype = {
 		this.lightDateTime = date;
 		this.lightLng = this.mapCenter.lng; 
 		this.lightLat = this.mapCenter.lat
-		this.sunPosition = this.getSunPosition(date, this.mapCenter.lng, this.mapCenter.lat);  
+		this.sunPosition = this.getSunPosition(date, [this.mapCenter.lng, this.mapCenter.lat]);  
 		let altitude = this.sunPosition.altitude;
 		let azimuth = Math.PI + this.sunPosition.azimuth;
 		//console.log("Altitude: " + utils.degreeify(altitude) + ", Azimuth: " + (utils.degreeify(azimuth)));

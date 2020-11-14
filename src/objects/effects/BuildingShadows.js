@@ -65,7 +65,7 @@ class BuildingShadows {
 		const buildingsLayer = map.getLayer(this.buildingsLayerId);
 		const context = this.map.painter.context;
 		const { lng, lat } = this.map.getCenter();
-		const pos = this.tb.getSunPosition(this.tb.lightDateTime, lng, lat);
+		const pos = this.tb.getSunPosition(this.tb.lightDateTime, [lng, lat]);
 		gl.uniform1f(this.uAltitude, (pos.altitude > this.minAltitude ? pos.altitude : 0));
 		gl.uniform1f(this.uAzimuth, pos.azimuth + 3 * Math.PI / 2);
 		//this.opacity = Math.sin(Math.max(pos.altitude, 0)) * 0.6;

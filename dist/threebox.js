@@ -723,8 +723,13 @@ Threebox.prototype = {
 	},
 
 	//[jscastro] get the sun position (azimuth, altitude) from a given datetime, lng, lat
-	getSunPosition: function (date, lng, lat) {
-		return SunCalc.getPosition(date, lat, lng);  
+	getSunPosition: function (date, coords) {
+		return SunCalc.getPosition(date, coords[1], coords[0]);  
+	},
+
+	//[jscastro] get the sun times for sunrise, sunset, etc.. from a given datetime, lng, lat and alt
+	getSunTimes: function (date, coords) {
+		return SunCalc.getTimes(date, coords[1], coords[0], (coords[2] ? coords[2] : 0));
 	},
 
 	//[jscastro] set shadows for fill-extrusion layers
@@ -761,7 +766,7 @@ Threebox.prototype = {
 		this.lightDateTime = date;
 		this.lightLng = this.mapCenter.lng; 
 		this.lightLat = this.mapCenter.lat
-		this.sunPosition = this.getSunPosition(date, this.mapCenter.lng, this.mapCenter.lat);  
+		this.sunPosition = this.getSunPosition(date, [this.mapCenter.lng, this.mapCenter.lat]);  
 		let altitude = this.sunPosition.altitude;
 		let azimuth = Math.PI + this.sunPosition.azimuth;
 		//console.log("Altitude: " + utils.degreeify(altitude) + ", Azimuth: " + (utils.degreeify(azimuth)));
@@ -1915,7 +1920,7 @@ class BuildingShadows {
 		const buildingsLayer = map.getLayer(this.buildingsLayerId);
 		const context = this.map.painter.context;
 		const { lng, lat } = this.map.getCenter();
-		const pos = this.tb.getSunPosition(this.tb.lightDateTime, lng, lat);
+		const pos = this.tb.getSunPosition(this.tb.lightDateTime, [lng, lat]);
 		gl.uniform1f(this.uAltitude, (pos.altitude > this.minAltitude ? pos.altitude : 0));
 		gl.uniform1f(this.uAzimuth, pos.azimuth + 3 * Math.PI / 2);
 		//this.opacity = Math.sin(Math.max(pos.altitude, 0)) * 0.6;
@@ -16799,10 +16804,13 @@ Objects.prototype = {
 
 			let dupe = obj.clone(true);	//clone the whole threebox object
 			dupe.getObjectByName("model").animations = obj.animations; //we must set this explicitly before addMethods
-			if (dupe.userData.feature) dupe.userData.feature.properties.uuid = dupe.uuid;
+			if (dupe.userData.feature) {
+				if (options && options.feature) dupe.userData.feature = options.feature;
+				dupe.userData.feature.properties.uuid = dupe.uuid;
+			}
 			root._addMethods(dupe); // add methods
 
-			if (!options || options.scale == obj.userData.scale) {
+			if (!options || utils.equal(options.scale, obj.userData.scale)) {
 				//no options, no changes, just return the same object
 				dupe.copyAnchor(obj); // copy anchors
 				//[jscastro] we add by default a tooltip that can be overriden later or hide it with threebox `enableTooltips`
@@ -17006,8 +17014,7 @@ Objects.prototype = {
 			htmlElement: null,
 			cssClass: " label3D",
 			alwaysVisible: false,
-			topMargin: -0.5,
-			feature: null
+			topMargin: -0.5
 		},
 
 		tooltip: {
@@ -19056,6 +19063,33 @@ var utils = {
 
 			return output
 		}
+	},
+
+	equal: function (obj1, obj2) {
+		const keys1 = Object.keys(obj1);
+		const keys2 = Object.keys(obj2);
+
+		if (keys1.length !== keys2.length) {
+			return false;
+		}
+
+		for (const key of keys1) {
+			const val1 = obj1[key];
+			const val2 = obj2[key];
+			const areObjects = this.isObject(val1) && this.isObject(val2);
+			if (
+				areObjects && !deepEqual(val1, val2) ||
+				!areObjects && val1 !== val2
+			) {
+				return false;
+			}
+		}
+
+		return true;
+	},
+
+	isObject: function (object) {
+		return object != null && typeof object === 'object';
 	},
 
 	_validate: function (userInputs, defaults) {
