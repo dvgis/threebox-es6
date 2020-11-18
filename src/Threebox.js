@@ -94,15 +94,18 @@ Threebox.prototype = {
 		this.lightLng = this.mapCenter.lng;
 		this.lightLat = this.mapCenter.lat;
 		this.sunPosition;
+		this.rotationStep = 5;// degrees step size for rotation
+		this.gridStep = 6;// decimals to adjust the lnglat grid step, 6 = 11.1cm
+		this.altitudeStep = 0.1; // 1px = 0.1m = 10cm
 
 		this.lights = this.initLights;
 		if (this.options.defaultLights) this.defaultLights();
-		if (this.options.realSunlight) this.realSunlight();
-		if (this.options.enableSelectingFeatures) this.enableSelectingFeatures = this.options.enableSelectingFeatures;
-		if (this.options.enableSelectingObjects) this.enableSelectingObjects = this.options.enableSelectingObjects;
-		if (this.options.enableDraggingObjects) this.enableDraggingObjects = this.options.enableDraggingObjects;
-		if (this.options.enableRotatingObjects) this.enableRotatingObjects = this.options.enableRotatingObjects;
-		if (this.options.enableTooltips) this.enableTooltips = this.options.enableTooltips;
+		if (this.options.realSunlight) this.realSunlight(this.options.realSunlightHelper);
+		this.enableSelectingFeatures = this.options.enableSelectingFeatures || false;
+		this.enableSelectingObjects = this.options.enableSelectingObjects || false;
+		this.enableDraggingObjects = this.options.enableDraggingObjects || false;
+		this.enableRotatingObjects = this.options.enableRotatingObjects || false;
+		this.enableTooltips = this.options.enableTooltips || false;
 
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
@@ -121,8 +124,6 @@ Threebox.prototype = {
 			// Variable to hold the starting xy coordinates
 			// when 'mousedown' occured.
 			let start;
-			let rotationStep = 10;// degrees step size for rotation
-			let gridStep = 6;// decimals to adjust the lnglat
 
 			//when object selected
 			let startCoords = [];
@@ -136,6 +137,8 @@ Threebox.prototype = {
 
 			let lngDiff; // difference between cursor and model left corner
 			let latDiff; // difference between cursor and model bottom corner
+			let altDiff; // difference between cursor and model height
+			let rotationDiff; 
 
 			// Return the xy coordinates of the mouse position
 			function mousePos(e) {
@@ -297,6 +300,7 @@ Threebox.prototype = {
 			}
 
 			map.onMouseMove = function (e) {
+
 				// Capture the ongoing xy coordinates
 				let current = mousePos(e);
 
@@ -313,9 +317,10 @@ Threebox.prototype = {
 						minY = Math.min(start.y, current.y),
 						maxY = Math.max(start.y, current.y);
 					//set the movement fluid we rotate only every 10px moved, in steps of 10 degrees up to 360
-					let rotation = { x: 0, y: 0, z: 360 + ((~~((current.x - start.x) / rotationStep) % 360 * rotationStep) % 360) };
+					let rotation = { x: 0, y: 0, z: (Math.round(rotationDiff[2] + (~~((current.x - start.x) / this.tb.rotationStep) % 360 * this.tb.rotationStep) % 360)) };
 					//now rotate the model depending the axis
 					draggedObject.setRotation(rotation);
+					draggedObject.addHelp("rot: " + rotation.z + "&#176;");
 					//draggedObject.setRotationAxis(rotation);
 					return;
 				}
@@ -329,8 +334,23 @@ Threebox.prototype = {
 					this.getCanvasContainer().style.cursor = 'move';
 					// Capture the first xy coordinates, height must be the same to move on the same plane
 					let coords = e.lngLat;
-					let options = [Number((coords.lng + lngDiff).toFixed(gridStep)), Number((coords.lat + latDiff).toFixed(gridStep)), draggedObject.modelHeight];
+					let options = [Number((coords.lng + lngDiff).toFixed(this.tb.gridStep)), Number((coords.lat + latDiff).toFixed(this.tb.gridStep)), draggedObject.modelHeight];
 					draggedObject.setCoords(options);
+					draggedObject.addHelp("lng: " + options[0] + "&#176;, lat: " + options[1] + "&#176;");
+					return;
+				}
+
+				//check if being moved on altitude
+				if (e.originalEvent.ctrlKey && draggedObject) {
+					if (!map.tb.enableDraggingObjects) return;
+					draggedAction = 'altitude';
+					// Set a UI indicator for dragging.
+					this.getCanvasContainer().style.cursor = 'move';
+					// Capture the first xy coordinates, height must be the same to move on the same plane
+					let now = (e.point.y * this.tb.altitudeStep);
+					let options = [draggedObject.coordinates[0], draggedObject.coordinates[1], Number((- now - altDiff).toFixed(this.tb.gridStep))];
+					draggedObject.setCoords(options);
+					draggedObject.addHelp("alt: " + options[2] + "m");
 					return;
 				}
 
@@ -393,7 +413,8 @@ Threebox.prototype = {
 			map.onMouseDown = function (e) {
 
 				// Continue the rest of the function shiftkey or altkey are pressed, and if object is selected
-				if (!((e.originalEvent.shiftKey || e.originalEvent.altKey) && e.originalEvent.button === 0 && selectedObject)) return;
+				if (!((e.originalEvent.shiftKey || e.originalEvent.altKey || e.originalEvent.ctrlKey) && e.originalEvent.button === 0 && selectedObject)) return;
+				if (!map.tb.enableDraggingObjects && !map.tb.enableRotatingObjects) return;
 
 				e.preventDefault();
 
@@ -412,8 +433,11 @@ Threebox.prototype = {
 				// Capture the first xy coordinates
 				start = mousePos(e);
 				startCoords = draggedObject.coordinates;
+
+				rotationDiff = utils.degreeify(draggedObject.rotation);
 				lngDiff = startCoords[0] - e.lngLat.lng;
 				latDiff = startCoords[1] - e.lngLat.lat;
+				altDiff = -draggedObject.modelHeight - (e.point.y * this.tb.altitudeStep);
 			}
 
 			map.onMouseUp = function (e) {
@@ -429,7 +453,7 @@ Threebox.prototype = {
 
 				if (draggedObject) {
 					draggedObject.dispatchEvent(new CustomEvent('ObjectDragged', { detail: { draggedObject: draggedObject, draggedAction: draggedAction }, bubbles: true, cancelable: true }));
-
+					draggedObject.removeHelp();
 					draggedObject = null;
 					draggedAction = null;
 				};
@@ -454,6 +478,7 @@ Threebox.prototype = {
 			this.on('mousedown', map.onMouseDown);
 
 		});
+
 
 	},
 
@@ -842,14 +867,16 @@ Threebox.prototype = {
 
 	},
 
-	realSunlight: function () {
+	realSunlight: function (helper = false) {
 
 		this.renderer.shadowMap.enabled = true;
 		//this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 		this.lights.dirLight = new THREE.DirectionalLight(0xffffff, 1);
 		this.scene.add(this.lights.dirLight);
-		this.lights.dirLightHelper = new THREE.DirectionalLightHelper(this.lights.dirLight, 5);
-		this.scene.add(this.lights.dirLightHelper);
+		if (helper) {
+			this.lights.dirLightHelper = new THREE.DirectionalLightHelper(this.lights.dirLight, 5);
+			this.scene.add(this.lights.dirLightHelper);
+		}
 		let d2 = 1000; let r2 = 2; let mapSize2 = 8192;
 		this.lights.dirLight.castShadow = true;
 		this.lights.dirLight.shadow.radius = r2;
@@ -879,19 +906,21 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.8',
+	version: '2.0.9',
 
 }
 
 var defaultOptions = {
 	defaultLights: false,
 	realSunlight: false,
+	realSunlightHelper: false,
 	passiveRendering: true,
 	enableSelectingFeatures: false,
 	enableSelectingObjects: false,
 	enableDraggingObjects: false,
 	enableRotatingObjects: false,
 	enableTooltips: false
+
 }
 module.exports = exports = Threebox;
 

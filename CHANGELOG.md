@@ -1,26 +1,43 @@
+## 2.0.9
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+
+- [**#12**](https://github.com/jscastro76/threebox/issues/12) rotationStep, gridStep and altitudeStep must be configurable
+- [**#44**](https://github.com/jscastro76/threebox/issues/44) disable or enable dirLightHelper for realSunlight.
+- [**#89**](https://github.com/jscastro76/threebox/issues/89) Allow drag an Object3D on altitude.
+- [**#90**](https://github.com/jscastro76/threebox/issues/90) When dragging/rotating objects add a label that shows the current values 
+- [**#91**](https://github.com/jscastro76/threebox/issues/91) An object rotated twice, starts again from 0 degrees not from its original position  
+- [**#92**](https://github.com/jscastro76/threebox/issues/92) Refactor `obj.addLabel`, `obj.addTooltip` and add `obj.addHelp` 
+
+<br>
+
+- - - 
+
 ## 2.0.8
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
 #### :sparkles: Enhancements
 
-- #73 `tb.dispose` must clean `tb.objectsCache`
-- #74 Question: Why is this library not available on npm ?
-- #75 Publish in npm 
-- #76 Refactor Objects.prototype._makeGroup
-- #78 refactor var to const and let 
-- #80 Update example [15-performance.html](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html) Add built-in animation to example 15-performance.html windmill.
-- #82 Add a method `tb.getSunTimes`
-- #85 We need an object compare method
-- #87 Change `tb.getSunPosition` to accept lnglat coords instead of two params 
-- #88 Add night style change in 12-add3dmodel.html and 13-eiffel.html examples during night hours 
+- [**#73**](https://github.com/jscastro76/threebox/issues/73) `tb.dispose` must clean `tb.objectsCache`
+- [**#74**](https://github.com/jscastro76/threebox/issues/74) Question: Why is this library not available on npm ?
+- [**#75**](https://github.com/jscastro76/threebox/issues/75) Publish in npm 
+- [**#76**](https://github.com/jscastro76/threebox/issues/76) Refactor Objects.prototype._makeGroup
+- [**#78**](https://github.com/jscastro76/threebox/issues/78) refactor var to const and let 
+- [**#80**](https://github.com/jscastro76/threebox/issues/80) Update example [15-performance.html](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html) Add built-in animation to example 15-performance.html windmill.
+- [**#82**](https://github.com/jscastro76/threebox/issues/82) Add a method `tb.getSunTimes`
+- [**#85**](https://github.com/jscastro76/threebox/issues/85) We need an object compare method
+- [**#87**](https://github.com/jscastro76/threebox/issues/87) Change `tb.getSunPosition` to accept lnglat coords instead of two params 
+- [**#88**](https://github.com/jscastro76/threebox/issues/88) Add night style change in 12-add3dmodel.html and 13-eiffel.html examples during night hours 
 
 #### :beetle: Bug fixes
 
-- #42 Angular and Threebox. Solved an issue using a `mapboxgl.Point`line
-- #77 example 05-logistics raises an error removing the line
-- #79 Some examples are not using `renderingMode: 3d` in the layer creation 
-- #86 After #56 the feature that comes in userData is not being updated. 
+- [**#42**](https://github.com/jscastro76/threebox/issues/42) #42 Angular and Threebox. Solved an issue using a `mapboxgl.Point`line
+- [**#77**](https://github.com/jscastro76/threebox/issues/77) #77 example 05-logistics raises an error removing the line
+- [**#79**](https://github.com/jscastro76/threebox/issues/79) #79 Some examples are not using `renderingMode: 3d` in the layer creation 
+- [**#86**](https://github.com/jscastro76/threebox/issues/86) #86 After #56 the feature that comes in userData is not being updated. 
 
 <br>
 

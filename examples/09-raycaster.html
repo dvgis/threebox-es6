@@ -81,6 +81,8 @@
                 renderingMode: '3d',
                 onAdd: function (map, mbxContext) {
 
+                    tb.altitudeStep = 1;
+
                     //// initialize geometry and material of our cube object
                     var geometry = new THREE.BoxGeometry(30, 60, 120);
 
@@ -117,6 +119,9 @@
                     tb.loadObj(options, function (model) {
                         //origin3[2] += model.modelSize.z;
                         let soldier = model.setCoords(origin3);
+						model.addLabel(createLabelIcon("Status: Radioactive"), true); //+ '&#013;' + feature.properties.name
+						model.addTooltip("This is a custom tooltip", true);
+
                         tb.add(soldier);
                         // play animation 3, for 10 seconds
                         soldier.playAnimation(options = { animation: 1, duration: 10000 });
@@ -176,6 +181,13 @@
             };
             return layer;
         }
+
+		function createLabelIcon(text) {
+			let popup = document.createElement('div');
+			popup.innerHTML = '<span title="' + text + '" style="font-size: 30px;color: yellow;">&#9762;</span>';
+			return popup;
+		}
+
 
     </script>
 </body>

@@ -99,15 +99,18 @@ Threebox.prototype = {
 		this.lightLng = this.mapCenter.lng;
 		this.lightLat = this.mapCenter.lat;
 		this.sunPosition;
+		this.rotationStep = 5;// degrees step size for rotation
+		this.gridStep = 6;// decimals to adjust the lnglat grid step, 6 = 11.1cm
+		this.altitudeStep = 0.1; // 1px = 0.1m = 10cm
 
 		this.lights = this.initLights;
 		if (this.options.defaultLights) this.defaultLights();
-		if (this.options.realSunlight) this.realSunlight();
-		if (this.options.enableSelectingFeatures) this.enableSelectingFeatures = this.options.enableSelectingFeatures;
-		if (this.options.enableSelectingObjects) this.enableSelectingObjects = this.options.enableSelectingObjects;
-		if (this.options.enableDraggingObjects) this.enableDraggingObjects = this.options.enableDraggingObjects;
-		if (this.options.enableRotatingObjects) this.enableRotatingObjects = this.options.enableRotatingObjects;
-		if (this.options.enableTooltips) this.enableTooltips = this.options.enableTooltips;
+		if (this.options.realSunlight) this.realSunlight(this.options.realSunlightHelper);
+		this.enableSelectingFeatures = this.options.enableSelectingFeatures || false;
+		this.enableSelectingObjects = this.options.enableSelectingObjects || false;
+		this.enableDraggingObjects = this.options.enableDraggingObjects || false;
+		this.enableRotatingObjects = this.options.enableRotatingObjects || false;
+		this.enableTooltips = this.options.enableTooltips || false;
 
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
@@ -126,8 +129,6 @@ Threebox.prototype = {
 			// Variable to hold the starting xy coordinates
 			// when 'mousedown' occured.
 			let start;
-			let rotationStep = 10;// degrees step size for rotation
-			let gridStep = 6;// decimals to adjust the lnglat
 
 			//when object selected
 			let startCoords = [];
@@ -141,6 +142,8 @@ Threebox.prototype = {
 
 			let lngDiff; // difference between cursor and model left corner
 			let latDiff; // difference between cursor and model bottom corner
+			let altDiff; // difference between cursor and model height
+			let rotationDiff; 
 
 			// Return the xy coordinates of the mouse position
 			function mousePos(e) {
@@ -302,6 +305,7 @@ Threebox.prototype = {
 			}
 
 			map.onMouseMove = function (e) {
+
 				// Capture the ongoing xy coordinates
 				let current = mousePos(e);
 
@@ -318,9 +322,10 @@ Threebox.prototype = {
 						minY = Math.min(start.y, current.y),
 						maxY = Math.max(start.y, current.y);
 					//set the movement fluid we rotate only every 10px moved, in steps of 10 degrees up to 360
-					let rotation = { x: 0, y: 0, z: 360 + ((~~((current.x - start.x) / rotationStep) % 360 * rotationStep) % 360) };
+					let rotation = { x: 0, y: 0, z: (Math.round(rotationDiff[2] + (~~((current.x - start.x) / this.tb.rotationStep) % 360 * this.tb.rotationStep) % 360)) };
 					//now rotate the model depending the axis
 					draggedObject.setRotation(rotation);
+					draggedObject.addHelp("rot: " + rotation.z + "&#176;");
 					//draggedObject.setRotationAxis(rotation);
 					return;
 				}
@@ -334,8 +339,23 @@ Threebox.prototype = {
 					this.getCanvasContainer().style.cursor = 'move';
 					// Capture the first xy coordinates, height must be the same to move on the same plane
 					let coords = e.lngLat;
-					let options = [Number((coords.lng + lngDiff).toFixed(gridStep)), Number((coords.lat + latDiff).toFixed(gridStep)), draggedObject.modelHeight];
+					let options = [Number((coords.lng + lngDiff).toFixed(this.tb.gridStep)), Number((coords.lat + latDiff).toFixed(this.tb.gridStep)), draggedObject.modelHeight];
 					draggedObject.setCoords(options);
+					draggedObject.addHelp("lng: " + options[0] + "&#176;, lat: " + options[1] + "&#176;");
+					return;
+				}
+
+				//check if being moved on altitude
+				if (e.originalEvent.ctrlKey && draggedObject) {
+					if (!map.tb.enableDraggingObjects) return;
+					draggedAction = 'altitude';
+					// Set a UI indicator for dragging.
+					this.getCanvasContainer().style.cursor = 'move';
+					// Capture the first xy coordinates, height must be the same to move on the same plane
+					let now = (e.point.y * this.tb.altitudeStep);
+					let options = [draggedObject.coordinates[0], draggedObject.coordinates[1], Number((- now - altDiff).toFixed(this.tb.gridStep))];
+					draggedObject.setCoords(options);
+					draggedObject.addHelp("alt: " + options[2] + "m");
 					return;
 				}
 
@@ -398,7 +418,8 @@ Threebox.prototype = {
 			map.onMouseDown = function (e) {
 
 				// Continue the rest of the function shiftkey or altkey are pressed, and if object is selected
-				if (!((e.originalEvent.shiftKey || e.originalEvent.altKey) && e.originalEvent.button === 0 && selectedObject)) return;
+				if (!((e.originalEvent.shiftKey || e.originalEvent.altKey || e.originalEvent.ctrlKey) && e.originalEvent.button === 0 && selectedObject)) return;
+				if (!map.tb.enableDraggingObjects && !map.tb.enableRotatingObjects) return;
 
 				e.preventDefault();
 
@@ -417,8 +438,11 @@ Threebox.prototype = {
 				// Capture the first xy coordinates
 				start = mousePos(e);
 				startCoords = draggedObject.coordinates;
+
+				rotationDiff = utils.degreeify(draggedObject.rotation);
 				lngDiff = startCoords[0] - e.lngLat.lng;
 				latDiff = startCoords[1] - e.lngLat.lat;
+				altDiff = -draggedObject.modelHeight - (e.point.y * this.tb.altitudeStep);
 			}
 
 			map.onMouseUp = function (e) {
@@ -434,7 +458,7 @@ Threebox.prototype = {
 
 				if (draggedObject) {
 					draggedObject.dispatchEvent(new CustomEvent('ObjectDragged', { detail: { draggedObject: draggedObject, draggedAction: draggedAction }, bubbles: true, cancelable: true }));
-
+					draggedObject.removeHelp();
 					draggedObject = null;
 					draggedAction = null;
 				};
@@ -459,6 +483,7 @@ Threebox.prototype = {
 			this.on('mousedown', map.onMouseDown);
 
 		});
+
 
 	},
 
@@ -847,14 +872,16 @@ Threebox.prototype = {
 
 	},
 
-	realSunlight: function () {
+	realSunlight: function (helper = false) {
 
 		this.renderer.shadowMap.enabled = true;
 		//this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 		this.lights.dirLight = new THREE.DirectionalLight(0xffffff, 1);
 		this.scene.add(this.lights.dirLight);
-		this.lights.dirLightHelper = new THREE.DirectionalLightHelper(this.lights.dirLight, 5);
-		this.scene.add(this.lights.dirLightHelper);
+		if (helper) {
+			this.lights.dirLightHelper = new THREE.DirectionalLightHelper(this.lights.dirLight, 5);
+			this.scene.add(this.lights.dirLightHelper);
+		}
 		let d2 = 1000; let r2 = 2; let mapSize2 = 8192;
 		this.lights.dirLight.castShadow = true;
 		this.lights.dirLight.shadow.radius = r2;
@@ -884,19 +911,21 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.8',
+	version: '2.0.9',
 
 }
 
 var defaultOptions = {
 	defaultLights: false,
 	realSunlight: false,
+	realSunlightHelper: false,
 	passiveRendering: true,
 	enableSelectingFeatures: false,
 	enableSelectingObjects: false,
 	enableDraggingObjects: false,
 	enableRotatingObjects: false,
 	enableTooltips: false
+
 }
 module.exports = exports = Threebox;
 
@@ -16188,13 +16217,16 @@ Objects.prototype = {
 	_addMethods: function (obj, isStatic) {
 
 		var root = this;
+		const labelName = "label";
+		const tooltipName = "tooltip";
+		const helpName = "help";
 
 		if (isStatic) {
 
 		}
 
 		else {
-
+			
 			if (!obj.coordinates) obj.coordinates = [0, 0, 0];
 
 			//[jscastro] added property for the internal 3D model
@@ -16244,7 +16276,7 @@ Objects.prototype = {
 				obj.coordinates = lnglat;
 				obj.set({ position: lnglat });
 				//Each time the object is positioned, set modelHeight property and project the floor
-				obj.modelHeight = obj.coordinates[2];
+				obj.modelHeight = obj.coordinates[2] || 0;
 				if (obj.boxGroup) obj.setBoundingBoxShadowFloor();
 				return obj;
 
@@ -16449,16 +16481,19 @@ Objects.prototype = {
 				}
 			}
 
-			let _label;
 			//[jscastro] added property for simulated label
 			Object.defineProperty(obj, 'label', {
-				get() { return obj.getObjectByName("label"); }
+				get() { return obj.getObjectByName(labelName); }
 			});
 
-			let _tooltip;
 			//[jscastro] added property for simulated tooltip
 			Object.defineProperty(obj, 'tooltip', {
-				get() { return obj.getObjectByName("tooltip"); }
+				get() { return obj.getObjectByName(tooltipName); }
+			});
+
+			//[jscastro] added property for help
+			Object.defineProperty(obj, 'help', {
+				get() { return obj.getObjectByName(helpName); }
 			});
 
 			//[jscastro] added property to redefine visible, including the label and tooltip
@@ -16498,63 +16533,76 @@ Objects.prototype = {
 			});
 
 			//[jscastro] add CSS2 label method 
-			obj.addLabel = function (HTMLElement, visible = false, center = obj.anchor) {
+			obj.addLabel = function (HTMLElement, visible, center, height) {
 				if (HTMLElement) {
 					//we add it to the first children to get same boxing and position
 					//obj.children[0].add(obj.drawLabel(text, height));
-					obj.scaleGroup.add(obj.drawLabelHTML(HTMLElement, visible, center));
+					obj.drawLabelHTML(HTMLElement, visible, center, height);
 				}
 			}
 
 			//[jscastro] remove CSS2 label method 
 			obj.removeLabel = function () {
-				if (obj.label) {
-					obj.label.dispose();
-					let g = obj.scaleGroup.children;
-					g.splice(g.indexOf(obj.label), 1);
-				}
+				obj.removeCSS2D(labelName);
 			}
 
 			//[jscastro] draw label method can be invoked separately
-			obj.drawLabelHTML = function (HTMLElement, visible = false, center = obj.anchor) {
-				let div = root.drawLabelHTML(HTMLElement, Objects.prototype._defaults.label.cssClass);
-				const box = obj.box3();
-				const size = box.getSize(new THREE.Vector3());
-				let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
-				obj.removeLabel();
-				let label = new CSS2D.CSS2DObject(div);
-				label.name = "label";
-				label.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * 0.5); //middle-centered
-				label.visible = visible;
+			obj.drawLabelHTML = function (HTMLElement, visible = false, center = obj.anchor, height = 0.5) {
+				let divLabel = root.drawLabelHTML(HTMLElement, Objects.prototype._defaults.label.cssClass);
+				let label = obj.addCSS2D(divLabel, labelName, center, height) //label.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * 0.5); //middle-centered
 				label.alwaysVisible = visible;
-
+				label.visible = visible;
 				return label;
 			}
 
 			//[jscastro] add tooltip method 
-			obj.addTooltip = function (tooltipText, mapboxStyle = false, center = obj.anchor, custom = true) {
-				if (tooltipText) {
-					let divToolTip = root.drawTooltip(tooltipText, mapboxStyle);
-					const box = obj.box3();
-					const size = box.getSize(new THREE.Vector3());
-					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
-					obj.removeTooltip();
-					let tooltip = new CSS2D.CSS2DObject(divToolTip);
-					tooltip.name = "tooltip";
-					tooltip.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z); //top-centered
-					tooltip.visible = false; //only visible on mouseover or selected
-					tooltip.custom = custom;
-					//we add it to the first children to get same boxing and position
-					obj.scaleGroup.add(tooltip);
-				}
+			obj.addTooltip = function (tooltipText, mapboxStyle, center, custom = true, height = 1) {
+				let t = obj.addHelp(tooltipText, tooltipName, mapboxStyle, center, height);
+				t.visible = false;
+				t.custom = custom;
 			}
 
 			//[jscastro] remove CSS2 tooltip method
 			obj.removeTooltip = function () {
-				if (obj.tooltip) {
-					obj.tooltip.dispose();
+				obj.removeCSS2D(tooltipName);
+			}
+
+			//[jscastro] add tooltip method 
+			obj.addHelp = function (helpText, objName = helpName, mapboxStyle = false, center = obj.anchor, height = 0) {
+				let divHelp = root.drawTooltip(helpText, mapboxStyle);
+				let h = obj.addCSS2D(divHelp, objName, center, height);
+				h.visible = true;
+				return h;
+			}
+
+			//[jscastro] remove CSS2 tooltip method
+			obj.removeHelp = function () {
+				obj.removeCSS2D(helpName);
+			}
+
+			//[jscastro] add CSS2D help method 
+			obj.addCSS2D = function (element, objName, center = obj.anchor, height = 1) {
+				if (element) {
+					const box = obj.box3();
+					const size = box.getSize(new THREE.Vector3());
+					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
+					obj.removeCSS2D(objName);
+					let help = new CSS2D.CSS2DObject(element);
+					help.name = objName;
+					help.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * height); 
+					help.visible = false; //only visible on mouseover or selected
+					obj.scaleGroup.add(help);
+					return help;
+				}
+			}
+
+			//[jscastro] remove CSS2 help method
+			obj.removeCSS2D = function (objName) {
+				let css2D = obj.getObjectByName(objName);
+				if (css2D) {
+					css2D.dispose();
 					let g = obj.scaleGroup.children;
-					g.splice(g.indexOf(obj.tooltip), 1);
+					g.splice(g.indexOf(css2D), 1);
 				}
 			}
 
@@ -16593,7 +16641,7 @@ Objects.prototype = {
 			})
 
 			let _receiveShadow = false;
-			//[jscastro] added property for traverse an object to cast a shadow
+			//[jscastro] added property for traverse an object to receive a shadow
 			Object.defineProperty(obj, 'receiveShadow', {
 				get() { return _receiveShadow; },
 				set(value) {
@@ -16974,7 +17022,6 @@ Objects.prototype = {
 		} else {
 			div.innerHTML = HTMLElement.outerHTML;
 		}
-		//div.style.marginTop = '-' + bottomMargin + 'em';
 		return div;
 	},
 

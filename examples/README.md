@@ -16,7 +16,7 @@ These are the examples included in Threebox.
 <img alt="threebox" src="images/tube.png" width="50%"><br/>
 - This sample creates an spiral tube geometry to render. 
 - Enabled built-in raycasting and selection for this 3D object through `enableSelectingObjects`, all objects can be selected and unselected.
-- Enabled built-in dragging mode for 3D objects through `enableDraggingObjects`, 3D object is dragabble, once selected, using [Shift] key
+- Enabled built-in dragging mode for 3D objects through `enableDraggingObjects`, 3D object is dragabble, once selected, using [Shift] key for translation and [Ctrl] for altitude.
 - Enabled built-in rotation mode for 3D objects through `enableRotatingObjects`, 3D objects is rotable on it's vertical axis, once selected, using [Alt] key.
 - Enabled built-in default Labels on altitude for the 3D object through `enableTooltips`.<br/>
 - - - -
@@ -52,7 +52,7 @@ These are the examples included in Threebox.
 <img alt="threebox" src="images/raycaster.png" width="50%"><br/>
 - This sample shows how to create 3 objects over a default fill-extrusion composite layer.
 - Enabled built-in raycasting and selection both for fill-extrusion and 3D objects through `enableSelectingFeatures` and `enableSelectingObjects`, all objects can be selected and unselected.
-- Enabled built-in dragging mode for 3D objects through `enableDraggingObjects`, 3D objects are dragabble, once selected, using [Shift] key
+- Enabled built-in dragging mode for 3D objects through `enableDraggingObjects`, 3D objects are dragabble, once selected, using [Shift] key for translation and [Ctrl] for altitude.
 - Enabled built-in rotation mode for 3D objects through `enableRotatingObjects`, 3D objects are rotable on it's vertical axis, once selected, using [Alt] key.
 - Enabled built-in default Labels on altitude both for fill-extrusions and 3D objects through `enableTooltips`.<br/>
 - - - -
@@ -73,6 +73,7 @@ These are the examples included in Threebox.
 - Enabled built-in sunlight position for the scene through `realSunlight`
 - Enabled built-in shadows for 3D Objects through `castShadow`.
 - Set the time map lights based on `setSunlight` for today.
+- Changes automatically the style from sunset to sunrise through `tb.getSunTimes`.
 - - - -
 
 #### [13-eiffel.html](https://github.com/jscastro76/threebox/blob/master/examples/13-eiffel.html) 
@@ -83,6 +84,7 @@ These are the examples included in Threebox.
 - Enabled built-in sunlight position for the scene through `realSunlight`
 - Enabled built-in shadows for 3D Objects through `castShadow`.
 - Set the time map lights based on `setSunlight` for today.
+- Changes automatically the style from sunset to sunrise through `tb.getSunTimes`.
 <br />
 - - - -
 
@@ -91,6 +93,7 @@ These are the examples included in Threebox.
 - This sample shows how to to add real sunlight position and shadows over a default fill-extrusion composite layer. 
 - Enabled built-in sunlight position for the scene through `realSunlight`.
 - Enabled built-in fill-extrusion shadows through `tb.setBuildingShadows`. <br/>
+- Changes automatically the style from sunset to sunrise through `tb.getSunTimes`.
 - - - -
 
 #### [15-performance.html](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html) 

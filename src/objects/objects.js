@@ -62,13 +62,16 @@ Objects.prototype = {
 	_addMethods: function (obj, isStatic) {
 
 		var root = this;
+		const labelName = "label";
+		const tooltipName = "tooltip";
+		const helpName = "help";
 
 		if (isStatic) {
 
 		}
 
 		else {
-
+			
 			if (!obj.coordinates) obj.coordinates = [0, 0, 0];
 
 			//[jscastro] added property for the internal 3D model
@@ -118,7 +121,7 @@ Objects.prototype = {
 				obj.coordinates = lnglat;
 				obj.set({ position: lnglat });
 				//Each time the object is positioned, set modelHeight property and project the floor
-				obj.modelHeight = obj.coordinates[2];
+				obj.modelHeight = obj.coordinates[2] || 0;
 				if (obj.boxGroup) obj.setBoundingBoxShadowFloor();
 				return obj;
 
@@ -323,16 +326,19 @@ Objects.prototype = {
 				}
 			}
 
-			let _label;
 			//[jscastro] added property for simulated label
 			Object.defineProperty(obj, 'label', {
-				get() { return obj.getObjectByName("label"); }
+				get() { return obj.getObjectByName(labelName); }
 			});
 
-			let _tooltip;
 			//[jscastro] added property for simulated tooltip
 			Object.defineProperty(obj, 'tooltip', {
-				get() { return obj.getObjectByName("tooltip"); }
+				get() { return obj.getObjectByName(tooltipName); }
+			});
+
+			//[jscastro] added property for help
+			Object.defineProperty(obj, 'help', {
+				get() { return obj.getObjectByName(helpName); }
 			});
 
 			//[jscastro] added property to redefine visible, including the label and tooltip
@@ -372,63 +378,76 @@ Objects.prototype = {
 			});
 
 			//[jscastro] add CSS2 label method 
-			obj.addLabel = function (HTMLElement, visible = false, center = obj.anchor) {
+			obj.addLabel = function (HTMLElement, visible, center, height) {
 				if (HTMLElement) {
 					//we add it to the first children to get same boxing and position
 					//obj.children[0].add(obj.drawLabel(text, height));
-					obj.scaleGroup.add(obj.drawLabelHTML(HTMLElement, visible, center));
+					obj.drawLabelHTML(HTMLElement, visible, center, height);
 				}
 			}
 
 			//[jscastro] remove CSS2 label method 
 			obj.removeLabel = function () {
-				if (obj.label) {
-					obj.label.dispose();
-					let g = obj.scaleGroup.children;
-					g.splice(g.indexOf(obj.label), 1);
-				}
+				obj.removeCSS2D(labelName);
 			}
 
 			//[jscastro] draw label method can be invoked separately
-			obj.drawLabelHTML = function (HTMLElement, visible = false, center = obj.anchor) {
-				let div = root.drawLabelHTML(HTMLElement, Objects.prototype._defaults.label.cssClass);
-				const box = obj.box3();
-				const size = box.getSize(new THREE.Vector3());
-				let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
-				obj.removeLabel();
-				let label = new CSS2D.CSS2DObject(div);
-				label.name = "label";
-				label.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * 0.5); //middle-centered
-				label.visible = visible;
+			obj.drawLabelHTML = function (HTMLElement, visible = false, center = obj.anchor, height = 0.5) {
+				let divLabel = root.drawLabelHTML(HTMLElement, Objects.prototype._defaults.label.cssClass);
+				let label = obj.addCSS2D(divLabel, labelName, center, height) //label.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * 0.5); //middle-centered
 				label.alwaysVisible = visible;
-
+				label.visible = visible;
 				return label;
 			}
 
 			//[jscastro] add tooltip method 
-			obj.addTooltip = function (tooltipText, mapboxStyle = false, center = obj.anchor, custom = true) {
-				if (tooltipText) {
-					let divToolTip = root.drawTooltip(tooltipText, mapboxStyle);
-					const box = obj.box3();
-					const size = box.getSize(new THREE.Vector3());
-					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
-					obj.removeTooltip();
-					let tooltip = new CSS2D.CSS2DObject(divToolTip);
-					tooltip.name = "tooltip";
-					tooltip.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z); //top-centered
-					tooltip.visible = false; //only visible on mouseover or selected
-					tooltip.custom = custom;
-					//we add it to the first children to get same boxing and position
-					obj.scaleGroup.add(tooltip);
-				}
+			obj.addTooltip = function (tooltipText, mapboxStyle, center, custom = true, height = 1) {
+				let t = obj.addHelp(tooltipText, tooltipName, mapboxStyle, center, height);
+				t.visible = false;
+				t.custom = custom;
 			}
 
 			//[jscastro] remove CSS2 tooltip method
 			obj.removeTooltip = function () {
-				if (obj.tooltip) {
-					obj.tooltip.dispose();
+				obj.removeCSS2D(tooltipName);
+			}
+
+			//[jscastro] add tooltip method 
+			obj.addHelp = function (helpText, objName = helpName, mapboxStyle = false, center = obj.anchor, height = 0) {
+				let divHelp = root.drawTooltip(helpText, mapboxStyle);
+				let h = obj.addCSS2D(divHelp, objName, center, height);
+				h.visible = true;
+				return h;
+			}
+
+			//[jscastro] remove CSS2 tooltip method
+			obj.removeHelp = function () {
+				obj.removeCSS2D(helpName);
+			}
+
+			//[jscastro] add CSS2D help method 
+			obj.addCSS2D = function (element, objName, center = obj.anchor, height = 1) {
+				if (element) {
+					const box = obj.box3();
+					const size = box.getSize(new THREE.Vector3());
+					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
+					obj.removeCSS2D(objName);
+					let help = new CSS2D.CSS2DObject(element);
+					help.name = objName;
+					help.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * height); 
+					help.visible = false; //only visible on mouseover or selected
+					obj.scaleGroup.add(help);
+					return help;
+				}
+			}
+
+			//[jscastro] remove CSS2 help method
+			obj.removeCSS2D = function (objName) {
+				let css2D = obj.getObjectByName(objName);
+				if (css2D) {
+					css2D.dispose();
 					let g = obj.scaleGroup.children;
-					g.splice(g.indexOf(obj.tooltip), 1);
+					g.splice(g.indexOf(css2D), 1);
 				}
 			}
 
@@ -467,7 +486,7 @@ Objects.prototype = {
 			})
 
 			let _receiveShadow = false;
-			//[jscastro] added property for traverse an object to cast a shadow
+			//[jscastro] added property for traverse an object to receive a shadow
 			Object.defineProperty(obj, 'receiveShadow', {
 				get() { return _receiveShadow; },
 				set(value) {
@@ -848,7 +867,6 @@ Objects.prototype = {
 		} else {
 			div.innerHTML = HTMLElement.outerHTML;
 		}
-		//div.style.marginTop = '-' + bottomMargin + 'em';
 		return div;
 	},
 

@@ -9,7 +9,7 @@ A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://d
 - - -
 ## Current release
 
-Current release is [**2.0.8**](https://github.com/jscastro76/threebox/releases/tag/v.2.0.8), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#208) for more details.
+Current release is [**2.0.9**](https://github.com/jscastro76/threebox/releases/tag/v.2.0.9), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#209) for more details.
 
 Threebox is available as an [nmp package](https://www.npmjs.com/package/threebox-plugin)
 ```js
@@ -61,7 +61,7 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Support for Object3D auto-centering, bounding box and floor projection.
 - Optimization for loading thousands of objects through cache.
 - Optimization of Camera perspective to have Raycast with pixel-precision level.
-- Check out [v2.0.7 change log](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#208) for more detail.
+- Check out [v2.0.9 change log](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#209) for more detail.
 
 <br>
 

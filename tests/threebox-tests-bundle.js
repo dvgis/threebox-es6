@@ -126,9 +126,7 @@ function fromByteArray (uint8) {
 
   // go through the array every three bytes, we'll deal with trailing stuff later
   for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
-    parts.push(encodeChunk(
-      uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)
-    ))
+    parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)))
   }
 
   // pad the end with zeros, but make sure to not forget the extra bytes
@@ -157,7 +155,7 @@ function fromByteArray (uint8) {
 },{}],3:[function(require,module,exports){
 arguments[4][2][0].apply(exports,arguments)
 },{"dup":2}],4:[function(require,module,exports){
-(function (Buffer){
+(function (Buffer){(function (){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -1936,9 +1934,9 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-}).call(this,require("buffer").Buffer)
+}).call(this)}).call(this,require("buffer").Buffer)
 },{"base64-js":1,"buffer":4,"ieee754":21}],5:[function(require,module,exports){
-(function (Buffer){
+(function (Buffer){(function (){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2047,7 +2045,7 @@ function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
 
-}).call(this,{"isBuffer":require("../../is-buffer/index.js")})
+}).call(this)}).call(this,{"isBuffer":require("../../is-buffer/index.js")})
 },{"../../is-buffer/index.js":24}],6:[function(require,module,exports){
 var objectKeys = require('object-keys');
 var isArguments = require('is-arguments');
@@ -3169,7 +3167,7 @@ var implementation = require('./implementation');
 module.exports = Function.prototype.bind || implementation;
 
 },{"./implementation":16}],18:[function(require,module,exports){
-(function (global){
+(function (global){(function (){
 'use strict';
 
 var origSymbol = global.Symbol;
@@ -3184,7 +3182,7 @@ module.exports = function hasNativeSymbols() {
 	return hasSymbolSham();
 };
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./shams":19}],19:[function(require,module,exports){
 'use strict';
 
@@ -3237,6 +3235,7 @@ var bind = require('function-bind');
 module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
 },{"function-bind":17}],21:[function(require,module,exports){
+/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -3801,7 +3800,7 @@ module.exports = function isArguments(value) {
 };
 
 },{}],36:[function(require,module,exports){
-(function (process){
+(function (process){(function (){
 // .dirname, .basename, and .extname methods are extracted from Node.js v8.11.1,
 // backported and transplited with Babel, with backwards-compat fixes
 
@@ -4105,9 +4104,9 @@ var substr = 'ab'.substr(-1) === 'b'
     }
 ;
 
-}).call(this,require('_process'))
+}).call(this)}).call(this,require('_process'))
 },{"_process":38}],37:[function(require,module,exports){
-(function (process){
+(function (process){(function (){
 'use strict';
 
 if (typeof process === 'undefined' ||
@@ -4154,7 +4153,7 @@ function nextTick(fn, arg1, arg2, arg3) {
 }
 
 
-}).call(this,require('_process'))
+}).call(this)}).call(this,require('_process'))
 },{"_process":38}],38:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
@@ -4525,7 +4524,7 @@ PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
 },{"./_stream_transform":43,"core-util-is":5,"inherits":22}],42:[function(require,module,exports){
-(function (process,global){
+(function (process,global){(function (){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -5545,7 +5544,7 @@ function indexOf(xs, x) {
   }
   return -1;
 }
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+}).call(this)}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./_stream_duplex":40,"./internal/streams/BufferList":45,"./internal/streams/destroy":46,"./internal/streams/stream":47,"_process":38,"core-util-is":5,"events":14,"inherits":22,"isarray":28,"process-nextick-args":37,"safe-buffer":48,"string_decoder/":49,"util":2}],43:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -5762,7 +5761,7 @@ function done(stream, er, data) {
   return stream.push(null);
 }
 },{"./_stream_duplex":40,"core-util-is":5,"inherits":22}],44:[function(require,module,exports){
-(function (process,global,setImmediate){
+(function (process,global,setImmediate){(function (){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -6450,7 +6449,7 @@ Writable.prototype._destroy = function (err, cb) {
   this.end();
   cb(err);
 };
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
+}).call(this)}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
 },{"./_stream_duplex":40,"./internal/streams/destroy":46,"./internal/streams/stream":47,"_process":38,"core-util-is":5,"inherits":22,"process-nextick-args":37,"safe-buffer":48,"timers":71,"util-deprecate":72}],45:[function(require,module,exports){
 'use strict';
 
@@ -7091,7 +7090,7 @@ module.exports = function shimFlags() {
 };
 
 },{"./polyfill":56,"define-properties":7}],58:[function(require,module,exports){
-(function (process,setImmediate){
+(function (process,setImmediate){(function (){
 var through = require('through');
 var nextTick = typeof setImmediate !== 'undefined'
     ? setImmediate
@@ -7122,7 +7121,7 @@ module.exports = function (write, end) {
     return tr;
 };
 
-}).call(this,require('_process'),require("timers").setImmediate)
+}).call(this)}).call(this,require('_process'),require("timers").setImmediate)
 },{"_process":38,"through":70,"timers":71}],59:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -7321,7 +7320,7 @@ module.exports = function shimStringTrim() {
 };
 
 },{"./polyfill":62,"define-properties":7}],64:[function(require,module,exports){
-(function (process){
+(function (process){(function (){
 var defined = require('defined');
 var createDefaultStream = require('./lib/default_stream');
 var Test = require('./lib/test');
@@ -7473,9 +7472,9 @@ function createHarness(conf_) {
     return test;
 }
 
-}).call(this,require('_process'))
+}).call(this)}).call(this,require('_process'))
 },{"./lib/default_stream":65,"./lib/results":66,"./lib/test":67,"_process":38,"defined":8,"through":70}],65:[function(require,module,exports){
-(function (process){
+(function (process){(function (){
 var through = require('through');
 var fs = require('fs');
 
@@ -7507,9 +7506,9 @@ module.exports = function () {
     }
 };
 
-}).call(this,require('_process'))
+}).call(this)}).call(this,require('_process'))
 },{"_process":38,"fs":3,"through":70}],66:[function(require,module,exports){
-(function (process,setImmediate){
+(function (process,setImmediate){(function (){
 var defined = require('defined');
 var EventEmitter = require('events').EventEmitter;
 var inherits = require('inherits');
@@ -7725,9 +7724,9 @@ function invalidYaml(str) {
     return regexpTest(yamlIndicators, str);
 }
 
-}).call(this,require('_process'),require("timers").setImmediate)
+}).call(this)}).call(this,require('_process'),require("timers").setImmediate)
 },{"_process":38,"defined":8,"events":14,"function-bind":17,"has":20,"inherits":22,"object-inspect":69,"resumer":58,"through":70,"timers":71}],67:[function(require,module,exports){
-(function (process,setImmediate,__dirname){
+(function (process,setImmediate,__dirname){(function (){
 var deepEqual = require('deep-equal');
 var defined = require('defined');
 var path = require('path');
@@ -8328,7 +8327,7 @@ Test.skip = function (name_, _opts, _cb) {
 
 // vim: set softtabstop=4 shiftwidth=4:
 
-}).call(this,require('_process'),require("timers").setImmediate,"/node_modules/tape/lib")
+}).call(this)}).call(this,require('_process'),require("timers").setImmediate,"/node_modules/tape/lib")
 },{"_process":38,"deep-equal":6,"defined":8,"events":14,"for-each":15,"function-bind":17,"has":20,"inherits":22,"is-regex":68,"object-inspect":69,"path":36,"string.prototype.trim":61,"timers":71}],68:[function(require,module,exports){
 'use strict';
 
@@ -8680,7 +8679,7 @@ function arrObjKeys(obj, inspect) {
 }
 
 },{"./util.inspect":2}],70:[function(require,module,exports){
-(function (process){
+(function (process){(function (){
 var Stream = require('stream')
 
 // through
@@ -8790,9 +8789,9 @@ function through (write, end, opts) {
 }
 
 
-}).call(this,require('_process'))
+}).call(this)}).call(this,require('_process'))
 },{"_process":38,"stream":59}],71:[function(require,module,exports){
-(function (setImmediate,clearImmediate){
+(function (setImmediate,clearImmediate){(function (){
 var nextTick = require('process/browser.js').nextTick;
 var apply = Function.prototype.apply;
 var slice = Array.prototype.slice;
@@ -8869,9 +8868,9 @@ exports.setImmediate = typeof setImmediate === "function" ? setImmediate : funct
 exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate : function(id) {
   delete immediateIds[id];
 };
-}).call(this,require("timers").setImmediate,require("timers").clearImmediate)
+}).call(this)}).call(this,require("timers").setImmediate,require("timers").clearImmediate)
 },{"process/browser.js":38,"timers":71}],72:[function(require,module,exports){
-(function (global){
+(function (global){(function (){
 
 /**
  * Module exports.
@@ -8940,7 +8939,7 @@ function config (name) {
   return String(val).toLowerCase() === 'true';
 }
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],73:[function(require,module,exports){
 /**
  * @author peterqliu / https://github.com/peterqliu
@@ -9038,15 +9037,18 @@ Threebox.prototype = {
 		this.lightLng = this.mapCenter.lng;
 		this.lightLat = this.mapCenter.lat;
 		this.sunPosition;
+		this.rotationStep = 5;// degrees step size for rotation
+		this.gridStep = 6;// decimals to adjust the lnglat grid step, 6 = 11.1cm
+		this.altitudeStep = 0.1; // 1px = 0.1m = 10cm
 
 		this.lights = this.initLights;
 		if (this.options.defaultLights) this.defaultLights();
-		if (this.options.realSunlight) this.realSunlight();
-		if (this.options.enableSelectingFeatures) this.enableSelectingFeatures = this.options.enableSelectingFeatures;
-		if (this.options.enableSelectingObjects) this.enableSelectingObjects = this.options.enableSelectingObjects;
-		if (this.options.enableDraggingObjects) this.enableDraggingObjects = this.options.enableDraggingObjects;
-		if (this.options.enableRotatingObjects) this.enableRotatingObjects = this.options.enableRotatingObjects;
-		if (this.options.enableTooltips) this.enableTooltips = this.options.enableTooltips;
+		if (this.options.realSunlight) this.realSunlight(this.options.realSunlightHelper);
+		this.enableSelectingFeatures = this.options.enableSelectingFeatures || false;
+		this.enableSelectingObjects = this.options.enableSelectingObjects || false;
+		this.enableDraggingObjects = this.options.enableDraggingObjects || false;
+		this.enableRotatingObjects = this.options.enableRotatingObjects || false;
+		this.enableTooltips = this.options.enableTooltips || false;
 
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
@@ -9065,8 +9067,6 @@ Threebox.prototype = {
 			// Variable to hold the starting xy coordinates
 			// when 'mousedown' occured.
 			let start;
-			let rotationStep = 10;// degrees step size for rotation
-			let gridStep = 6;// decimals to adjust the lnglat
 
 			//when object selected
 			let startCoords = [];
@@ -9080,6 +9080,8 @@ Threebox.prototype = {
 
 			let lngDiff; // difference between cursor and model left corner
 			let latDiff; // difference between cursor and model bottom corner
+			let altDiff; // difference between cursor and model height
+			let rotationDiff; 
 
 			// Return the xy coordinates of the mouse position
 			function mousePos(e) {
@@ -9241,6 +9243,7 @@ Threebox.prototype = {
 			}
 
 			map.onMouseMove = function (e) {
+
 				// Capture the ongoing xy coordinates
 				let current = mousePos(e);
 
@@ -9257,9 +9260,10 @@ Threebox.prototype = {
 						minY = Math.min(start.y, current.y),
 						maxY = Math.max(start.y, current.y);
 					//set the movement fluid we rotate only every 10px moved, in steps of 10 degrees up to 360
-					let rotation = { x: 0, y: 0, z: 360 + ((~~((current.x - start.x) / rotationStep) % 360 * rotationStep) % 360) };
+					let rotation = { x: 0, y: 0, z: (Math.round(rotationDiff[2] + (~~((current.x - start.x) / this.tb.rotationStep) % 360 * this.tb.rotationStep) % 360)) };
 					//now rotate the model depending the axis
 					draggedObject.setRotation(rotation);
+					draggedObject.addHelp("rot: " + rotation.z + "&#176;");
 					//draggedObject.setRotationAxis(rotation);
 					return;
 				}
@@ -9273,8 +9277,23 @@ Threebox.prototype = {
 					this.getCanvasContainer().style.cursor = 'move';
 					// Capture the first xy coordinates, height must be the same to move on the same plane
 					let coords = e.lngLat;
-					let options = [Number((coords.lng + lngDiff).toFixed(gridStep)), Number((coords.lat + latDiff).toFixed(gridStep)), draggedObject.modelHeight];
+					let options = [Number((coords.lng + lngDiff).toFixed(this.tb.gridStep)), Number((coords.lat + latDiff).toFixed(this.tb.gridStep)), draggedObject.modelHeight];
 					draggedObject.setCoords(options);
+					draggedObject.addHelp("lng: " + options[0] + "&#176;, lat: " + options[1] + "&#176;");
+					return;
+				}
+
+				//check if being moved on altitude
+				if (e.originalEvent.ctrlKey && draggedObject) {
+					if (!map.tb.enableDraggingObjects) return;
+					draggedAction = 'altitude';
+					// Set a UI indicator for dragging.
+					this.getCanvasContainer().style.cursor = 'move';
+					// Capture the first xy coordinates, height must be the same to move on the same plane
+					let now = (e.point.y * this.tb.altitudeStep);
+					let options = [draggedObject.coordinates[0], draggedObject.coordinates[1], Number((- now - altDiff).toFixed(this.tb.gridStep))];
+					draggedObject.setCoords(options);
+					draggedObject.addHelp("alt: " + options[2] + "m");
 					return;
 				}
 
@@ -9337,7 +9356,8 @@ Threebox.prototype = {
 			map.onMouseDown = function (e) {
 
 				// Continue the rest of the function shiftkey or altkey are pressed, and if object is selected
-				if (!((e.originalEvent.shiftKey || e.originalEvent.altKey) && e.originalEvent.button === 0 && selectedObject)) return;
+				if (!((e.originalEvent.shiftKey || e.originalEvent.altKey || e.originalEvent.ctrlKey) && e.originalEvent.button === 0 && selectedObject)) return;
+				if (!map.tb.enableDraggingObjects && !map.tb.enableRotatingObjects) return;
 
 				e.preventDefault();
 
@@ -9356,8 +9376,11 @@ Threebox.prototype = {
 				// Capture the first xy coordinates
 				start = mousePos(e);
 				startCoords = draggedObject.coordinates;
+
+				rotationDiff = utils.degreeify(draggedObject.rotation);
 				lngDiff = startCoords[0] - e.lngLat.lng;
 				latDiff = startCoords[1] - e.lngLat.lat;
+				altDiff = -draggedObject.modelHeight - (e.point.y * this.tb.altitudeStep);
 			}
 
 			map.onMouseUp = function (e) {
@@ -9373,7 +9396,7 @@ Threebox.prototype = {
 
 				if (draggedObject) {
 					draggedObject.dispatchEvent(new CustomEvent('ObjectDragged', { detail: { draggedObject: draggedObject, draggedAction: draggedAction }, bubbles: true, cancelable: true }));
-
+					draggedObject.removeHelp();
 					draggedObject = null;
 					draggedAction = null;
 				};
@@ -9398,6 +9421,7 @@ Threebox.prototype = {
 			this.on('mousedown', map.onMouseDown);
 
 		});
+
 
 	},
 
@@ -9786,14 +9810,16 @@ Threebox.prototype = {
 
 	},
 
-	realSunlight: function () {
+	realSunlight: function (helper = false) {
 
 		this.renderer.shadowMap.enabled = true;
 		//this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 		this.lights.dirLight = new THREE.DirectionalLight(0xffffff, 1);
 		this.scene.add(this.lights.dirLight);
-		this.lights.dirLightHelper = new THREE.DirectionalLightHelper(this.lights.dirLight, 5);
-		this.scene.add(this.lights.dirLightHelper);
+		if (helper) {
+			this.lights.dirLightHelper = new THREE.DirectionalLightHelper(this.lights.dirLight, 5);
+			this.scene.add(this.lights.dirLightHelper);
+		}
 		let d2 = 1000; let r2 = 2; let mapSize2 = 8192;
 		this.lights.dirLight.castShadow = true;
 		this.lights.dirLight.shadow.radius = r2;
@@ -9823,19 +9849,21 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.8',
+	version: '2.0.9',
 
 }
 
 var defaultOptions = {
 	defaultLights: false,
 	realSunlight: false,
+	realSunlightHelper: false,
 	passiveRendering: true,
 	enableSelectingFeatures: false,
 	enableSelectingObjects: false,
 	enableDraggingObjects: false,
 	enableRotatingObjects: false,
 	enableTooltips: false
+
 }
 module.exports = exports = Threebox;
 
@@ -25127,13 +25155,16 @@ Objects.prototype = {
 	_addMethods: function (obj, isStatic) {
 
 		var root = this;
+		const labelName = "label";
+		const tooltipName = "tooltip";
+		const helpName = "help";
 
 		if (isStatic) {
 
 		}
 
 		else {
-
+			
 			if (!obj.coordinates) obj.coordinates = [0, 0, 0];
 
 			//[jscastro] added property for the internal 3D model
@@ -25183,7 +25214,7 @@ Objects.prototype = {
 				obj.coordinates = lnglat;
 				obj.set({ position: lnglat });
 				//Each time the object is positioned, set modelHeight property and project the floor
-				obj.modelHeight = obj.coordinates[2];
+				obj.modelHeight = obj.coordinates[2] || 0;
 				if (obj.boxGroup) obj.setBoundingBoxShadowFloor();
 				return obj;
 
@@ -25388,16 +25419,19 @@ Objects.prototype = {
 				}
 			}
 
-			let _label;
 			//[jscastro] added property for simulated label
 			Object.defineProperty(obj, 'label', {
-				get() { return obj.getObjectByName("label"); }
+				get() { return obj.getObjectByName(labelName); }
 			});
 
-			let _tooltip;
 			//[jscastro] added property for simulated tooltip
 			Object.defineProperty(obj, 'tooltip', {
-				get() { return obj.getObjectByName("tooltip"); }
+				get() { return obj.getObjectByName(tooltipName); }
+			});
+
+			//[jscastro] added property for help
+			Object.defineProperty(obj, 'help', {
+				get() { return obj.getObjectByName(helpName); }
 			});
 
 			//[jscastro] added property to redefine visible, including the label and tooltip
@@ -25437,63 +25471,76 @@ Objects.prototype = {
 			});
 
 			//[jscastro] add CSS2 label method 
-			obj.addLabel = function (HTMLElement, visible = false, center = obj.anchor) {
+			obj.addLabel = function (HTMLElement, visible, center, height) {
 				if (HTMLElement) {
 					//we add it to the first children to get same boxing and position
 					//obj.children[0].add(obj.drawLabel(text, height));
-					obj.scaleGroup.add(obj.drawLabelHTML(HTMLElement, visible, center));
+					obj.drawLabelHTML(HTMLElement, visible, center, height);
 				}
 			}
 
 			//[jscastro] remove CSS2 label method 
 			obj.removeLabel = function () {
-				if (obj.label) {
-					obj.label.dispose();
-					let g = obj.scaleGroup.children;
-					g.splice(g.indexOf(obj.label), 1);
-				}
+				obj.removeCSS2D(labelName);
 			}
 
 			//[jscastro] draw label method can be invoked separately
-			obj.drawLabelHTML = function (HTMLElement, visible = false, center = obj.anchor) {
-				let div = root.drawLabelHTML(HTMLElement, Objects.prototype._defaults.label.cssClass);
-				const box = obj.box3();
-				const size = box.getSize(new THREE.Vector3());
-				let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
-				obj.removeLabel();
-				let label = new CSS2D.CSS2DObject(div);
-				label.name = "label";
-				label.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * 0.5); //middle-centered
-				label.visible = visible;
+			obj.drawLabelHTML = function (HTMLElement, visible = false, center = obj.anchor, height = 0.5) {
+				let divLabel = root.drawLabelHTML(HTMLElement, Objects.prototype._defaults.label.cssClass);
+				let label = obj.addCSS2D(divLabel, labelName, center, height) //label.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * 0.5); //middle-centered
 				label.alwaysVisible = visible;
-
+				label.visible = visible;
 				return label;
 			}
 
 			//[jscastro] add tooltip method 
-			obj.addTooltip = function (tooltipText, mapboxStyle = false, center = obj.anchor, custom = true) {
-				if (tooltipText) {
-					let divToolTip = root.drawTooltip(tooltipText, mapboxStyle);
-					const box = obj.box3();
-					const size = box.getSize(new THREE.Vector3());
-					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
-					obj.removeTooltip();
-					let tooltip = new CSS2D.CSS2DObject(divToolTip);
-					tooltip.name = "tooltip";
-					tooltip.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z); //top-centered
-					tooltip.visible = false; //only visible on mouseover or selected
-					tooltip.custom = custom;
-					//we add it to the first children to get same boxing and position
-					obj.scaleGroup.add(tooltip);
-				}
+			obj.addTooltip = function (tooltipText, mapboxStyle, center, custom = true, height = 1) {
+				let t = obj.addHelp(tooltipText, tooltipName, mapboxStyle, center, height);
+				t.visible = false;
+				t.custom = custom;
 			}
 
 			//[jscastro] remove CSS2 tooltip method
 			obj.removeTooltip = function () {
-				if (obj.tooltip) {
-					obj.tooltip.dispose();
+				obj.removeCSS2D(tooltipName);
+			}
+
+			//[jscastro] add tooltip method 
+			obj.addHelp = function (helpText, objName = helpName, mapboxStyle = false, center = obj.anchor, height = 0) {
+				let divHelp = root.drawTooltip(helpText, mapboxStyle);
+				let h = obj.addCSS2D(divHelp, objName, center, height);
+				h.visible = true;
+				return h;
+			}
+
+			//[jscastro] remove CSS2 tooltip method
+			obj.removeHelp = function () {
+				obj.removeCSS2D(helpName);
+			}
+
+			//[jscastro] add CSS2D help method 
+			obj.addCSS2D = function (element, objName, center = obj.anchor, height = 1) {
+				if (element) {
+					const box = obj.box3();
+					const size = box.getSize(new THREE.Vector3());
+					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
+					obj.removeCSS2D(objName);
+					let help = new CSS2D.CSS2DObject(element);
+					help.name = objName;
+					help.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * height); 
+					help.visible = false; //only visible on mouseover or selected
+					obj.scaleGroup.add(help);
+					return help;
+				}
+			}
+
+			//[jscastro] remove CSS2 help method
+			obj.removeCSS2D = function (objName) {
+				let css2D = obj.getObjectByName(objName);
+				if (css2D) {
+					css2D.dispose();
 					let g = obj.scaleGroup.children;
-					g.splice(g.indexOf(obj.tooltip), 1);
+					g.splice(g.indexOf(css2D), 1);
 				}
 			}
 
@@ -25532,7 +25579,7 @@ Objects.prototype = {
 			})
 
 			let _receiveShadow = false;
-			//[jscastro] added property for traverse an object to cast a shadow
+			//[jscastro] added property for traverse an object to receive a shadow
 			Object.defineProperty(obj, 'receiveShadow', {
 				get() { return _receiveShadow; },
 				set(value) {
@@ -25913,7 +25960,6 @@ Objects.prototype = {
 		} else {
 			div.innerHTML = HTMLElement.outerHTML;
 		}
-		//div.style.marginTop = '-' + bottomMargin + 'em';
 		return div;
 	},
 

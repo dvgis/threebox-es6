@@ -51,10 +51,11 @@ Sets up a threebox scene inside a [*Mapbox GL* custom layer's onAdd function](ht
 |-----------|----------|---------|--------|----------------------------------------------------------------------------------------------|
 | `defaultLights`    | no       | false      | boolean | Whether to add some default lighting to the scene. If no lighting added, most objects in the scene will render as black |
 | `realSunlight`    | no       | false      | boolean | It sets lights that simulate Sun position for the map center coords (`map.getCenter`) and user local datetime (`new Date()`). This sunlight can be updated through `tb.setSunlight` method. It calls internally to suncalc module. |
+| `realSunlightHelper`    | no       | false      | boolean | It sets if a light helper will be shown when `realSunlight` is true. |
 | `passiveRendering`     | no       | true   | boolean  | Color of line. Unlike other Threebox objects, this color will render on screen precisely as specified, regardless of scene lighting |
 | `enableSelectingFeatures`     | no       | false   | boolean  | Enables the Mouseover and Selection of fill-extrusion features. This will fire the event `SelectedFeatureChange` |
 | `enableSelectingObjects`     | no       | false   | boolean  | Enables the Mouseover and Selection of 3D objects. This will fire the event `SelectedChange`. This value will set the `options.bbx` value of the objects created.|
-| `enableDraggingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'translate'`|
+| `enableDraggingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'translate'` or `draggedAction = 'altitude'` |
 | `enableRotatingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'rotate'`|
 | `enableToltips`     | no       | false   | boolean  | Enables the default tooltips on fill-extrusion features and 3D Objects`|
 
@@ -111,7 +112,7 @@ with the mouse if Threebox instance properties `enableSelectingObjects`, `enable
 - To **drag** an object you have to select the object and then press **SHIFT** key and move the mouse.
 - To **rotate** and object you have to select the object and then press **ALT** key and move the mouse. The object will always rotate over its defined center.
 
-Any 3D object (including 3D extrusions created through fill-extrusion mapbox layers) will have a tooltip if the Threebox instance property `enableTooltips` is set to true.
+Any 3D object (including 3D extrusions created through fill-extrusion mapbox layers) will have a tooltip if the Threebox instance property `tb.enableTooltips` is set to true.
 
 Here below is the simplest sample to load a 3D model:
 
@@ -506,12 +507,12 @@ Takes an input of `{x: number, y: number}` as an object with values representing
 
 #### realSunlight 
 ```js
-tb.realSunlight()
+tb.realSunlight([helper = true])
 ```
 This method creates the an illumination that simulates Sun light for the Threebox `scene`. It creates a [`THREE.HemisphereLight`](https://threejs.org/docs/index.html#api/en/lights/HemisphereLight) and one [`THREE.DirectionalLight`](https://threejs.org/docs/#api/en/lights/DirectionalLight) 
 that is positioned based on `suncalc.js.` module which calculates the sun position for a given date, time, lng, lat combination. It calls internally to `tb.setSunlight` with `map.getCenter` and `new Date()` as values.
 These lights can be overriden manually adding custom lights to the Threebox `scene`.
-
+If `helper` is true, then a helper is shown.
 <br>
 
 #### remove 
@@ -620,6 +621,121 @@ This will return the version of Threebox
 <br>
 
 - - -
+
+
+### Threebox properties
+
+In all the samples below, the instance of the Threebox will be always referred as `tb`.
+
+<br>
+
+#### altitudeStep
+
+```js
+tb.altitudeStep : Number
+```
+This get/set property receives and returns the size in meters of the step to use when an object is dragged vertically. By default this is set to 0.1 = 10cm.
+
+<br>
+
+#### enableDraggingObjects
+
+```js
+tb.enableDraggingObjects : Boolean
+```
+This get/set property receives and returns the value to enable the option to drag 3D Objects vertical or horizontally created with Threebox.
+This property requires `tb.enableSelectingFeature` is set to true.  
+When this property is true, and an object is selected, holding the **[Shift] key + mouse click** the object will be moved on its x-y axes (horizontally).  
+Holding the **[Ctrl] key + mouse click** the object will be moved on its z axis (vertically).
+This dragging actions fire `ObjectDragged` event when the object is dropped, that can be listened as follows:
+```js
+obj.addEventListener('ObjectDragged', onDraggedObject, false)
+```
+
+This property doesn't affect to Mapbox `fill-extrusion` layers.  
+
+<br>
+
+#### enableRotatingObjects
+
+```js
+tb.enableRotatingObjects : Boolean
+```
+This get/set property receives and returns the value to enable the option to drag 3D Objects vertical or horizontally created with Threebox.
+This property requires `tb.enableSelectingFeature` is set to true.  
+When this property is true, and an object is selected, holding the **[Alt] key + mouse click** the object will be rotate pivoting over its anchor on z axis.  
+Holding the **[Ctrl] key + mouse click** the object will be moved on its z axis (vertically).
+This dragging actions fire `ObjectDragged` event when the object is dropped, that can be listened as follows:
+```js
+obj.addEventListener('ObjectDragged', onDraggedObject, false)
+```
+
+This property doesn't affect to Mapbox `fill-extrusion` layers.  
+
+<br>
+
+#### enableSelectingFeatures
+
+```js
+tb.enableSelectingFeatures : Boolean
+```
+This get/set property receives and returns the value to enable the option to select features from `fill-extrusion` layers.
+This property doesn't affect to 3D objects.
+
+This selection/unselection actions fire `SelectedFeatureChange` event when the object selected or unselected (explicitly or implicitly because of other feature  is selected instead), and can be listened as follows:
+```js
+obj.addEventListener('SelectedFeatureChange', onSelectedFeatureChange, false)
+```
+
+
+<br>
+
+#### enableSelectingObjects
+
+```js
+tb.enableSelectingObjects : Boolean
+```
+This get/set property receives and returns the value to enable the option to select 3D Objects created with Threebox.  
+This selection/unselection actions fire `SelectedChange` event when the object selected or unselected (explicitly or implicitly because of other object is selected instead), and can be listened as follows:
+```js
+obj.addEventListener('SelectedChange', onSelectedChange, false)
+```
+
+This property doesn't affect to Mapbox `fill-extrusion` layers.
+
+<br>
+
+#### enableTooltips
+
+```js
+tb.enableTooltips : Boolean
+```
+This get/set property receives and returns the value to enable the option to have tooltips (custom or by default) on objects. 
+This property requires `tb.enableSelectingFeature` is set to true.  
+When this property is true, and an object is overed or selected, its tooltip will be shown.
+
+<br>
+  
+
+#### gridStep
+
+```js
+tb.gridStep : Number(integer)
+```
+This get/set property receives and returns the size in precision decimals of the step to use when an object is dragged horizontally reducing the number of decimals managed by Mapbox in its coords. 
+By default the precision of this step is set to 6 decimals = 11.1 cm, setting this property to 7 the grid will be reduced to 1.1 cm.  
+
+<br>
+
+#### rotationStep
+
+```js
+tb.rotationStep : Number
+```
+This get/set property receives and returns the size in degrees of the step to use when an object is dragged and rotated. By default this is set to 5.
+
+<br>
+
 
 ## Objects
 
@@ -769,36 +885,62 @@ In all the samples below, the instance of the Threebox object will be always ref
 
 <br>
 
+#### addCSS2D
+```js
+obj.addCSS2D(element, objName [, center = obj.anchor, height = 0])
+```
+This is a generic method that uses the DOM [HTMLElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement) received to paint it on screen in a relative position to the object that contains it. 
+`objName` is needed to name the object and potentially to remove a previous one.
+`center` defines the position where the label will rendered, by default the object anchor `obj.anchor`.
+`height` defines this object position, where 0 is the object bottom and 1 is the object top, by default the bottom-center (0) of the object.
+
+Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that is returned.
+
+<br>
+
+#### addHelp
+```js
+obj.addHelp(helpText [,objName = helpName, mapboxSyle = false, center = obj.anchor, height = 0])
+```
+This method creates a browser-like help tooltip instance that is accessible through `obj.help`. 
+This help tooltip is only visible when an object is being dragged for a translation, rotation or altitude change. 
+If `mapboxStyle` is true, it applies the same styles the *Mapbox GL* popups.
+`center` defines the position where the label will rendered, by default the object anchor `obj.anchor`.
+`height` defines this object position, where 0 is the object bottom and 1 is the object top, by default the bottom-center (0) of the object.
+
+Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.help` property.
+Internally this method calls `objects.prototype.drawTooltip` to create the needed HTML to wrap up the `HTMLElement` received by param. 
+Internally this method calls `obj.addCSS2D`.
+
+<br>
+
 #### addLabel
 ```js
-obj.addLabel(HTMLElement [, visible, mapboxSyle = false, center = obj.anchor])
+obj.addLabel(HTMLElement [, visible, center = obj.anchor, height = 0.5])
 
 ```
 It uses the DOM [HTMLElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement) received to paint it on screen in a relative position to the object that contains it. 
 If `visible` is true, the label will be always visible, otherwise by default its value is false and it's regular behavior is only to be shown on MouseOver.
-`center` defines the object's center of position and rotation that in 3D objects is defined through `options.adjustment` param. As the label is 
-calculated based on the center of the object, this value will change the position of the object.
-Its position is always relative to the object that contains it and rerendered whenever that label is visible.
-Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
+`center` defines the position where the label will rendered, by default the object anchor `obj.anchor`.
+`height` defines this object position, where 0 is the object bottom and 1 is the object top, by default the middle-center (0.5) of the object.
 
-*TODO: In next versions of Threebox, this object position will be configurable. In this versión it's positioned at the top of the object.*
+Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
+Internally this method calls `obj.drawLabelHTML` to create the needed HTML to wrap up the `HTMLElement` received by param. 
 
 <br>
 
 #### addTooltip
 ```js
-obj.addTooltip(tooltipText [, mapboxSyle = false, center = obj.anchor, custom = true])
+obj.addTooltip(tooltipText [, mapboxSyle = false, center = obj.anchor, custom = true, height = 1])
 ```
 This method creates a browser-like tooltip for the object using the tooltipText. 
 If `mapboxStyle` is true, it applies the same styles the *Mapbox GL* popups.
-`center` defines the object center of position and rotation that in 3D objects is defined through `options.adjustment` param. As the tooltip is 
-calculated based on the center of the object, this value will change the position of the object.
-Its position is always relative to the object that contains it and rerendered whenever that label is visible.
-`custom` is always true, unless the tooltip is automatically generated by Threebox.
+`center` defines the position where the label will rendered, by default the object anchor `obj.anchor`.
+`custom` is always true for explicitly added tooltips by the user, unless the tooltip is automatically generated by Threebox.
+`height` defines this object position, where 0 is the object bottom and 1 is the object top, by default the top-center (1) of the object.
 
-Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.label` property.
-
-*TODO: In next versions of Threebox, this object position will be configurable. In this versión it's positioned at the center of the object.*
+Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) to create an instance of `THREE.CSS2DObject` that will be associated to the `obj.tooptip` property.
+Internally this method calls `obj.addHelp`.
 
 <br>
 
@@ -838,6 +980,41 @@ Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](
 obj.duplicate()
 ```
 Returns a clone of the object. Improves around a 95% the performance when handling many identical objects, by reusing materials and geometries.
+
+<br>
+
+#### removeCSS2D
+```js
+obj.removeCSS2D(objName)
+```
+Removes the instance of `CSS2DObject` by `objName` and dispose its resources.
+
+<br>
+
+#### removeHelp
+```js
+obj.removeHelp()
+```
+Removes the instance of `CSS2DObject` stored in `obj.help`.
+Internally it calls `obj.removeCSS2D` method.
+
+<br>
+
+#### removeLabel
+```js
+obj.removeLabel()
+```
+Removes the instance of `CSS2DObject` stored in `obj.label`.
+Internally it calls `obj.removeCSS2D` method.
+
+<br>
+
+#### removeTooltip
+```js
+obj.removeTooltip()
+```
+Removes the instance of `CSS2DObject` stored in `obj.tooltip`.
+Internally it calls `obj.removeCSS2D` method.
 
 <br>
 
@@ -928,7 +1105,7 @@ In all the samples below, the instance of the Threebox object will be always ref
 ```js
 obj.boundingBox : THREE.Box3Helper
 ```
-This get/set property receives and return a [`THREE.Box3Helper`](https://threejs.org/docs/#api/en/helpers/BoxHelper) which contains the object in it's initial size. 
+This get/set property receives and returns a [`THREE.Box3Helper`](https://threejs.org/docs/#api/en/helpers/BoxHelper) which contains the object in it's initial size. 
 `boundingBox` represents is visible once the object is on MouseOver (yellow) or Selected (green).
 
 By Threebox design `.boundingBox` is hidden for [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) even when it's visible for the camera.
@@ -942,7 +1119,7 @@ By Threebox design `.boundingBox` is hidden for [`THREE.Raycaster`](https://thre
 ```js
 obj.boundingBoxShadow : THREE.Box3Helper
 ```
-This get/set property receives and return a [`THREE.Box3Helper`](https://threejs.org/docs/#api/en/helpers/BoxHelper) which contains the object in it's initial size but 0 height and projected to the floor of the map independently of its heigh position, so it acts as a shadow of the shape. 
+This get/set property receives and returns a [`THREE.Box3Helper`](https://threejs.org/docs/#api/en/helpers/BoxHelper) which contains the object in it's initial size but 0 height and projected to the floor of the map independently of its heigh position, so it acts as a shadow of the shape. 
 `boundingBoxShadow` represents is visible once the object is on MouseOver or Selected in black color.
 
 By Threebox design `.boundingBoxShadow` is hidden for [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) even when it's visible for the camera.
@@ -951,17 +1128,64 @@ By Threebox design `.boundingBoxShadow` is hidden for [`THREE.Raycaster`](https:
 
 <br>
 
+#### castShadow
+
+```js
+obj.castShadow : boolean
+```
+This get/set property receives and returns the value of the option of objects to cast a shadow.
+It creates a plane with a `THREE.PlaneBufferGeometry` and a `THREE.ShadowMaterial()` centered on the object to project the shadow with the size of the longest dimension (x, y, z) size of the object and make it 10 times bigger to be able to hold the full shadow.
+
+<br>
+
+#### help
+
+```js
+obj.help : CSS2DObject
+```
+This get property returns a `CSS2DObject`[`THREE.CSS2DObject`](https://threejs.org/docs/index.html#examples/en/renderers/CSS2DRenderer) value that represents the help tooltip of a [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D) created by `obj.addHelp` method, where the value of a rotation, translation or altitude change is shown while dragging. Despite this is accessible, this is an internal object only visible on drag&drop actions over an object.
+
+<br>
+
+#### label
+
+```js
+obj.label : CSS2DObject
+```
+This get property returns a `CSS2DObject`[`THREE.CSS2DObject`](https://threejs.org/docs/index.html#examples/en/renderers/CSS2DRenderer) value that represents the label of a [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D) created by `obj.addLabel` method. The label could be used as an element to show on mouse over or to be always visible. It's normally used to show attributes or status of a threebox object and can contain any HTMLElement.
+
+<br>
+
+
+#### receiveShadow
+
+```js
+obj.receiveShadow : boolean
+```
+This get/set property receives and returns the value of the option of objects to receive a shadow.
+
+<br>
+
+#### tooltip
+
+```js
+obj.tooltip : CSS2DObject
+```
+This get property returns a `CSS2DObject`[`THREE.CSS2DObject`](https://threejs.org/docs/index.html#examples/en/renderers/CSS2DRenderer) value that represents the tooltip of a [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D) created by `obj.addTooltip` method. 
+The tooltip by default shows the `uuid` value of a threebox object and it's only visible if `tb.enableTooltips` is true.
+
+<br>
+
 #### visibility
 
 ```js
 obj.visibility : boolean
 ```
-This get/set property receives and return a boolean value to override the property `visible` of a  [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D.visible), 
+This get/set property receives and returns a boolean value to override the property `visible` of a  [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D.visible), 
 adding also the same visibility value for `obj.label` and `obj.tooltip`
 
 By Threebox design `.boundingBoxShadow` is hidden for [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) even when it's visible for the camera.
 
-*TODO: In next versions of Threebox, this object material will be configurable. In this versión still predefined in Objects.prototype*
 
 <br>
 
@@ -970,7 +1194,7 @@ By Threebox design `.boundingBoxShadow` is hidden for [`THREE.Raycaster`](https:
 ```js
 obj.wireframe : boolean
 ```
-This get/set property receives and return a boolean value to convert an [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D.visible) in wireframes or texture it. 
+This get/set property receives and returns a boolean value to convert an [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D.visible) in wireframes or texture it. 
 
 By Threebox design whenever an object is converted to wireframes, it's also hidden for [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) even when it's visible for the camera.
 
@@ -1032,7 +1256,7 @@ obj.addEventListener('ObjectDragged', onDraggedObject, false)
 
 This event is fired when an object changes is dragged and dropped in a different position, and only once when `map.once('mouseup'` and  `map.once('mouseout'`. 
 The event can be listened at any time once the `tb.loadObj` callback method is being executed.
-An instance of the object that changes is returned in `eventArgs.detail`, and the action made during the dragging that cound be `"rotate"` if the object has been rotated on its center axis or `"translate"` if the object has been moved to other position . 
+An instance of the object that changes is returned in `eventArgs.detail`, and the action made during the dragging that cound be `"rotate"` if the object has been rotated on its center axis or `"translate"`/`"altitude"` if the object has been moved to other position . 
 
 ```js
 map.addLayer({
