@@ -28058,6 +28058,10 @@ var utils = {
 			return false;
 		}
 
+		if (keys1.length == 0 && keys2.length == 0 && keys1 !== keys2) {
+			return false;
+		}
+
 		for (const key of keys1) {
 			const val1 = obj1[key];
 			const val2 = obj2[key];

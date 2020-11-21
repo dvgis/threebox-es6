@@ -11,6 +11,11 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 - [**#91**](https://github.com/jscastro76/threebox/issues/91) An object rotated twice, starts again from 0 degrees not from its original position  
 - [**#92**](https://github.com/jscastro76/threebox/issues/92) Refactor `obj.addLabel`, `obj.addTooltip` and add `obj.addHelp` 
 
+#### :beetle: Bug fixes
+
+- [**#93**](https://github.com/jscastro76/threebox/issues/93) Bug on `utils.equal` is only comparing objects, not when is only values
+
+
 <br>
 
 - - - 
