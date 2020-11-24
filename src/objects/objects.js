@@ -321,7 +321,7 @@ Objects.prototype = {
 				//[jscastro] if the object options have an adjustment to center the 3D Object different to 0
 				if (center && (center.x != 0 || center.y != 0 || center.z != 0)) {
 					let size = obj.getSize();
-					obj.anchor = { x: -(size.x * center.x), y: -(size.y * center.y), z: -(size.z * center.z) };
+					obj.anchor = { x: obj.anchor.x - (size.x * center.x), y: obj.anchor.y - (size.y * center.y), z: obj.anchor.z - (size.z * center.z) };
 					obj.model.position.set(-obj.anchor.x, -obj.anchor.y, -obj.anchor.z)
 				}
 			}
@@ -596,7 +596,7 @@ Objects.prototype = {
 								obj.boundingBoxShadow.layers.disable(1);
 								obj.boundingBox.material = Objects.prototype._defaults.materials.boxNormalMaterial;
 								obj.remove(obj.boxGroup);
-								if (!obj.tooltip.custom) obj.removeTooltip();
+								if (obj.tooltip && !obj.tooltip.custom) obj.removeTooltip();
 							}
 							if (obj.label && !obj.label.alwaysVisible) { obj.label.visible = false; }
 						}
@@ -715,6 +715,8 @@ Objects.prototype = {
 				// [jscastro] rotate and scale the model
 				const r = utils.types.rotation(options.rotation, [0, 0, 0]);
 				const s = utils.types.scale(options.scale, [1, 1, 1]);
+				// [jscastro] reposition to 0,0,0
+				dupe.model.position.set(0, 0, 0);
 				// rotate and scale
 				dupe.model.rotation.set(r[0], r[1], r[2]);
 				dupe.model.scale.set(s[0], s[1], s[2]);

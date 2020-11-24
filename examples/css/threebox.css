@@ -49,6 +49,7 @@ body {
 	display: flex;
 	margin-bottom: 5em;
 	text-align: center;
+	color: black;
 }
 
 .mapboxgl-popup-tip {

@@ -12,7 +12,7 @@ Threebox works by adding a *Three.js* scene to *Mapbox GL*, creating a new *Mapb
 
 ## Examples
 
-Threebox contains [15 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.
+Threebox contains [16 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.
 - [01-basic.html](https://github.com/jscastro76/threebox/blob/master/examples/01-basic.html) 
 - [02-line.html](https://github.com/jscastro76/threebox/blob/master/examples/02-line.html) 
 - [03-tube.html](https://github.com/jscastro76/threebox/blob/master/examples/03-tube.html) 
@@ -28,6 +28,7 @@ Threebox contains [15 examples](https://github.com/jscastro76/threebox/blob/mast
 - [13-eiffel.html](https://github.com/jscastro76/threebox/blob/master/examples/13-eiffel.html) 
 - [14-buildingshadow.html](https://github.com/jscastro76/threebox/blob/master/examples/14-buildingshadow.html) 
 - [15-performance.html](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html) 
+- [16-multiLayer.html](https://github.com/jscastro76/threebox/blob/master/examples/16-multiLayer.html) 
 
 <br>
 

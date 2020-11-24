@@ -9,7 +9,7 @@ A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://d
 - - -
 ## Current release
 
-Current release is [**2.0.9**](https://github.com/jscastro76/threebox/releases/tag/v.2.0.9), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#209) for more details.
+Current release is [**2.1.0**](https://github.com/jscastro76/threebox/releases/tag/v.2.1.0), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#210) for more details.
 
 Threebox is available as an [nmp package](https://www.npmjs.com/package/threebox-plugin)
 ```js
@@ -42,7 +42,7 @@ npm i threebox-plugin
 Only in this fork, there is a list of new features implemented on top of the amazing work from [@peterqliu](https://github.com/peterqliu/threebox/):
 - Update to Three.js v117.
 - Update to Mapbox-gl-js v1.11.1.
-- [15 examples](https://github.com/jscastro76/threebox/tree/master/examples) with new features.
+- [16 examples](https://github.com/jscastro76/threebox/tree/master/examples) with new features.
 - Support for multiple 3D format objects (FBX, GLTF/GLB, Collada, OBJ/MTL).
 - Support for CSS2D labels supporting rich HTML controls through a new LabelManager.
 - Support for CSS2D tooltips/title browser-like and mapbox-like.
@@ -61,7 +61,7 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Support for Object3D auto-centering, bounding box and floor projection.
 - Optimization for loading thousands of objects through cache.
 - Optimization of Camera perspective to have Raycast with pixel-precision level.
-- Check out [v2.0.9 change log](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#209) for more detail.
+- Check out [change log](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md) for more detail.
 
 <br>
 

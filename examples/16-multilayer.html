@@ -1,0 +1,206 @@
+<!doctype html>
+<head>
+    <title>Threbox multilayer sample</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.css" rel="stylesheet" />
+    <script src="../dist/threebox.js" type="text/javascript"></script>
+    <link href="./css/threebox.css" rel="stylesheet" />
+    <script src="config.js"></script>
+    <style>
+        body, html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+		#menu {
+			background: #fff;
+			position: absolute;
+			z-index: 1;
+			top: 10px;
+			right: 10px;
+			border-radius: 3px;
+			width: 120px;
+			border: 1px solid rgba(0, 0, 0, 0.4);
+			font-family: 'Open Sans', sans-serif;
+		}
+
+			#menu a {
+				font-size: 13px;
+				color: #404040;
+				display: block;
+				margin: 0;
+				padding: 0;
+				padding: 10px;
+				text-decoration: none;
+				border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+				text-align: center;
+			}
+
+				#menu a:last-child {
+					border: none;
+				}
+
+				#menu a:hover {
+					background-color: #f8f8f8;
+					color: #404040;
+				}
+
+				#menu a.active {
+					background-color: #3887be;
+					color: #ffffff;
+				}
+
+					#menu a.active:hover {
+						background: #3074a4;
+					}
+    </style>
+</head>
+<body>
+    <nav id="menu"></nav>
+    <div id="map"></div>
+    <script type="module">
+
+        ///// THIS VISIBILITY TESTS USES A MULTILAYER APPROACH, WITH ONLY ONE tb.update()
+        ///// CREATED AUTOMATICALLY BY THE LAYER CRETED BY THREEBOX
+
+		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
+
+		mapboxgl.accessToken = config.accessToken;
+
+        var map = (window.map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/outdoors-v11',
+            zoom: 18,
+			center: [148.981427, -35.398307],
+            pitch: 60,
+            hash: true,
+            antialias: true // create the gl context with MSAA antialiasing, so custom layers are antialiased
+        }));
+
+        window.tb = new Threebox(
+            map,
+            map.getCanvas().getContext('webgl'),
+            {
+                defaultLights: true,
+                enableSelectingObjects: true,
+                enableTooltips: true,
+                multiLayer: true, // this will create a default custom layer that will manage a single tb.update
+            }
+        );
+
+        let stats;
+        let items = 5;
+        let minZoom = 16;
+        let maxZoom = 18;
+        let zoomStep = (maxZoom - minZoom) / 5;
+        let toggleableLayerIds = [];
+
+        map.on('style.load', function () {
+
+            // stats
+            stats = new Stats();
+            map.getContainer().appendChild(stats.dom);
+            animate();
+
+			for (let j = 1; j <= items; j++) {
+				let l = {
+					layer: '3d-model' + j,
+					origin: [148.9819 - ((j - 1) * (0.0003)), -35.39847]
+				}
+				toggleableLayerIds.push(l);
+            }
+            createButtons();
+
+            let i = 0;
+            toggleableLayerIds.forEach((l) => {
+                i++;
+                map.addLayer(createCustomLayer(l.layer, l.origin, i), 'waterway-label');
+				tb.setLayerZoomRange(l.layer, minZoom + (i * zoomStep), maxZoom + (i * zoomStep));
+            });
+
+        });
+
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+        }
+
+		function createCustomLayer(layerId, origin, scale) {
+			//create the layer
+			let customLayer3D = {
+				id: layerId,
+				type: 'custom',
+				renderingMode: '3d',
+				onAdd: function (map, gl) {
+					addModel(layerId, origin, scale);
+				},
+				render: function (gl, matrix) {
+					//tb.update(); is not needed anymore if multiLayer : true
+				}
+			};
+			return customLayer3D;
+
+		};
+
+		function addModel(layerId, origin, i) {
+			let options = {
+				type: 'gltf', //'gltf'/'mtl'
+				obj: './models/radar/34M_17.gltf', //model url
+				bin: '', //replace by mtl attribute
+				units: 'meters', //units in the default values are always in meters
+				scale: 1 / i,
+				rotation: { x: 90, y: 180, z: 0 }, //default rotation
+				anchor: 'center'
+			}
+			tb.loadObj(options, function (model) {
+				model.setCoords(origin);
+				let l = map.getLayer(layerId);
+				model.addTooltip("Zoom:" + (minZoom + (i * zoomStep)) + " - " + (maxZoom + (i * zoomStep)), true);
+				tb.add(model, layerId);
+			});
+		}
+
+
+        function createButtons() {
+            // set up the corresponding toggle button for each layer
+            for (var i = 0; i < toggleableLayerIds.length; i++) {
+                var id = toggleableLayerIds[i].layer;
+
+                var link = document.createElement('a');
+                link.href = '#';
+                link.className = 'active';
+                link.textContent = id;
+
+                link.onclick = function (e) {
+                    var clickedLayer = this.textContent;
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    var visibility = map.getLayoutProperty(clickedLayer, 'visibility');
+
+                    // toggle layer visibility by changing the layout object's visibility property
+                    if (visibility === 'visible') {
+                        map.setLayoutProperty(clickedLayer, 'visibility', 'none');
+                        this.className = '';
+                        tb.toggleLayer(clickedLayer, false);
+
+                    } else {
+                        this.className = 'active';
+                        map.setLayoutProperty(clickedLayer, 'visibility', 'visible');
+                        tb.toggleLayer(clickedLayer, true);
+                    }
+                };
+
+                var layers = document.getElementById('menu');
+                layers.appendChild(link);
+            }
+        }
+
+    </script>
+</body>

@@ -1,3 +1,26 @@
+## 2.1.0
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+
+- [**#5**](https://github.com/jscastro76/threebox/issues/5) Add a multi layer sample. [16-multilayer.html](https://github.com/jscastro76/threebox/blob/master/examples/16-multilayer.html)
+- [**#95**](https://github.com/jscastro76/threebox/issues/95) `tb.add` should admit layer and source as optional params 
+- [**#96**](https://github.com/jscastro76/threebox/issues/96) `tb.setLayerHeigthProperty` depends on an internal feature on `obj.userData.feature` 
+- [**#98**](https://github.com/jscastro76/threebox/issues/98) Add an init param for multiLayer scenarios, that allows to create a default empty layer in threebox 
+- [**#99**](https://github.com/jscastro76/threebox/issues/99) `setLayoutZoomRange` doesn’t work on multilayer scenarios 
+- [**#101**](https://github.com/jscastro76/threebox/issues/101) `options.adjustment` must be on top of `options.anchor` not instead 
+
+#### :beetle: Bug fixes
+
+- [**#94**](https://github.com/jscastro76/threebox/issues/94) tb.setLayoutPropery is not working when geojson features are not being used.
+- [**#97**](https://github.com/jscastro76/threebox/issues/97) When `enableSelectingObjects` is active and not tooltips 
+- [**#100**](https://github.com/jscastro76/threebox/issues/100) Object anchors are not well calculated on duplicates when downscaled 
+
+<br>
+
+- - - 
+
 ## 2.0.9
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 

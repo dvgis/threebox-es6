@@ -34,10 +34,6 @@
 
 	<script type="module">
 
-		var config = {
-			accessToken: 'pk.eyJ1IjoianNjYXN0cm8iLCJhIjoiY2s2YzB6Z25kMDVhejNrbXNpcmtjNGtpbiJ9.28ynPf1Y5Q8EyB_moOHylw'
-		};
-
 		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
 
 		mapboxgl.accessToken = config.accessToken;
@@ -253,6 +249,36 @@
 			return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 
 		}
+
+		function createStatusKPI(text, complianceStatus) {
+			let cssText = ['text-secondary', 'text-secondary', 'text-success', 'text-red', 'text-yellow'];
+			let cssSymbol = ['', 'fa-circle', '', 'fa-exclamation-circle', 'fa-exclamation-triangle'];
+			//let value = getRandomInt(1, 100);
+			//let index = Math.floor(value / 34);
+			let index = 0;
+
+			if (complianceStatus === 'NOCOMPLIANT') {
+				index = 4;
+			}
+			else if (complianceStatus === 'FAULT') {
+				index = 3;
+			}
+			else if (complianceStatus === 'COMPLIANT') {
+				return; //index = 2;
+			}
+			else if (complianceStatus === 'UNKNOWN') {
+				return; //index = 1;
+			}
+			else if (complianceStatus === 'NOSTATUS') {
+				return; //index = 0;
+			}
+
+			let popup = document.createElement('div');
+			popup.innerHTML = '<i class="fas ' + cssSymbol[index] + ' ' + cssText[index] + '" title="' + text + '"></i>';
+
+			return popup;
+		}
+
 
 	</script>
 

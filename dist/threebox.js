@@ -85,6 +85,7 @@ Threebox.prototype = {
 		this.scene.add(this.world);
 
 		this.objectsCache = new Map();
+		this.customZoomLayers = [];
 		
 		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
 
@@ -111,10 +112,12 @@ Threebox.prototype = {
 		this.enableDraggingObjects = this.options.enableDraggingObjects || false;
 		this.enableRotatingObjects = this.options.enableRotatingObjects || false;
 		this.enableTooltips = this.options.enableTooltips || false;
+		this.multiLayer = this.options.multiLayer || false;
 
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
-
+			//[jscastro] if multiLayer, create a by default layer in the map, so tb.update won't be needed in client side to avoid duplicating calls to render
+			if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: 'custom', renderingMode: '3d', map: this, onAdd: function (map, gl) { }, render: function (gl, matrix) { this.map.tb.update(); }})
 			//[jscastro] new fields to manage events on map
 			let selectedObject; //selected object through click
 			let draggedObject; //dragged object through mousedown + mousemove
@@ -475,16 +478,22 @@ Threebox.prototype = {
 				}
 			}
 
+			map.onZoomEnd = function (e) {
+				this.tb.customZoomLayers.every((layer) => {
+					this.tb.setLayerZoomVisibility(layer);
+					return true;
+				});
+			}
+
 			//listener to the events
 			//this.on('contextmenu', map.onContextMenu);
 			this.on('click', map.onClick);
 			this.on('mousemove', map.onMouseMove);
 			this.on('mouseout', map.onMouseOut)
 			this.on('mousedown', map.onMouseDown);
+			this.on('zoom', map.onZoomEnd);
 
 		});
-
-
 	},
 
 	// Objects
@@ -624,7 +633,7 @@ Threebox.prototype = {
 		if (value !== null && value !== undefined) {
 			if (name === 'visibility') {
 				this.world.children.forEach(function (obj) {
-					if (obj.userData.feature && obj.userData.feature.layer === layerId) {
+					if (obj.layer === layerId) {
 						obj.visibility = value;
 					}
 				});
@@ -634,10 +643,12 @@ Threebox.prototype = {
 	},
 
 	//[jscastro] Custom Layers doesn't work on minzoom and maxzoom attributes, and if the layer is including labels they don't hide either on minzoom
-	setLayerZoomRange: function (layer3d, minZoomLayer, maxZoomLayer) {
-		if (this.map.getLayer(layer3d)) {
-			this.map.setLayerZoomRange(layer3d, minZoomLayer, maxZoomLayer)
+	setLayerZoomRange: function (layerId, minZoomLayer, maxZoomLayer) {
+		if (this.map.getLayer(layerId)) {
+			this.map.setLayerZoomRange(layerId, minZoomLayer, maxZoomLayer);
 			this.setLabelZoomRange(minZoomLayer, maxZoomLayer);
+			if (!this.customZoomLayers.includes(layerId)) this.customZoomLayers.push(layerId);
+			this.setLayerZoomVisibility(layerId);
 		}
 	},
 
@@ -680,6 +691,18 @@ Threebox.prototype = {
 		};
 	},
 
+	setLayerZoomVisibility: function (layerId) {
+		let z = this.map.getZoom();
+		let l = this.map.getLayer(layerId);
+		let v = l.visibility;
+		let u = typeof v === 'undefined';
+		if (l) {
+			if (l.minzoom && z < l.minzoom) { if (u || v === 'visible') { this.toggleLayer(l.id, false); }; return };
+			if (l.maxzoom && z >= l.maxzoom) { if (u || v === 'visible') { this.toggleLayer(l.id, false); }; return };
+			if (u || v === 'none') this.toggleLayer(l.id, true);
+		}
+	},
+
 	update: function () {
 
 		if (this.map.repaint) this.map.repaint = false
@@ -701,10 +724,20 @@ Threebox.prototype = {
 		if (this.options.passiveRendering === false) this.map.triggerRepaint();
 	},
 
-	add: function (obj) {
+	add: function (obj, layerId, sourceId) {
 		//[jscastro] remove the tooltip if not enabled
 		if (!this.enableTooltips && obj.tooltip) { obj.tooltip.visibility = false };
 		this.world.add(obj);
+		if (layerId) {
+			obj.layer = layerId;
+			obj.source = sourceId;
+			let l = this.map.getLayer(layerId);
+			if (l) {
+				let v = l.visibility;
+				let u = typeof v === 'undefined';
+				obj.visibility = (u || v === 'visible' ? true : false);
+			}
+		}
 	},
 
 	remove: function (obj) {
@@ -723,7 +756,7 @@ Threebox.prototype = {
 			for (let i = 0; i < objects.length; i++) {
 				let obj = objects[i];
 				//if layerId, check the layer to remove, otherwise always remove
-				if ((layerId && obj.userData.feature.layer === layerId) || !layerId) {
+				if (obj.layer === layerId || !layerId) {
 					this.remove(obj);
 				}
 			}
@@ -911,7 +944,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.0.9',
+	version: '2.1.0',
 
 }
 
@@ -924,7 +957,8 @@ var defaultOptions = {
 	enableSelectingObjects: false,
 	enableDraggingObjects: false,
 	enableRotatingObjects: false,
-	enableTooltips: false
+	enableTooltips: false,
+	multiLayer: false,
 
 }
 module.exports = exports = Threebox;
@@ -16476,7 +16510,7 @@ Objects.prototype = {
 				//[jscastro] if the object options have an adjustment to center the 3D Object different to 0
 				if (center && (center.x != 0 || center.y != 0 || center.z != 0)) {
 					let size = obj.getSize();
-					obj.anchor = { x: -(size.x * center.x), y: -(size.y * center.y), z: -(size.z * center.z) };
+					obj.anchor = { x: obj.anchor.x - (size.x * center.x), y: obj.anchor.y - (size.y * center.y), z: obj.anchor.z - (size.z * center.z) };
 					obj.model.position.set(-obj.anchor.x, -obj.anchor.y, -obj.anchor.z)
 				}
 			}
@@ -16751,7 +16785,7 @@ Objects.prototype = {
 								obj.boundingBoxShadow.layers.disable(1);
 								obj.boundingBox.material = Objects.prototype._defaults.materials.boxNormalMaterial;
 								obj.remove(obj.boxGroup);
-								if (!obj.tooltip.custom) obj.removeTooltip();
+								if (obj.tooltip && !obj.tooltip.custom) obj.removeTooltip();
 							}
 							if (obj.label && !obj.label.alwaysVisible) { obj.label.visible = false; }
 						}
@@ -16870,6 +16904,8 @@ Objects.prototype = {
 				// [jscastro] rotate and scale the model
 				const r = utils.types.rotation(options.rotation, [0, 0, 0]);
 				const s = utils.types.scale(options.scale, [1, 1, 1]);
+				// [jscastro] reposition to 0,0,0
+				dupe.model.position.set(0, 0, 0);
 				// rotate and scale
 				dupe.model.rotation.set(r[0], r[1], r[2]);
 				dupe.model.scale.set(s[0], s[1], s[2]);
@@ -19119,7 +19155,6 @@ var utils = {
 		if (keys1.length !== keys2.length) {
 			return false;
 		}
-
 		if (keys1.length == 0 && keys2.length == 0 && keys1 !== keys2) {
 			return false;
 		}
