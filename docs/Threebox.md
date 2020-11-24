@@ -59,6 +59,7 @@ Sets up a threebox scene inside a [*Mapbox GL* custom layer's onAdd function](ht
 | `enableDraggingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'translate'` or `draggedAction = 'altitude'` |
 | `enableRotatingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'rotate'`|
 | `enableToltips`     | no       | false   | boolean  | Enables the default tooltips on fill-extrusion features and 3D Objects`|
+| `multiLayer`     | no       | false   | boolean  | Enables the option for multi layer pages where a default layer will be created internally that will manage the `tb.update` calls  |
 
 The setup will require to call recursively to `tb.update();` to render the Threebox scene. This 
 [CustomLayerInterface#render](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface#render)
@@ -202,7 +203,7 @@ In all the samples below, the instance of Threebox will be always referred as `t
 
 #### add 
 ```js
-tb.add(obj)
+tb.add(obj [, layerId, sourceId])
 ```
 method to add an object to Threebox scene. It will add it to `tb.world.children` array.
 
@@ -532,6 +533,14 @@ method to remove a layer from Mapbox, including all 3D objects from Threebox sce
 
 <br>
 
+#### setLabelZoomRange 
+```js
+tb.setLabelZoomRange(minzoom, maxzoom)  
+```
+method set the CSS2DObjects zoom range and hide them at the same time the layer is
+
+<br>
+
 #### setLayerHeigthProperty 
 ```js
 tb.setLayerHeigthProperty(layerId, level) 
@@ -543,21 +552,19 @@ This method only works if the objects have a [*GeoJson*](https://geojson.org/) f
 
 #### setLayerZoomRange 
 ```js
-tb.setLayerZoomRange(layer3d, minZoomLayer, maxZoomLayer)
+tb.setLayerZoomRange(layerId, minZoomLayer, maxZoomLayer)
 ```
-Custom Layers don't work on minzoom and maxzoom attributes, and if the layer is including labels they don't hide either on minzoom
+Custom Layers don't work on minzoom and maxzoom attributes, as every layer is rendering the full scene, and if the layer is including labels they don't hide either on minzoom
 
 <br>
 
-
-#### setLabelZoomRange 
+#### setLayerZoomVisibility 
 ```js
-tb.setLabelZoomRange(minzoom, maxzoom)  
+tb.setLayerZoomVisibility(layerId)
 ```
-method set the CSS2DObjects zoom range and hide them at the same time the layer is
+This method sets or resets the layer visibility based on the current zoom. It's used by different methods to set the visibility of the layers.
 
 <br>
-
 
 #### setLayoutProperty 
 ```js
