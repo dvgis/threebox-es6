@@ -8,13 +8,6 @@ function LabelRenderer(map) {
 
 	this.map = map;
 
-	this.minzoom = map.minzoom;
-
-	this.maxzoom = map.maxzoom;
-
-	var zoomEventHandler;
-	var onZoomRange = true;
-
 	this.renderer = new THREE.CSS2DRenderer();
 
 	this.renderer.setSize(this.map.getCanvas().clientWidth, this.map.getCanvas().clientHeight);
@@ -45,44 +38,24 @@ function LabelRenderer(map) {
 		}
 	}
 
-	this.render = function (scene, camera) {
+	this.render = async function (scene, camera) {
 		this.scene = scene;
 		this.camera = camera;
-		this.renderer.render(scene, camera);
+		return new Promise((resolve) => { resolve(this.renderer.render(scene, camera)) }); 
 	}
 
-	this.setZoomRange = function (minzoom, maxzoom) {
-		//[jscastro] we only attach once if there are multiple custom layers
-		if (!zoomEventHandler) {
-			this.minzoom = minzoom;
-			this.maxzoom = maxzoom;
-			zoomEventHandler = this.mapZoom.bind(this);
-			this.map.on('zoom', zoomEventHandler);
-		}
-	};
-
-	this.mapZoom = function (e) {
-		if (this.map.getZoom() < this.minzoom || this.map.getZoom() > this.maxzoom) {
-			this.toggleLabels(false);
-		} else {
-			this.toggleLabels(true);
-		}
-	};
-
 	//[jscastro] method to toggle Layer visibility
-	this.toggleLabels = function (visible) {
-		if (onZoomRange != visible) {
-			// [jscastro] Render any label
-			this.setVisibility(visible, this.scene, this.camera, this.renderer);
-			onZoomRange = visible;
-		}
+	this.toggleLabels = async function (layerId, visible) {
+		return new Promise((resolve) => {
+			resolve(this.setVisibility(layerId, visible, this.scene, this.camera, this.renderer));
+		}) 
 	};
 
 	//[jscastro] method to set visibility
-	this.setVisibility = function (visible, scene, camera, renderer) {
+	this.setVisibility = function (layerId, visible, scene, camera, renderer) {
 		var cache = this.renderer.cacheList;
 		cache.forEach(function (l) {
-			if (l.visible != visible) {
+			if (l.visible != visible && l.layer === layerId) {
 				if ((visible && l.alwaysVisible) || !visible) {
 					l.visible = visible;
 					renderer.renderObject(l, scene, camera);

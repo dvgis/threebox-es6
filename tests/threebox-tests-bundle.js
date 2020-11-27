@@ -9023,7 +9023,7 @@ Threebox.prototype = {
 		this.scene.add(this.world);
 
 		this.objectsCache = new Map();
-		this.customZoomLayers = [];
+		this.zoomLayers = [];
 		
 		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
 
@@ -9149,7 +9149,7 @@ Threebox.prototype = {
 					feature: f
 				});
 				t.setCoords(coordinates);
-				map.tb.add(t);
+				map.tb.add(t, f.layer.id);
 				f.tooltip = t;
 				f.tooltip.tooltip.visible = true;
 			}
@@ -9417,8 +9417,8 @@ Threebox.prototype = {
 			}
 
 			map.onZoomEnd = function (e) {
-				this.tb.customZoomLayers.every((layer) => {
-					this.tb.setLayerZoomVisibility(layer);
+				this.tb.zoomLayers.every((layerId) => {
+					this.tb.setLayerZoomVisibility(layerId);
 					return true;
 				});
 			}
@@ -9559,11 +9559,6 @@ Threebox.prototype = {
 		return result;
 	},
 
-	//[jscastro] method set the CSS2DObjects zoom range and hide them at the same time the layer is
-	setLabelZoomRange: function (minzoom, maxzoom) {
-		this.labelRenderer.setZoomRange(minzoom, maxzoom);
-	},
-
 	//[jscastro] method to replicate behaviour of map.setLayoutProperty when Threebox are affected
 	setLayoutProperty: function (layerId, name, value) {
 		//first set layout property at the map
@@ -9584,8 +9579,7 @@ Threebox.prototype = {
 	setLayerZoomRange: function (layerId, minZoomLayer, maxZoomLayer) {
 		if (this.map.getLayer(layerId)) {
 			this.map.setLayerZoomRange(layerId, minZoomLayer, maxZoomLayer);
-			this.setLabelZoomRange(minZoomLayer, maxZoomLayer);
-			if (!this.customZoomLayers.includes(layerId)) this.customZoomLayers.push(layerId);
+			if (!this.zoomLayers.includes(layerId)) this.zoomLayers.push(layerId);
 			this.setLayerZoomVisibility(layerId);
 		}
 	},
@@ -9626,6 +9620,7 @@ Threebox.prototype = {
 		if (this.map.getLayer(layerId)) {
 			//call
 			this.setLayoutProperty(layerId, 'visibility', (visible ? 'visible' : 'none'))
+			this.labelRenderer.toggleLabels(layerId, visible);
 		};
 	},
 
@@ -9635,9 +9630,9 @@ Threebox.prototype = {
 		let v = l.visibility;
 		let u = typeof v === 'undefined';
 		if (l) {
-			if (l.minzoom && z < l.minzoom) { if (u || v === 'visible') { this.toggleLayer(l.id, false); }; return };
-			if (l.maxzoom && z >= l.maxzoom) { if (u || v === 'visible') { this.toggleLayer(l.id, false); }; return };
-			if (u || v === 'none') this.toggleLayer(l.id, true);
+			if (l.minzoom && z < l.minzoom) { this.toggleLayer(l.id, false); return; };
+			if (l.maxzoom && z >= l.maxzoom) { this.toggleLayer(l.id, false); return; };
+			this.toggleLayer(l.id, true);
 		}
 	},
 
@@ -9882,7 +9877,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.1.0',
+	version: '2.1.1',
 
 }
 
@@ -10489,6 +10484,11 @@ THREE.CSS2DObject = function (element) {
 	//[jscastro] some labels must be always visible
 	this.alwaysVisible = false;
 
+	//[jscastro] layer is needed to be rendered/hidden based on layer visibility
+	Object.defineProperty(this, 'layer', {
+		get() { return (this.parent && this.parent.parent ? this.parent.parent.layer : null) }
+	});
+
 	this.dispose = function () {
 		this.remove();
 		this.element = null;
@@ -10572,7 +10572,11 @@ THREE.CSS2DRenderer = function () {
 		if (object instanceof THREE.CSS2DObject) {
 
 			//[jscastro] optimize performance and don't update and remove the labels that are not visible
-			if (!object.visible) { object.remove(); }
+			if (!object.visible) {
+				cache.objects.delete({ key: object.uuid });
+				cache.list.delete(object.uuid);
+				object.remove();
+			}
 			else {
 
 				object.onBeforeRender(_this, scene, camera);
@@ -10594,8 +10598,8 @@ THREE.CSS2DRenderer = function () {
 					distanceToCameraSquared: getDistanceToSquared(camera, object)
 				};
 
-				cache.objects.set(object, objectData);
-				cache.list.set(object, object);
+				cache.objects.set({ key: object.uuid }, objectData);
+				cache.list.set(object.uuid, object);
 
 				if (element.parentNode !== domElement) {
 
@@ -10649,8 +10653,8 @@ THREE.CSS2DRenderer = function () {
 
 		var sorted = filterAndFlatten(scene).sort(function (a, b) {
 			//[jscastro] check the objects already exist in the cache
-			let cacheA = cache.objects.get(a);
-			let cacheB = cache.objects.get(b);
+			let cacheA = cache.objects.get({ key: a.uuid });
+			let cacheB = cache.objects.get({ key: b.uuid });
 
 			if (cacheA && cacheB) {
 				var distanceA = cacheA.distanceToCameraSquared;
@@ -10684,14 +10688,6 @@ THREE.CSS2DRenderer = function () {
 
 	};
 
-	this.setVisibility = function (visible, scene, camera) {
-		var a = cache.objects;
-		cache.list.forEach(function (l) {
-			l.visible = visible;
-			this.renderObject(l, scene, camera);
-		});
-	};
-
 };
 
 module.exports = exports = { CSS2DRenderer: THREE.CSS2DRenderer, CSS2DObject: THREE.CSS2DObject };
@@ -10707,13 +10703,6 @@ const THREE = require("./CSS2DRenderer.js");
 function LabelRenderer(map) {
 
 	this.map = map;
-
-	this.minzoom = map.minzoom;
-
-	this.maxzoom = map.maxzoom;
-
-	var zoomEventHandler;
-	var onZoomRange = true;
 
 	this.renderer = new THREE.CSS2DRenderer();
 
@@ -10745,44 +10734,24 @@ function LabelRenderer(map) {
 		}
 	}
 
-	this.render = function (scene, camera) {
+	this.render = async function (scene, camera) {
 		this.scene = scene;
 		this.camera = camera;
-		this.renderer.render(scene, camera);
+		return new Promise((resolve) => { resolve(this.renderer.render(scene, camera)) }); 
 	}
 
-	this.setZoomRange = function (minzoom, maxzoom) {
-		//[jscastro] we only attach once if there are multiple custom layers
-		if (!zoomEventHandler) {
-			this.minzoom = minzoom;
-			this.maxzoom = maxzoom;
-			zoomEventHandler = this.mapZoom.bind(this);
-			this.map.on('zoom', zoomEventHandler);
-		}
-	};
-
-	this.mapZoom = function (e) {
-		if (this.map.getZoom() < this.minzoom || this.map.getZoom() > this.maxzoom) {
-			this.toggleLabels(false);
-		} else {
-			this.toggleLabels(true);
-		}
-	};
-
 	//[jscastro] method to toggle Layer visibility
-	this.toggleLabels = function (visible) {
-		if (onZoomRange != visible) {
-			// [jscastro] Render any label
-			this.setVisibility(visible, this.scene, this.camera, this.renderer);
-			onZoomRange = visible;
-		}
+	this.toggleLabels = async function (layerId, visible) {
+		return new Promise((resolve) => {
+			resolve(this.setVisibility(layerId, visible, this.scene, this.camera, this.renderer));
+		}) 
 	};
 
 	//[jscastro] method to set visibility
-	this.setVisibility = function (visible, scene, camera, renderer) {
+	this.setVisibility = function (layerId, visible, scene, camera, renderer) {
 		var cache = this.renderer.cacheList;
 		cache.forEach(function (l) {
-			if (l.visible != visible) {
+			if (l.visible != visible && l.layer === layerId) {
 				if ((visible && l.alwaysVisible) || !visible) {
 					l.visible = visible;
 					renderer.renderObject(l, scene, camera);

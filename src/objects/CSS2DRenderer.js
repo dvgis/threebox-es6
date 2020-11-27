@@ -14,6 +14,11 @@ THREE.CSS2DObject = function (element) {
 	//[jscastro] some labels must be always visible
 	this.alwaysVisible = false;
 
+	//[jscastro] layer is needed to be rendered/hidden based on layer visibility
+	Object.defineProperty(this, 'layer', {
+		get() { return (this.parent && this.parent.parent ? this.parent.parent.layer : null) }
+	});
+
 	this.dispose = function () {
 		this.remove();
 		this.element = null;
@@ -97,7 +102,11 @@ THREE.CSS2DRenderer = function () {
 		if (object instanceof THREE.CSS2DObject) {
 
 			//[jscastro] optimize performance and don't update and remove the labels that are not visible
-			if (!object.visible) { object.remove(); }
+			if (!object.visible) {
+				cache.objects.delete({ key: object.uuid });
+				cache.list.delete(object.uuid);
+				object.remove();
+			}
 			else {
 
 				object.onBeforeRender(_this, scene, camera);
@@ -119,8 +128,8 @@ THREE.CSS2DRenderer = function () {
 					distanceToCameraSquared: getDistanceToSquared(camera, object)
 				};
 
-				cache.objects.set(object, objectData);
-				cache.list.set(object, object);
+				cache.objects.set({ key: object.uuid }, objectData);
+				cache.list.set(object.uuid, object);
 
 				if (element.parentNode !== domElement) {
 
@@ -174,8 +183,8 @@ THREE.CSS2DRenderer = function () {
 
 		var sorted = filterAndFlatten(scene).sort(function (a, b) {
 			//[jscastro] check the objects already exist in the cache
-			let cacheA = cache.objects.get(a);
-			let cacheB = cache.objects.get(b);
+			let cacheA = cache.objects.get({ key: a.uuid });
+			let cacheB = cache.objects.get({ key: b.uuid });
 
 			if (cacheA && cacheB) {
 				var distanceA = cacheA.distanceToCameraSquared;
@@ -207,14 +216,6 @@ THREE.CSS2DRenderer = function () {
 		this.renderObject(scene, scene, camera);
 		zOrder(scene);
 
-	};
-
-	this.setVisibility = function (visible, scene, camera) {
-		var a = cache.objects;
-		cache.list.forEach(function (l) {
-			l.visible = visible;
-			this.renderObject(l, scene, camera);
-		});
 	};
 
 };

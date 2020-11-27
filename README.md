@@ -1,17 +1,23 @@
 # `Threebox`
 
-A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://docs.mapbox.com/mapbox-gl-js/examples/)**, using the [`CustomLayerInterface`](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface) feature. Provides convenient methods to manage objects in lnglat coordinates, and to synchronize the map and scene cameras.
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/jscastro76/threebox?style=flat-square)](https://github.com/jscastro76/threebox/releases/)
+[![NPM version](http://img.shields.io/npm/v/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin)
+[![NPM license](http://img.shields.io/npm/l/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin)
+![npm](https://img.shields.io/npm/dt/threebox-plugin?style=social)
 
+A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://docs.mapbox.com/mapbox-gl-js/examples/)**, using the [`CustomLayerInterface`](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface) feature. Provides convenient methods to manage objects in lnglat coordinates, and to synchronize the map and scene cameras.
 <img alt="threebox" src="docs/gallery.jpg">
 
 <br>
 
 - - -
-## Current release
+## Latest release
 
-Current release is [**2.1.0**](https://github.com/jscastro76/threebox/releases/tag/v.2.1.0), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md#210) for more details.
+![GitHub Release Date](https://img.shields.io/github/release-date/jscastro76/threebox?style=flat-square)  
+Latest  **code release** is [![GitHub release (latest by date)](https://img.shields.io/github/v/release/jscastro76/threebox?style=flat-square)](https://github.com/jscastro76/threebox/releases/), please review the [**Change log**](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md) for more details.
 
-Threebox is available as an [nmp package](https://www.npmjs.com/package/threebox-plugin)
+Threebox is also available as an **nmp package** [![NPM version](http://img.shields.io/npm/v/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin)  
+
 ```js
 npm i threebox-plugin
 ```
@@ -61,6 +67,7 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Support for Object3D auto-centering, bounding box and floor projection.
 - Optimization for loading thousands of objects through cache.
 - Optimization of Camera perspective to have Raycast with pixel-precision level.
+- Available as [npm package](https://www.npmjs.com/package/threebox-plugin)
 - Check out [change log](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md) for more detail.
 
 <br>
@@ -96,7 +103,7 @@ All the [**Threebox Documentation**](/docs/Threebox.md) has been completely upda
 You can use threebox in two different ways. 
 
 #### NPM install
-Add threebox to your project via [npm package](https://www.npmjs.com/package/threebox-plugin):
+Add threebox to your project via **npm package** [![NPM version](http://img.shields.io/npm/v/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin) :
 
 `npm install threebox-plugin`
 

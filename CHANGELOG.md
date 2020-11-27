@@ -1,3 +1,21 @@
+## 2.1.1
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+
+- [**#105**](https://github.com/jscastro76/threebox/issues/105) In examples tb is not defined . #105
+- [**#107**](https://github.com/jscastro76/threebox/issues/107) CSS2D labels must be refactored to optimize the render #107 
+- [**#108**](https://github.com/jscastro76/threebox/issues/108) Deprecate `tb.setLabelZoomRange` #108
+
+#### :beetle: Bug fixes
+
+- [**#104**](https://github.com/jscastro76/threebox/issues/104) CSS2DLabels doesn't hide properly based on zoom ranges on setLabelZoomRange #104
+
+<br>
+
+- - - 
+
 ## 2.1.0
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 

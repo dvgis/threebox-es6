@@ -80,7 +80,7 @@ Threebox.prototype = {
 		this.scene.add(this.world);
 
 		this.objectsCache = new Map();
-		this.customZoomLayers = [];
+		this.zoomLayers = [];
 		
 		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
 
@@ -206,7 +206,7 @@ Threebox.prototype = {
 					feature: f
 				});
 				t.setCoords(coordinates);
-				map.tb.add(t);
+				map.tb.add(t, f.layer.id);
 				f.tooltip = t;
 				f.tooltip.tooltip.visible = true;
 			}
@@ -474,8 +474,8 @@ Threebox.prototype = {
 			}
 
 			map.onZoomEnd = function (e) {
-				this.tb.customZoomLayers.every((layer) => {
-					this.tb.setLayerZoomVisibility(layer);
+				this.tb.zoomLayers.every((layerId) => {
+					this.tb.setLayerZoomVisibility(layerId);
 					return true;
 				});
 			}
@@ -616,11 +616,6 @@ Threebox.prototype = {
 		return result;
 	},
 
-	//[jscastro] method set the CSS2DObjects zoom range and hide them at the same time the layer is
-	setLabelZoomRange: function (minzoom, maxzoom) {
-		this.labelRenderer.setZoomRange(minzoom, maxzoom);
-	},
-
 	//[jscastro] method to replicate behaviour of map.setLayoutProperty when Threebox are affected
 	setLayoutProperty: function (layerId, name, value) {
 		//first set layout property at the map
@@ -641,8 +636,7 @@ Threebox.prototype = {
 	setLayerZoomRange: function (layerId, minZoomLayer, maxZoomLayer) {
 		if (this.map.getLayer(layerId)) {
 			this.map.setLayerZoomRange(layerId, minZoomLayer, maxZoomLayer);
-			this.setLabelZoomRange(minZoomLayer, maxZoomLayer);
-			if (!this.customZoomLayers.includes(layerId)) this.customZoomLayers.push(layerId);
+			if (!this.zoomLayers.includes(layerId)) this.zoomLayers.push(layerId);
 			this.setLayerZoomVisibility(layerId);
 		}
 	},
@@ -683,6 +677,7 @@ Threebox.prototype = {
 		if (this.map.getLayer(layerId)) {
 			//call
 			this.setLayoutProperty(layerId, 'visibility', (visible ? 'visible' : 'none'))
+			this.labelRenderer.toggleLabels(layerId, visible);
 		};
 	},
 
@@ -692,9 +687,9 @@ Threebox.prototype = {
 		let v = l.visibility;
 		let u = typeof v === 'undefined';
 		if (l) {
-			if (l.minzoom && z < l.minzoom) { if (u || v === 'visible') { this.toggleLayer(l.id, false); }; return };
-			if (l.maxzoom && z >= l.maxzoom) { if (u || v === 'visible') { this.toggleLayer(l.id, false); }; return };
-			if (u || v === 'none') this.toggleLayer(l.id, true);
+			if (l.minzoom && z < l.minzoom) { this.toggleLayer(l.id, false); return; };
+			if (l.maxzoom && z >= l.maxzoom) { this.toggleLayer(l.id, false); return; };
+			this.toggleLayer(l.id, true);
 		}
 	},
 
@@ -939,7 +934,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.1.0',
+	version: '2.1.1',
 
 }
 
