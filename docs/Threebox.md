@@ -58,7 +58,7 @@ Sets up a threebox scene inside a [*Mapbox GL* custom layer's onAdd function](ht
 | `enableSelectingObjects`     | no       | false   | boolean  | Enables the Mouseover and Selection of 3D objects. This will fire the event `SelectedChange`. This value will set the `options.bbx` value of the objects created.|
 | `enableDraggingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'translate'` or `draggedAction = 'altitude'` |
 | `enableRotatingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'rotate'`|
-| `enableToltips`     | no       | false   | boolean  | Enables the default tooltips on fill-extrusion features and 3D Objects`|
+| `enableToltips`     | no       | false   | boolean  | Enables the default tooltips on fill-extrusion features and 3D Objects|
 | `multiLayer`     | no       | false   | boolean  | Enables the option for multi layer pages where a default layer will be created internally that will manage the `tb.update` calls  |
 
 The setup will require to call recursively to `tb.update();` to render the Threebox scene. This 
@@ -521,7 +521,7 @@ If `helper` is true, then a helper is shown.
 ```js
 tb.remove(obj)
 ```
-method to remove an object from Threebox scene and the `tb.world.children` array.
+Method to remove an object from Threebox scene and the `tb.world.children` array.
 
 <br>
 
@@ -529,15 +529,7 @@ method to remove an object from Threebox scene and the `tb.world.children` array
 ```js
 tb.removeLayer(layerId)
 ```
-method to remove a layer from Mapbox, including all 3D objects from Threebox scene and the `tb.world.children` array. 
-
-<br>
-
-#### setLabelZoomRange 
-```js
-tb.setLabelZoomRange(minzoom, maxzoom)  
-```
-method set the CSS2DObjects zoom range and hide them at the same time the layer is
+Method to remove a layer from Mapbox, including all 3D objects from Threebox scene and the `tb.world.children` array. 
 
 <br>
 
@@ -545,7 +537,7 @@ method set the CSS2DObjects zoom range and hide them at the same time the layer 
 ```js
 tb.setLayerHeigthProperty(layerId, level) 
 ```
-method to set the height of all the objects in a level. 
+Method to set the height of all the objects in a level. 
 This method only works if the objects have a [*GeoJson*](https://geojson.org/) feature, and a `level` attribute among its properties.
 
 <br>
@@ -554,7 +546,8 @@ This method only works if the objects have a [*GeoJson*](https://geojson.org/) f
 ```js
 tb.setLayerZoomRange(layerId, minZoomLayer, maxZoomLayer)
 ```
-Custom Layers don't work on minzoom and maxzoom attributes, as every layer is rendering the full scene, and if the layer is including labels they don't hide either on minzoom
+Custom Layers don't work on minzoom and maxzoom attributes, as every layer is rendering the full scene, and if the layer is including labels they don't hide either on minzoom.  
+This method sets the zoom range for any custom layer and manages the 3D objects and CSS2D labels toggle action in sync with layer visibility set through `tb.setLayoutProperty`.
 
 <br>
 
@@ -570,7 +563,7 @@ This method sets or resets the layer visibility based on the current zoom. It's 
 ```js
 tb.setLayoutProperty(layerId, name, value)
 ```
-This method to replicates the behaviour of [`map.setLayoutProperty`](https://docs.mapbox.com/mapbox-gl-js/api/map/#map#setlayoutproperty) when custom layers are affected but it can used for any layer type. 
+This method replicates the behaviour of [`map.setLayoutProperty`](https://docs.mapbox.com/mapbox-gl-js/api/map/#map#setlayoutproperty) when custom layers are affected but it can used for any layer type. 
 
 <br>
 
@@ -579,7 +572,7 @@ This method to replicates the behaviour of [`map.setLayoutProperty`](https://doc
 ```js
 tb.setStyle(styleId[, options])
 ```
-This method to replicates the behaviour of [`map.setStyle`](https://docs.mapbox.com/mapbox-gl-js/api/map/#map#setstyle) to remove the 3D objects from `tb.world`.
+This method replicates the behaviour of [`map.setStyle`](https://docs.mapbox.com/mapbox-gl-js/api/map/#map#setstyle) to remove the 3D objects from `tb.world`.
 It's a direct passthrough to `map.setStyle` but it also calls internally `tb.clear(true)` to remove the children from `tb.world` and also to dispose all the resources reserved by those objects.
 
 <br>
@@ -1494,7 +1487,7 @@ Plays the default embedded animation of a loaded 3D model.
 | option | required | default | type   | description                                                                                  |
 |-----------|----------|---------|--------|------------|
 | `duration`    | no       | 1000      | number | Duration of the animation, in milliseconds |
-
+| `speed`    | no       | 1      | number | This value changes the `obj.mixer.timeScale` of the animation being played where 1 is the default duration of the animation, < 1 will mathe the animation slower and > 1 will make the animation faster |
 
 <br>
 
@@ -1510,6 +1503,7 @@ Plays one of the embedded animations of a loaded 3D model. The animation index m
 |-----------|----------|---------|--------|------------|
 | `animation`    | yes       | NA      | number | Index of the animation in the 3D model. If you need to check whats the index of the animation you can get the full array using `obj.animations`.|
 | `duration`    | no       | 1000      | number | Duration of the animation, in milliseconds |
+| `speed`    | no       | 1      | number | This value changes the `obj.mixer.timeScale` of the animation being played where 1 is the default duration of the animation, < 1 will mathe the animation slower and > 1 will make the animation faster |
 
 
 <br>
