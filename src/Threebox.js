@@ -530,8 +530,8 @@ Threebox.prototype = {
 		} else {
 			this.objectsCache.set(options.obj, {
 				promise: new Promise(
-					function (resolve, reject) {
-						loader(options, cb, function (obj) {
+					async (resolve, reject) => {
+						loader(options, cb, async (obj) => {
 							//console.log("Loading " + options.obj);
 							if (obj.duplicate) {
 								resolve(obj.duplicate());
@@ -801,7 +801,8 @@ Threebox.prototype = {
 		var date = new Date(newDate.getTime());
 
 		if (coords) {
-			this.mapCenter = { lng: coords[0], lat: coords[1] };
+			if (coords.lng && coords.lat) this.mapCenter = coords
+			else this.mapCenter = { lng: coords[0], lat: coords[1] };
 		}
 		else {
 			this.mapCenter = this.map.getCenter();

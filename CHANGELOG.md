@@ -7,6 +7,9 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 - [**#105**](https://github.com/jscastro76/threebox/issues/105) In examples tb is not defined . #105
 - [**#107**](https://github.com/jscastro76/threebox/issues/107) CSS2D labels must be refactored to optimize the render #107 
 - [**#108**](https://github.com/jscastro76/threebox/issues/108) Deprecate `tb.setLabelZoomRange` #108
+- [**#109**](https://github.com/jscastro76/threebox/issues/109) add speed param to animations #109
+- [**#114**](https://github.com/jscastro76/threebox/issues/114) `tb.setSunlight` must accept LngLatLike coords #114
+- [**#117**](https://github.com/jscastro76/threebox/issues/117) cache functions must be 100% async #117
 
 #### :beetle: Bug fixes
 

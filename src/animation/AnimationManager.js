@@ -235,6 +235,8 @@ AnimationManager.prototype = {
 
 				utils.extend(options, newParams);
 
+				obj.mixer.timeScale = options.speed || 1;
+
 				let entry = {
 					type: 'playDefault',
 					parameters: options
