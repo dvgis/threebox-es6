@@ -432,12 +432,12 @@ Objects.prototype = {
 					const size = box.getSize(new THREE.Vector3());
 					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
 					obj.removeCSS2D(objName);
-					let help = new CSS2D.CSS2DObject(element);
-					help.name = objName;
-					help.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * height); 
-					help.visible = false; //only visible on mouseover or selected
-					obj.scaleGroup.add(help);
-					return help;
+					let c = new CSS2D.CSS2DObject(element);
+					c.name = objName;
+					c.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * height); 
+					c.visible = false; //only visible on mouseover or selected
+					obj.scaleGroup.add(c);
+					return c;
 				}
 			}
 

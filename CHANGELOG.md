@@ -14,6 +14,9 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 #### :beetle: Bug fixes
 
 - [**#104**](https://github.com/jscastro76/threebox/issues/104) CSS2DLabels doesn't hide properly based on zoom ranges on setLabelZoomRange #104
+- [**#120**](https://github.com/jscastro76/threebox/issues/120) `labelCanvas` z-index overlaps with HTML controls visibility #120
+- [**#122**](https://github.com/jscastro76/threebox/issues/122) when the style changes `tb.zoomLayers` must be reset #122
+- [**#123**](https://github.com/jscastro76/threebox/issues/123) style change doesn't work when `multiLayer = true` #123
 
 <br>
 

@@ -114,10 +114,14 @@ Threebox.prototype = {
 		this.enableTooltips = this.options.enableTooltips || false;
 		this.multiLayer = this.options.multiLayer || false;
 
+		this.map.on('style.load', function () {
+			this.tb.zoomLayers = [];
+			//[jscastro] if multiLayer, create a by default layer in the map, so tb.update won't be needed in client side to avoid duplicating calls to render
+			if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: 'custom', renderingMode: '3d', map: this, onAdd: function (map, gl) { }, render: function (gl, matrix) { this.map.tb.update(); } })
+		});
+
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
-			//[jscastro] if multiLayer, create a by default layer in the map, so tb.update won't be needed in client side to avoid duplicating calls to render
-			if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: 'custom', renderingMode: '3d', map: this, onAdd: function (map, gl) { }, render: function (gl, matrix) { this.map.tb.update(); }})
 			//[jscastro] new fields to manage events on map
 			let selectedObject; //selected object through click
 			let draggedObject; //dragged object through mousedown + mousemove
@@ -1775,6 +1779,7 @@ function LabelRenderer(map) {
 	this.renderer.domElement.style.position = 'absolute';
 	this.renderer.domElement.id = 'labelCanvas'; //TODO: this value must come by parameter
 	this.renderer.domElement.style.top = 0;
+	this.renderer.domElement.style.zIndex = "0";
 	this.map.getCanvasContainer().appendChild(this.renderer.domElement);
 
 	this.scene, this.camera;
@@ -16593,12 +16598,12 @@ Objects.prototype = {
 					const size = box.getSize(new THREE.Vector3());
 					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
 					obj.removeCSS2D(objName);
-					let help = new CSS2D.CSS2DObject(element);
-					help.name = objName;
-					help.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * height); 
-					help.visible = false; //only visible on mouseover or selected
-					obj.scaleGroup.add(help);
-					return help;
+					let c = new CSS2D.CSS2DObject(element);
+					c.name = objName;
+					c.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * height); 
+					c.visible = false; //only visible on mouseover or selected
+					obj.scaleGroup.add(c);
+					return c;
 				}
 			}
 

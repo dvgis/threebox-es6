@@ -14,6 +14,7 @@ function LabelRenderer(map) {
 	this.renderer.domElement.style.position = 'absolute';
 	this.renderer.domElement.id = 'labelCanvas'; //TODO: this value must come by parameter
 	this.renderer.domElement.style.top = 0;
+	this.renderer.domElement.style.zIndex = "0";
 	this.map.getCanvasContainer().appendChild(this.renderer.domElement);
 
 	this.scene, this.camera;
