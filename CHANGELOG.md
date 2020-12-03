@@ -10,6 +10,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 - [**#109**](https://github.com/jscastro76/threebox/issues/109) add speed param to animations #109
 - [**#114**](https://github.com/jscastro76/threebox/issues/114) `tb.setSunlight` must accept LngLatLike coords #114
 - [**#117**](https://github.com/jscastro76/threebox/issues/117) cache functions must be 100% async #117
+- [**#119**](https://github.com/jscastro76/threebox/issues/119) Create a sample with azure maps #119. Added added [17-azuremaps.html](https://github.com/jscastro76/threebox/blob/master/examples/17-azuremaps.html) 
 
 #### :beetle: Bug fixes
 

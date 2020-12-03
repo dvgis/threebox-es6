@@ -17,6 +17,8 @@
 	<script>
 
 		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
+		/// Seattle Space Needle from here https://3dwarehouse.sketchup.com/model/d4c52391dfaa912d9a1f861ea5945001/Space-Needle?hl=en&login=true
+		/// Soldier model from here Skeletal Animation Blending= https://www.mixamo.com/ 
 
 		//Instantiate a map object
 		var map;
@@ -68,10 +70,10 @@
 					type: 'custom',
 					renderingMode: '3d',
 					onAdd: function (map, mbxContext) {
-						let options = { obj: './models/landmarks/spaceneedle.glb', type: 'gltf', scale: 368.82, units: 'meters', rotation: { x: 90, y: 180, z: 0 }, anchor: 'center' }
+						let options = { obj: './models/landmarks/spaceneedle.glb', type: 'gltf', scale: 368.82, units: 'meters', rotation: { x: 90, y: 0, z: 0 }, anchor: 'center' }
 
 						tb.loadObj(options, function (model) {
-							model.setCoords([-122.349293, 47.620439]);
+							model.setCoords([-122.34928, 47.620569]);
 							model.castShadow = true;
 							model.addTooltip("This is the Space Needle!!");
 							tb.add(model);

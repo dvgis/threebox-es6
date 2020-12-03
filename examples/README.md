@@ -108,8 +108,16 @@ These are the examples included in Threebox.
 <img alt="threebox" src="images/multilayer.png" width="50%"><br/>
 - This sample shows how to create multiple layers dynamically with Threebox and manage different zoom ranges for each one. 
 - Create multiple 3D layers in Mapbox is a heavy consumer of resources because every layer is rendered separately.
-- Enabled built-in multilayer support through `multiLayer` param, this param will create an embedded internal layer in Threebox that will manage the render with a single call to tb.update so it's not needed in each layer definition. This saves a lot of resources as it's mapbox render loop only calls once to three.js render.
+- Enabled built-in multilayer support through `multiLayer` param, this param will create an embedded internal layer in Threebox that will manage the render with a single call to tb.update so it's not needed in each layer definition. This saves a lot of resources as mapbox render loop only calls once to three.js render.
 - Each layer can be hidden explicitly with a button, but also each layer has a different zoom range through `tb.setLayoutZoomRange` so the layers will hide depending on zoom level. 
 - Added performance stats indicator.
+
+- - - -
+
+#### [17-azuremaps.html](https://github.com/jscastro76/threebox/blob/master/examples/17-azuremaps.html) 
+<img alt="threebox" src="images/azuremaps.png" width="50%"><br/>
+- This sample shows how to create an Azure Maps sample through threebox using the satellite Azure Maps style.
+- It adds two models, one with the Space Needle in real size and other with a Giant Soldier.
+- This sample shows how to  add real sunlight position and shadows over this two models. 
 
 - - - -
