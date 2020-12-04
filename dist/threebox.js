@@ -2,7 +2,7 @@
 window.Threebox = require('./src/Threebox.js'),
 window.THREE = require('./src/three.js')
 
-},{"./src/Threebox.js":2,"./src/three.js":22}],2:[function(require,module,exports){
+},{"./src/Threebox.js":2,"./src/three.js":23}],2:[function(require,module,exports){
 /**
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
@@ -17,6 +17,7 @@ const ThreeboxConstants = require("./utils/constants.js");
 const Objects = require("./objects/objects.js");
 const material = require("./utils/material.js");
 const sphere = require("./objects/sphere.js");
+const extrusion = require("./objects/extrusion.js");
 const label = require("./objects/label.js");
 const tooltip = require("./objects/tooltip.js");
 const loader = require("./objects/loadObj.js");
@@ -117,7 +118,7 @@ Threebox.prototype = {
 		this.map.on('style.load', function () {
 			this.tb.zoomLayers = [];
 			//[jscastro] if multiLayer, create a by default layer in the map, so tb.update won't be needed in client side to avoid duplicating calls to render
-			if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: 'custom', renderingMode: '3d', map: this, onAdd: function (map, gl) { }, render: function (gl, matrix) { this.map.tb.update(); } })
+			if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: 'custom', renderingMode: '3d', map: this, onAdd: function (map, gl) { }, render: function (gl, matrix) { this.tb.update(); } })
 		});
 
 		//[jscastro] new event map on load
@@ -517,9 +518,14 @@ Threebox.prototype = {
 		return tube(options, this.world)
 	},
 
-	Object3D: function (options, o) {
+	extrusion: function (options) {
 		this.setDefaultView(options, this.options);
-		return Object3D(options, o)
+		return extrusion(options);
+	},
+
+	Object3D: function (options) {
+		this.setDefaultView(options, this.options);
+		return Object3D(options)
 	},
 
 	loadObj: async function loadObj(options, cb) {
@@ -964,7 +970,7 @@ var defaultOptions = {
 module.exports = exports = Threebox;
 
 
-},{"./animation/AnimationManager.js":3,"./camera/CameraSync.js":4,"./objects/LabelRenderer.js":6,"./objects/Object3D.js":7,"./objects/effects/BuildingShadows.js":9,"./objects/label.js":10,"./objects/line.js":11,"./objects/loadObj.js":12,"./objects/objects.js":18,"./objects/sphere.js":19,"./objects/tooltip.js":20,"./objects/tube.js":21,"./three.js":22,"./utils/constants.js":23,"./utils/material.js":24,"./utils/suncalc.js":25,"./utils/utils.js":26}],3:[function(require,module,exports){
+},{"./animation/AnimationManager.js":3,"./camera/CameraSync.js":4,"./objects/LabelRenderer.js":6,"./objects/Object3D.js":7,"./objects/effects/BuildingShadows.js":9,"./objects/extrusion.js":10,"./objects/label.js":11,"./objects/line.js":12,"./objects/loadObj.js":13,"./objects/objects.js":19,"./objects/sphere.js":20,"./objects/tooltip.js":21,"./objects/tube.js":22,"./three.js":23,"./utils/constants.js":24,"./utils/material.js":25,"./utils/suncalc.js":26,"./utils/utils.js":27}],3:[function(require,module,exports){
 /**
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
@@ -1408,7 +1414,7 @@ const defaults = {
     }
 }
 module.exports = exports = AnimationManager;
-},{"../three.js":22,"../utils/utils.js":26}],4:[function(require,module,exports){
+},{"../three.js":23,"../utils/utils.js":27}],4:[function(require,module,exports){
 /**
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
@@ -1536,7 +1542,7 @@ CameraSync.prototype = {
 }
 
 module.exports = exports = CameraSync;
-},{"../three.js":22,"../utils/constants.js":23,"../utils/utils.js":26}],5:[function(require,module,exports){
+},{"../three.js":23,"../utils/constants.js":24,"../utils/utils.js":27}],5:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -1762,7 +1768,7 @@ THREE.CSS2DRenderer = function () {
 module.exports = exports = { CSS2DRenderer: THREE.CSS2DRenderer, CSS2DObject: THREE.CSS2DObject };
 
 
-},{"../three.js":22}],6:[function(require,module,exports){
+},{"../three.js":23}],6:[function(require,module,exports){
 /**
  * @author jscastro / https://github.com/jscastro76
  */
@@ -1843,9 +1849,13 @@ const utils = require("../utils/utils.js");
 
 function Object3D(opt) {
 	opt = utils._validate(opt, Objects.prototype._defaults.Object3D);
-
 	// [jscastro] full refactor of Object3D to behave exactly like 3D Models loadObj
 	let obj = opt.obj;
+	// [jscastro] options.rotation was wrongly used
+	const r = utils.types.rotation(opt.rotation, [0, 0, 0]);
+	const s = utils.types.scale(opt.scale, [1, 1, 1]);
+	obj.rotation.set(r[0], r[1], r[2]);
+	obj.scale.set(s[0], s[1], s[2]);
 	obj.name = "model";
 	let userScaleGroup = Objects.prototype._makeGroup(obj, opt);
 	opt.obj.name = "model";
@@ -1860,7 +1870,7 @@ function Object3D(opt) {
 }
 
 module.exports = exports = Object3D;
-},{"../utils/utils.js":26,"./objects.js":18}],8:[function(require,module,exports){
+},{"../utils/utils.js":27,"./objects.js":19}],8:[function(require,module,exports){
 /** @license zlib.js 2012 - imaya [ https://github.com/imaya/zlib.js ] The MIT License */var mod = {}, l = void 0, aa = mod; function r(c, d) { var a = c.split("."), b = aa; !(a[0] in b) && b.execScript && b.execScript("var " + a[0]); for (var e; a.length && (e = a.shift());)!a.length && d !== l ? b[e] = d : b = b[e] ? b[e] : b[e] = {} }; var t = "undefined" !== typeof Uint8Array && "undefined" !== typeof Uint16Array && "undefined" !== typeof Uint32Array && "undefined" !== typeof DataView; function v(c) { var d = c.length, a = 0, b = Number.POSITIVE_INFINITY, e, f, g, h, k, m, n, p, s, x; for (p = 0; p < d; ++p)c[p] > a && (a = c[p]), c[p] < b && (b = c[p]); e = 1 << a; f = new (t ? Uint32Array : Array)(e); g = 1; h = 0; for (k = 2; g <= a;) { for (p = 0; p < d; ++p)if (c[p] === g) { m = 0; n = h; for (s = 0; s < g; ++s)m = m << 1 | n & 1, n >>= 1; x = g << 16 | p; for (s = m; s < e; s += k)f[s] = x; ++h } ++g; h <<= 1; k <<= 1 } return [f, a, b] }; function w(c, d) {
 this.g = []; this.h = 32768; this.d = this.f = this.a = this.l = 0; this.input = t ? new Uint8Array(c) : c; this.m = !1; this.i = y; this.r = !1; if (d || !(d = {})) d.index && (this.a = d.index), d.bufferSize && (this.h = d.bufferSize), d.bufferType && (this.i = d.bufferType), d.resize && (this.r = d.resize); switch (this.i) {
 	case A: this.b = 32768; this.c = new (t ? Uint8Array : Array)(32768 + this.h + 258); break; case y: this.b = 0; this.c = new (t ? Uint8Array : Array)(this.h); this.e = this.z; this.n = this.v; this.j = this.w; break; default: throw Error("invalid inflate mode");
@@ -2004,7 +2014,67 @@ class BuildingShadows {
 
 
 module.exports = exports = BuildingShadows;
-},{"../../utils/suncalc.js":25}],10:[function(require,module,exports){
+},{"../../utils/suncalc.js":26}],10:[function(require,module,exports){
+/**
+ * @author jscastro / https://github.com/jscastro76
+ */
+const Objects = require('./objects.js');
+const utils = require("../utils/utils.js");
+const THREE = require("../three.js");
+const Object3D = require('./Object3D.js');
+
+/**
+ * 
+ * @param {any} opt must fit the default defined in Objects.prototype._defaults.extrusion 
+ * @param {arr} opt.coordinates could receive a feature.geometry.coordinates
+ */
+function extrusion(opt) {
+
+	opt = utils._validate(opt, Objects.prototype._defaults.extrusion);
+	let shape = extrusion.prototype.buildShape(opt.coordinates);
+	let geometry = extrusion.prototype.buildGeometry(shape, opt.geometryOptions);
+	let mesh = new THREE.Mesh(geometry, opt.materials);
+	opt.obj = mesh;
+	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
+	return new Object3D(opt);
+
+}
+
+extrusion.prototype = {
+
+	buildShape: function (coords) {
+		if (coords[0] instanceof (THREE.Vector2 || THREE.Vector3)) return new THREE.Shape(coords);
+		let shape = new THREE.Shape();
+		for (let i = 0; i < coords.length; i++) {
+			if (i === 0) {
+				shape = new THREE.Shape(this.buildPoints(coords[0], coords[0]));
+			} else {
+				shape.holes.push(new THREE.Path(this.buildPoints(coords[i], coords[0])));
+			}
+		}
+		return shape;
+	},
+
+	buildPoints: function (coords, initCoords) {
+		const points = [];
+		let init = utils.projectToWorld([initCoords[0][0], initCoords[0][1], 0]);
+		for (let i = 0; i < coords.length; i++) {
+			let pos = utils.projectToWorld([coords[i][0], coords[i][1], 0]);
+			points.push(new THREE.Vector2(utils.toDecimal((pos.x - init.x), 9), utils.toDecimal((pos.y - init.y), 9)));
+		}
+		return points;
+	},
+
+	buildGeometry: function (shape, settings) {
+		let geometry = new THREE.ExtrudeBufferGeometry(shape, settings);
+		geometry.computeBoundingBox();
+		return geometry;
+	}
+
+}
+
+module.exports = exports = extrusion;
+},{"../three.js":23,"../utils/utils.js":27,"./Object3D.js":7,"./objects.js":19}],11:[function(require,module,exports){
 /**
  * @author jscastro / https://github.com/jscastro76
  */
@@ -2031,7 +2101,7 @@ function Label(obj) {
 
 
 module.exports = exports = Label;
-},{"../utils/utils.js":26,"./CSS2DRenderer.js":5,"./objects.js":18}],11:[function(require,module,exports){
+},{"../utils/utils.js":27,"./CSS2DRenderer.js":5,"./objects.js":19}],12:[function(require,module,exports){
 const THREE = require("../three.js");
 const utils = require("../utils/utils.js");
 const Objects = require('./objects.js');
@@ -3025,7 +3095,7 @@ THREE.Wireframe.prototype = Object.assign( Object.create( THREE.Mesh.prototype )
 
 } );
 
-},{"../three.js":22,"../utils/utils.js":26,"./objects.js":18}],12:[function(require,module,exports){
+},{"../three.js":23,"../utils/utils.js":27,"./objects.js":19}],13:[function(require,module,exports){
 /**
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
@@ -3160,7 +3230,7 @@ function loadObj(options, cb, promise) {
 }
 
 module.exports = exports = loadObj;
-},{"../utils/utils.js":26,"./loaders/ColladaLoader.js":13,"./loaders/FBXLoader.js":14,"./loaders/GLTFLoader.js":15,"./loaders/MTLLoader.js":16,"./loaders/OBJLoader.js":17,"./objects.js":18}],13:[function(require,module,exports){
+},{"../utils/utils.js":27,"./loaders/ColladaLoader.js":14,"./loaders/FBXLoader.js":15,"./loaders/GLTFLoader.js":16,"./loaders/MTLLoader.js":17,"./loaders/OBJLoader.js":18,"./objects.js":19}],14:[function(require,module,exports){
 const THREE = require('../../three.js');
 
 /**
@@ -7146,7 +7216,7 @@ THREE.ColladaLoader.prototype = Object.assign(Object.create(THREE.Loader.prototy
 
 module.exports = exports = THREE.ColladaLoader;
 
-},{"../../three.js":22}],14:[function(require,module,exports){
+},{"../../three.js":23}],15:[function(require,module,exports){
 const THREE = require('../../three.js');
 const Zlib = require('../Zlib.Inflate.js');
 
@@ -11281,7 +11351,7 @@ THREE.FBXLoader = (function () {
 
 module.exports = exports = THREE.FBXLoader;
 
-},{"../../three.js":22,"../Zlib.Inflate.js":8}],15:[function(require,module,exports){
+},{"../../three.js":23,"../Zlib.Inflate.js":8}],16:[function(require,module,exports){
 const THREE = require('../../three.js');
 /**
  * @author Rich Tibbett / https://github.com/richtr
@@ -14727,7 +14797,7 @@ THREE.GLTFLoader = (function () {
 })();
 
 module.exports = exports = THREE.GLTFLoader;
-},{"../../three.js":22}],16:[function(require,module,exports){
+},{"../../three.js":23}],17:[function(require,module,exports){
 const THREE = require('../../three.js');
 
 const MTLLoader = function ( manager ) {
@@ -15287,7 +15357,7 @@ THREE.MTLLoader.MaterialCreator.prototype = {
 };
 
 module.exports = exports = THREE.MTLLoader;
-},{"../../three.js":22}],17:[function(require,module,exports){
+},{"../../three.js":23}],18:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -16163,7 +16233,7 @@ THREE.OBJLoader = (function () {
 })();
 
 module.exports = exports = THREE.OBJLoader;
-},{"../../three.js":22}],18:[function(require,module,exports){
+},{"../../three.js":23}],19:[function(require,module,exports){
 /**
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
@@ -17096,15 +17166,6 @@ Objects.prototype = {
 			tooltip: false
 		},
 
-		extrusion: {
-			footprint: null,
-			base: 0,
-			top: 100,
-			color: 'black',
-			material: 'MeshBasicMaterial',
-			scaleToLatitude: false
-		},
-
 		loadObj: {
 			type: null,
 			obj: null,
@@ -17123,6 +17184,20 @@ Objects.prototype = {
 			anchor: 'bottom-left',
 			bbox: false,
 			tooltip: false
+		},
+
+		extrusion: {
+			coordinates: [[[]]],
+			geometryOptions: {},
+			height: 100,
+			materials: null,
+			scale: 1,
+			rotation: 0,
+			units: 'scene',
+			anchor: 'center',
+			point: [0, 0],
+			bbox: false,
+			tooltip: false
 		}
 	},
 
@@ -17134,7 +17209,7 @@ Objects.prototype = {
 }
 
 module.exports = exports = Objects;
-},{"../animation/AnimationManager.js":3,"../three.js":22,"../utils/material.js":24,"../utils/utils.js":26,"./CSS2DRenderer.js":5}],19:[function(require,module,exports){
+},{"../animation/AnimationManager.js":3,"../three.js":23,"../utils/material.js":25,"../utils/utils.js":27,"./CSS2DRenderer.js":5}],20:[function(require,module,exports){
 /**
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
@@ -17157,7 +17232,7 @@ function Sphere(opt) {
 
 
 module.exports = exports = Sphere;
-},{"../utils/material.js":24,"../utils/utils.js":26,"./Object3D.js":7,"./objects.js":18}],20:[function(require,module,exports){
+},{"../utils/material.js":25,"../utils/utils.js":27,"./Object3D.js":7,"./objects.js":19}],21:[function(require,module,exports){
 const utils = require("../utils/utils.js");
 const Objects = require('./objects.js');
 const CSS2D = require('./CSS2DRenderer.js');
@@ -17182,7 +17257,7 @@ function Tooltip(obj) {
 }
 
 module.exports = exports = Tooltip;
-},{"../three.js":22,"../utils/utils.js":26,"./CSS2DRenderer.js":5,"./objects.js":18}],21:[function(require,module,exports){
+},{"../three.js":23,"../utils/utils.js":27,"./CSS2DRenderer.js":5,"./objects.js":19}],22:[function(require,module,exports){
 /**
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
@@ -17383,7 +17458,7 @@ tube.prototype = {
 module.exports = exports = tube;
 
 
-},{"../three.js":22,"../utils/material.js":24,"../utils/utils.js":26,"./Object3D.js":7,"./objects.js":18}],22:[function(require,module,exports){
+},{"../three.js":23,"../utils/material.js":25,"../utils/utils.js":27,"./Object3D.js":7,"./objects.js":19}],23:[function(require,module,exports){
 // threejs.org/license
 (function(k,ua){"object"===typeof exports&&"undefined"!==typeof module?ua(exports):"function"===typeof define&&define.amd?define(["exports"],ua):(k=k||self,ua(k.THREE={}))})(this,function(k){function ua(){}function v(a,b){this.x=a||0;this.y=b||0}function ya(){this.elements=[1,0,0,0,1,0,0,0,1];0<arguments.length&&console.error("THREE.Matrix3: the constructor no longer reads arguments. use .set() instead.")}function W(a,b,c,d,e,f,g,h,l,m){Object.defineProperty(this,"id",{value:ej++});this.uuid=O.generateUUID();
 this.name="";this.image=void 0!==a?a:W.DEFAULT_IMAGE;this.mipmaps=[];this.mapping=void 0!==b?b:W.DEFAULT_MAPPING;this.wrapS=void 0!==c?c:1001;this.wrapT=void 0!==d?d:1001;this.magFilter=void 0!==e?e:1006;this.minFilter=void 0!==f?f:1008;this.anisotropy=void 0!==l?l:1;this.format=void 0!==g?g:1023;this.internalFormat=null;this.type=void 0!==h?h:1009;this.offset=new v(0,0);this.repeat=new v(1,1);this.center=new v(0,0);this.rotation=0;this.matrixAutoUpdate=!0;this.matrix=new ya;this.generateMipmaps=
@@ -18439,7 +18514,7 @@ Oh;k.UnsignedByteType=1009;k.UnsignedInt248Type=1020;k.UnsignedIntType=1014;k.Un
 Ba;k.WebGLRenderTargetCube=function(a,b,c){console.warn("THREE.WebGLRenderTargetCube( width, height, options ) is now WebGLCubeRenderTarget( size, options ).");return new Zb(a,c)};k.WebGLRenderer=jg;k.WebGLUtils=Th;k.WireframeGeometry=Pc;k.WireframeHelper=function(a,b){console.warn("THREE.WireframeHelper has been removed. Use THREE.WireframeGeometry instead.");return new ma(new Pc(a.geometry),new da({color:void 0!==b?b:16777215}))};k.WrapAroundEnding=2402;k.XHRLoader=function(a){console.warn("THREE.XHRLoader has been renamed to THREE.FileLoader.");
 return new Ta(a)};k.ZeroCurvatureEnding=2400;k.ZeroFactor=200;k.ZeroSlopeEnding=2401;k.ZeroStencilOp=0;k.sRGBEncoding=3001;Object.defineProperty(k,"__esModule",{value:!0})});
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 const WORLD_SIZE = 1024000;
 const MERCATOR_A = 6378137.0;
 const FOV = Math.atan(3/4);
@@ -18455,7 +18530,7 @@ module.exports = exports = {
     FOV_DEGREES: FOV * 360 / (Math.PI * 2), // Math.atan(3/4) in degrees
     TILE_SIZE: 512
 }
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 // This module creates a THREE material from the options object provided into the Objects class.
 // Users can do this in one of three ways:
 
@@ -18508,7 +18583,7 @@ function material (options) {
 
 module.exports = exports = material;
 
-},{"../three.js":22,"../utils/utils.js":26}],25:[function(require,module,exports){
+},{"../three.js":23,"../utils/utils.js":27}],26:[function(require,module,exports){
 /*
  (c) 2011-2015, Vladimir Agafonkin
  SunCalc is a JavaScript library for calculating sun/moon position and light phases.
@@ -18829,7 +18904,7 @@ module.exports = exports = material;
 }());
 
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var THREE = require("../three.js");
 var Constants = require("./constants.js");
 var validate = require("./validate.js");
@@ -19122,7 +19197,12 @@ var utils = {
 			})
 
 			return output
-		}
+		},
+
+	},
+
+	toDecimal: function (n, d) {
+		return Number(n.toFixed(d));
 	},
 
 	equal: function (obj1, obj2) {
@@ -19184,7 +19264,7 @@ var utils = {
 }
 
 module.exports = exports = utils
-},{"../three.js":22,"./constants.js":23,"./validate.js":27}],27:[function(require,module,exports){
+},{"../three.js":23,"./constants.js":24,"./validate.js":28}],28:[function(require,module,exports){
 // Type validator
 
 function Validate(){

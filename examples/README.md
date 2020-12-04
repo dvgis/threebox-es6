@@ -121,3 +121,11 @@ These are the examples included in Threebox.
 - This sample shows how to  add real sunlight position and shadows over this two models. 
 
 - - - -
+
+#### [18-extrusions.html](https://github.com/jscastro76/threebox/blob/master/examples/18-extrusions.html) 
+<img alt="threebox" src="images/extrusions.png" width="50%"><br/>
+- This sample shows how to create an Azure Maps sample through threebox using the satellite Azure Maps style.
+- It adds two models, one with the Space Needle in real size and other with a Giant Soldier.
+- This sample shows how to  add real sunlight position and shadows over this two models. 
+
+- - - -

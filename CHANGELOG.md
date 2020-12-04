@@ -1,3 +1,19 @@
+## 2.1.2
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+
+- [**#127**](https://github.com/jscastro76/threebox/issues/127) Create a new example with Three.js extrusions based on standard geoJson #127 Added a new example [17-extrusions.html](https://github.com/jscastro76/threebox/blob/master/examples/17-extrusions.html)
+- [**#126**](https://github.com/jscastro76/threebox/issues/126) add options.rotate and options.scale for Objects3D #126
+- [**#125**](https://github.com/jscastro76/threebox/issues/125) three.js draw geojson #125
+
+#### :beetle: Bug fixes
+
+<br>
+
+- - - 
+
 ## 2.1.1
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
@@ -10,7 +26,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 - [**#109**](https://github.com/jscastro76/threebox/issues/109) add speed param to animations #109
 - [**#114**](https://github.com/jscastro76/threebox/issues/114) `tb.setSunlight` must accept LngLatLike coords #114
 - [**#117**](https://github.com/jscastro76/threebox/issues/117) cache functions must be 100% async #117
-- [**#119**](https://github.com/jscastro76/threebox/issues/119) Create a sample with azure maps #119. Added added [17-azuremaps.html](https://github.com/jscastro76/threebox/blob/master/examples/17-azuremaps.html) 
+- [**#119**](https://github.com/jscastro76/threebox/issues/119) Create a sample with azure maps #119. Added a new example [17-azuremaps.html](https://github.com/jscastro76/threebox/blob/master/examples/17-azuremaps.html) 
 
 #### :beetle: Bug fixes
 

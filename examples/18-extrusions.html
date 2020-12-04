@@ -1,0 +1,128 @@
+<!doctype html>
+<head>
+	<title>Threbox multilayer sample</title>
+	<script src="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.css" rel="stylesheet" />
+	<script src="../dist/threebox.js" type="text/javascript"></script>
+	<link href="./css/threebox.css" rel="stylesheet" />
+	<script src="https://d3js.org/d3.v6.min.js"></script>
+	<script src="config.js"></script>
+	<style>
+		body, html {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+		}
+
+		#map {
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+</head>
+<body>
+    <div id="map"></div>
+    <script type="module">
+
+        ///// THIS EXTRUSION SAMPLE SHOWS HOW TO CREATE EXTRUSIONS IN TWO WAYS
+		///// THE FIRST WAY IS TO CREATE AN ARRAY OF VECTOR2 AND USE tb.extrusion
+		///// THE SECOND WAY IS TO READ geoJson FEATURES FROM A FILE 
+
+		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
+
+		mapboxgl.accessToken = config.accessToken;
+
+		let origin1 = [-73.9999607205391, 40.71489610465261, 0];
+		let origin2 = [-73.9999607205391, 40.71489610465261, 50]
+
+		let map = new mapboxgl.Map({
+			container: 'map',
+			style: 'mapbox://styles/mapbox/outdoors-v11',
+			center: origin1,
+			zoom: 16.5,
+			pitch: 60,
+			heading: 0, hash: true
+		});
+
+		// we can add Threebox to mapbox to add built-in mouseover/mouseout and click behaviors
+		window.tb = new Threebox(
+			map,
+			map.getCanvas().getContext('webgl'),
+			{
+				defaultLights: true,
+				enableSelectingFeatures: true, //change this to false to disable fill-extrusion features selection
+				enableSelectingObjects: true, //change this to false to disable 3D objects selection
+				enableTooltips: true, // change this to false to disable default tooltips on fill-extrusion and 3D models
+			}
+		);
+
+		let redMaterial = new THREE.MeshPhongMaterial({
+			color: 0x660000,
+			side: THREE.DoubleSide
+		});
+
+		let buildings = [];
+		map.on('style.load', function () {
+
+			map.addLayer({
+				id: 'custom_layer',
+				type: 'custom',
+				renderingMode: '3d',
+				onAdd: function (map, mbxContext) {
+
+					//[jscastro] we add a star based on this example https://threejs.org/examples/?q=extrud#webgl_geometry_extrude_shapes
+					const points = [], numPts = 5;
+					for (let i = 0; i < numPts * 2; i++) {
+						const l = i % 2 == 1 ? 10 : 20;
+						const a = i / numPts * Math.PI;
+						points.push(new THREE.Vector2(Math.cos(a) * l, Math.sin(a) * l));
+					}
+					const material1 = new THREE.MeshLambertMaterial({ color: 0xb00000, wireframe: false });
+					const material2 = new THREE.MeshLambertMaterial({ color: 0xff8000, wireframe: false });
+					let star = tb.extrusion({
+						coordinates: points,
+						geometryOptions: { depth: 20, steps: 1, bevelEnabled: true, bevelThickness: 2, bevelSize: 4, bevelSegments: 1 },
+						anchor: 'top-right',
+						units: 'meters',
+						rotation: { x: 90, y: 0, z: 20 },
+						materials: [material1, material2]
+					});
+					star.setCoords(origin2);
+					tb.add(star);
+
+					//[jscastro] we read a geoJson that is filled with 3 real features from the composite source
+					d3.json('./geojson/extrusion.json').then(function (fc) {
+						console.log(fc);
+						//then we create the extrusions based on the geoJson features
+						addBuildings(fc.features);
+					})
+
+				},
+
+				render: function (gl, matrix) {
+					tb.update();
+				}
+			});
+
+		});
+
+		function addBuildings(data, info, height) {
+			height = height ? height : 1;
+
+			data.forEach((b) => {
+				let center = b.properties.center;
+				let s = tb.projectedUnitsPerMeter(center[1]);
+
+				let extrusion = tb.extrusion({
+					coordinates: b.geometry.coordinates,
+					geometryOptions: { curveSegments: 1, bevelEnabled: false, depth: b.layer.paint["fill-extrusion-height"] * s },
+					materials: redMaterial
+				});
+				extrusion.setCoords([center[0], center[1], 0]);
+				tb.add(extrusion);
+
+			});
+		}
+
+    </script>
+</body>

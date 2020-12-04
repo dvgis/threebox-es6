@@ -12,6 +12,7 @@ const ThreeboxConstants = require("./utils/constants.js");
 const Objects = require("./objects/objects.js");
 const material = require("./utils/material.js");
 const sphere = require("./objects/sphere.js");
+const extrusion = require("./objects/extrusion.js");
 const label = require("./objects/label.js");
 const tooltip = require("./objects/tooltip.js");
 const loader = require("./objects/loadObj.js");
@@ -112,7 +113,7 @@ Threebox.prototype = {
 		this.map.on('style.load', function () {
 			this.tb.zoomLayers = [];
 			//[jscastro] if multiLayer, create a by default layer in the map, so tb.update won't be needed in client side to avoid duplicating calls to render
-			if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: 'custom', renderingMode: '3d', map: this, onAdd: function (map, gl) { }, render: function (gl, matrix) { this.map.tb.update(); } })
+			if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: 'custom', renderingMode: '3d', map: this, onAdd: function (map, gl) { }, render: function (gl, matrix) { this.tb.update(); } })
 		});
 
 		//[jscastro] new event map on load
@@ -512,9 +513,14 @@ Threebox.prototype = {
 		return tube(options, this.world)
 	},
 
-	Object3D: function (options, o) {
+	extrusion: function (options) {
 		this.setDefaultView(options, this.options);
-		return Object3D(options, o)
+		return extrusion(options);
+	},
+
+	Object3D: function (options) {
+		this.setDefaultView(options, this.options);
+		return Object3D(options)
 	},
 
 	loadObj: async function loadObj(options, cb) {

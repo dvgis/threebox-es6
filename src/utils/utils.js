@@ -290,7 +290,12 @@ var utils = {
 			})
 
 			return output
-		}
+		},
+
+	},
+
+	toDecimal: function (n, d) {
+		return Number(n.toFixed(d));
 	},
 
 	equal: function (obj1, obj2) {

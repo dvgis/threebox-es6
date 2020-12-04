@@ -930,15 +930,6 @@ Objects.prototype = {
 			tooltip: false
 		},
 
-		extrusion: {
-			footprint: null,
-			base: 0,
-			top: 100,
-			color: 'black',
-			material: 'MeshBasicMaterial',
-			scaleToLatitude: false
-		},
-
 		loadObj: {
 			type: null,
 			obj: null,
@@ -955,6 +946,20 @@ Objects.prototype = {
 			obj: null,
 			units: 'scene',
 			anchor: 'bottom-left',
+			bbox: false,
+			tooltip: false
+		},
+
+		extrusion: {
+			coordinates: [[[]]],
+			geometryOptions: {},
+			height: 100,
+			materials: null,
+			scale: 1,
+			rotation: 0,
+			units: 'scene',
+			anchor: 'center',
+			point: [0, 0],
 			bbox: false,
 			tooltip: false
 		}
