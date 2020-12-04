@@ -48,7 +48,7 @@ npm i threebox-plugin
 Only in this fork, there is a list of new features implemented on top of the amazing work from [@peterqliu](https://github.com/peterqliu/threebox/):
 - Update to Three.js v117.
 - Update to Mapbox-gl-js v1.11.1.
-- [16 examples](https://github.com/jscastro76/threebox/tree/master/examples) with new features.
+- [17 examples](https://github.com/jscastro76/threebox/tree/master/examples) with new features.
 - Support for multiple 3D format objects (FBX, GLTF/GLB, Collada, OBJ/MTL).
 - Support for CSS2D labels supporting rich HTML controls through a new LabelManager.
 - Support for CSS2D tooltips/title browser-like and mapbox-like.
