@@ -124,8 +124,8 @@ These are the examples included in Threebox.
 
 #### [18-extrusions.html](https://github.com/jscastro76/threebox/blob/master/examples/18-extrusions.html) 
 <img alt="threebox" src="images/extrusions.png" width="50%"><br/>
-- This sample shows how to create an Azure Maps sample through threebox using the satellite Azure Maps style.
-- It adds two models, one with the Space Needle in real size and other with a Giant Soldier.
-- This sample shows how to  add real sunlight position and shadows over this two models. 
+- This sample shows how to create extrusions in two different ways. 
+- The first way is to create a star based on an array of Vector2 points.
+- The second way creates dynamically features from a gesJson file with real complex features from the composite layer. 
 
 - - - -
