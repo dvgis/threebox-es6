@@ -32,14 +32,14 @@
 
 		mapboxgl.accessToken = config.accessToken;
 
-		let origin1 = [-73.9999607205391, 40.71489610465261, 0];
-		let origin2 = [-73.9999607205391, 40.71489610465261, 50]
+		let origin1 = [-74.001058, 40.714914, 0];
+		let origin2 = [-74.0001269, 40.7151698, 50]
 
 		let map = new mapboxgl.Map({
 			container: 'map',
 			style: 'mapbox://styles/mapbox/outdoors-v11',
 			center: origin1,
-			zoom: 16.5,
+			zoom: 16.9,
 			pitch: 60,
 			heading: 0, hash: true
 		});
@@ -82,12 +82,14 @@
 					let star = tb.extrusion({
 						coordinates: points,
 						geometryOptions: { depth: 20, steps: 1, bevelEnabled: true, bevelThickness: 2, bevelSize: 4, bevelSegments: 1 },
-						anchor: 'top-right',
+						anchor: 'center',
 						units: 'meters',
 						rotation: { x: 90, y: 0, z: 20 },
 						materials: [material1, material2]
 					});
+					star.addTooltip("A animated extruded star over Columbus Park", true);
 					star.setCoords(origin2);
+					star.set({ rotation: {x: 0, y: 0, z: 720}, duration: 10000 })
 					tb.add(star);
 
 					//[jscastro] we read a geoJson that is filled with 3 real features from the composite source
@@ -118,6 +120,7 @@
 					geometryOptions: { curveSegments: 1, bevelEnabled: false, depth: b.layer.paint["fill-extrusion-height"] * s },
 					materials: redMaterial
 				});
+				extrusion.addTooltip(b.properties.tooltip, true);
 				extrusion.setCoords([center[0], center[1], 0]);
 				tb.add(extrusion);
 

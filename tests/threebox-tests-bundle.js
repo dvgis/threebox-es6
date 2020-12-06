@@ -8950,7 +8950,6 @@ const THREE = require("./three.js");
 const CameraSync = require("./camera/CameraSync.js");
 const utils = require("./utils/utils.js");
 const SunCalc = require("./utils/suncalc.js");
-const AnimationManager = require("./animation/AnimationManager.js");
 const ThreeboxConstants = require("./utils/constants.js");
 const Objects = require("./objects/objects.js");
 const material = require("./utils/material.js");
@@ -9062,13 +9061,12 @@ Threebox.prototype = {
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
 			//[jscastro] new fields to manage events on map
-			let selectedObject; //selected object through click
-			let draggedObject; //dragged object through mousedown + mousemove
+			this.selectedObject; //selected object through click
+			this.selectedFeature;//selected state id for extrusion layer features
+			this.draggedObject; //dragged object through mousedown + mousemove
 			let draggedAction; //dragged action to notify frontend
-			let overedObject; //overed object through mouseover
-
-			let overedFeature;//overed state for extrusion layer features
-			let selectedFeature;//selected state id for extrusion layer features
+			this.overedObject; //overed object through mouseover
+			this.overedFeature;//overed state for extrusion layer features
 
 			let canvas = this.getCanvasContainer();
 			this.getCanvasContainer().style.cursor = 'default';
@@ -9100,69 +9098,70 @@ Threebox.prototype = {
 				};
 			}
 
-			function unselectFeature(f, map) {
+			
+			this.unselectObject = function (o) {
+				//deselect, reset and return
+				o.selected = false;
+				this.selectedObject = null;
+			}
+
+			this.unselectFeature = function (f) {
 				if (typeof f.id == 'undefined') return;
-				map.setFeatureState(
+				this.setFeatureState(
 					{ source: f.source, sourceLayer: f.sourceLayer, id: f.id },
 					{ select: false }
 				);
 
-				removeTooltip(f, map);
-				f = map.queryRenderedFeatures({ layers: [f.layer.id], filter: ["==", ['id'], f.id] })[0];
+				this.removeTooltip(f);
+				f = this.queryRenderedFeatures({ layers: [f.layer.id], filter: ["==", ['id'], f.id] })[0];
 				// Dispatch new event f for unselected
-				if (f) map.fire('SelectedFeatureChange', { detail: f });
-				selectedFeature = null;
+				if (f) this.fire('SelectedFeatureChange', { detail: f });
+				this.selectedFeature = null;
 
 			}
 
-			function selectFeature(f, map) {
-				selectedFeature = f;
-				map.setFeatureState(
-					{ source: selectedFeature.source, sourceLayer: selectedFeature.sourceLayer, id: selectedFeature.id },
+			this.selectFeature = function(f) {
+				this.selectedFeature = f;
+				this.setFeatureState(
+					{ source: this.selectedFeature.source, sourceLayer: this.selectedFeature.sourceLayer, id: this.selectedFeature.id },
 					{ select: true }
 				);
-				selectedFeature = map.queryRenderedFeatures({ layers: [selectedFeature.layer.id], filter: ["==", ['id'], selectedFeature.id] })[0];
-				addTooltip(selectedFeature, map)
+				this.selectedFeature = this.queryRenderedFeatures({ layers: [this.selectedFeature.layer.id], filter: ["==", ['id'], this.selectedFeature.id] })[0];
+				this.addTooltip(this.selectedFeature);
 				// Dispatch new event SelectedFeature for selected
-				map.fire('SelectedFeatureChange', { detail: selectedFeature });
+				this.fire('SelectedFeatureChange', { detail: this.selectedFeature });
 
 			}
 
-			function unoverFeature(f, map) {
-				if (overedFeature && typeof overedFeature != 'undefined' && overedFeature.id != f) {
+			this.unoverFeature = function(f) {
+				if (this.overedFeature && typeof this.overedFeature != 'undefined' && this.overedFeature.id != f) {
 					map.setFeatureState(
-						{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
+						{ source: this.overedFeature.source, sourceLayer: this.overedFeature.sourceLayer, id: this.overedFeature.id },
 						{ hover: false }
 					);
-					removeTooltip(overedFeature, map);
-					overedFeature = null;
+					this.removeTooltip(this.overedFeature);
+					this.overedFeature = null;
 				}
 			}
 
-			function unselectObject(o) {
-				//deselect, reset and return
-				o.selected = false;
-				selectedObject = null;
-			}
-
-			function addTooltip(f, map) {
-				if (!map.tb.enableTooltips) return;
-				let coordinates = map.tb.getFeatureCenter(f);
-				let t = map.tb.tooltip({
+			this.addTooltip = function(f) {
+				if (!this.tb.enableTooltips) return;
+				let coordinates = this.tb.getFeatureCenter(f);
+				let t = this.tb.tooltip({
 					text: f.properties.name || f.id || f.type,
 					mapboxStyle: true,
 					feature: f
 				});
 				t.setCoords(coordinates);
-				map.tb.add(t, f.layer.id);
+				this.tb.add(t, f.layer.id);
 				f.tooltip = t;
 				f.tooltip.tooltip.visible = true;
 			}
 
-			function removeTooltip(f, map) {
+			this.removeTooltip = function(f) {
 				if (f.tooltip) {
 					f.tooltip.visibility = false;
-					map.tb.remove(f.tooltip);
+					this.tb.remove(f.tooltip);
 					f.tooltip = null;
 				}
 			}
@@ -9172,7 +9171,7 @@ Threebox.prototype = {
 			}
 
 			// onclick function
-			map.onClick = function (e) {
+			this.onClick = function (e) {
 				let intersectionExists
 				let intersects = [];
 				if (map.tb.enableSelectingObjects) {
@@ -9187,29 +9186,29 @@ Threebox.prototype = {
 
 					if (nearestObject) {
 						//if extrusion object selected, unselect
-						if (selectedFeature) {
-							unselectFeature(selectedFeature, this);
+						if (this.selectedFeature) {
+							this.unselectFeature(this.selectedFeature);
 						}
 						//if not selected yet, select it
-						if (!selectedObject) {
-							selectedObject = nearestObject;
-							selectedObject.selected = true;
+						if (!this.selectedObject) {
+							this.selectedObject = nearestObject;
+							this.selectedObject.selected = true;
 						}
-						else if (selectedObject.uuid != nearestObject.uuid) {
+						else if (this.selectedObject.uuid != nearestObject.uuid) {
 							//it's a different object, restore the previous and select the new one
-							selectedObject.selected = false;
+							this.selectedObject.selected = false;
 							nearestObject.selected = true;
-							selectedObject = nearestObject;
+							this.selectedObject = nearestObject;
 
-						} else if (selectedObject.uuid == nearestObject.uuid) {
+						} else if (this.selectedObject.uuid == nearestObject.uuid) {
 							//deselect, reset and return
-							unselectObject(selectedObject);
+							this.unselectObject(this.selectedObject);
 							return;
 						}
 
 						// fire the Wireframed event to notify UI status change
-						selectedObject.dispatchEvent(new CustomEvent('Wireframed', { detail: selectedObject, bubbles: true, cancelable: true }));
-						selectedObject.dispatchEvent(new CustomEvent('IsPlayingChanged', { detail: selectedObject, bubbles: true, cancelable: true }));
+						this.selectedObject.dispatchEvent(new CustomEvent('Wireframed', { detail: this.selectedObject, bubbles: true, cancelable: true }));
+						this.selectedObject.dispatchEvent(new CustomEvent('IsPlayingChanged', { detail: this.selectedObject, bubbles: true, cancelable: true }));
 
 						this.repaint = true;
 						e.preventDefault();
@@ -9226,22 +9225,22 @@ Threebox.prototype = {
 						if (features[0].layer.type == 'fill-extrusion' && typeof features[0].id != 'undefined') {
 
 							//if 3D object selected, unselect
-							if (selectedObject) {
-								unselectObject(selectedObject);
+							if (this.selectedObject) {
+								this.unselectObject(this.selectedObject);
 							}
 
 							//if not selected yet, select it
-							if (!selectedFeature) {
-								selectFeature(features[0], this)
+							if (!this.selectedFeature) {
+								this.selectFeature(features[0])
 							}
-							else if (selectedFeature.id != features[0].id) {
+							else if (this.selectedFeature.id != features[0].id) {
 								//it's a different feature, restore the previous and select the new one
-								unselectFeature(selectedFeature, this);
-								selectFeature(features[0], this)
+								this.unselectFeature(this.selectedFeature);
+								this.selectFeature(features[0])
 
-							} else if (selectedFeature.id == features[0].id) {
+							} else if (this.selectedFeature.id == features[0].id) {
 								//deselect, reset and return
-								unselectFeature(selectedFeature, this);
+								this.unselectFeature(this.selectedFeature);
 								return;
 							}
 
@@ -9250,14 +9249,14 @@ Threebox.prototype = {
 				}
 			}
 
-			map.onMouseMove = function (e) {
+			this.onMouseMove = function (e) {
 
 				// Capture the ongoing xy coordinates
 				let current = mousePos(e);
 
 				this.getCanvasContainer().style.cursor = 'default';
 				//check if being rotated
-				if (e.originalEvent.altKey && draggedObject) {
+				if (e.originalEvent.altKey && this.draggedObject) {
 
 					if (!map.tb.enableRotatingObjects) return;
 					draggedAction = 'rotate';
@@ -9270,14 +9269,14 @@ Threebox.prototype = {
 					//set the movement fluid we rotate only every 10px moved, in steps of 10 degrees up to 360
 					let rotation = { x: 0, y: 0, z: (Math.round(rotationDiff[2] + (~~((current.x - start.x) / this.tb.rotationStep) % 360 * this.tb.rotationStep) % 360)) };
 					//now rotate the model depending the axis
-					draggedObject.setRotation(rotation);
-					draggedObject.addHelp("rot: " + rotation.z + "&#176;");
-					//draggedObject.setRotationAxis(rotation);
+					this.draggedObject.setRotation(rotation);
+					this.draggedObject.addHelp("rot: " + rotation.z + "&#176;");
+					//this.draggedObject.setRotationAxis(rotation);
 					return;
 				}
 
 				//check if being moved
-				if (e.originalEvent.shiftKey && draggedObject) {
+				if (e.originalEvent.shiftKey && this.draggedObject) {
 					if (!map.tb.enableDraggingObjects) return;
 
 					draggedAction = 'translate';
@@ -9285,23 +9284,23 @@ Threebox.prototype = {
 					this.getCanvasContainer().style.cursor = 'move';
 					// Capture the first xy coordinates, height must be the same to move on the same plane
 					let coords = e.lngLat;
-					let options = [Number((coords.lng + lngDiff).toFixed(this.tb.gridStep)), Number((coords.lat + latDiff).toFixed(this.tb.gridStep)), draggedObject.modelHeight];
-					draggedObject.setCoords(options);
-					draggedObject.addHelp("lng: " + options[0] + "&#176;, lat: " + options[1] + "&#176;");
+					let options = [Number((coords.lng + lngDiff).toFixed(this.tb.gridStep)), Number((coords.lat + latDiff).toFixed(this.tb.gridStep)), this.draggedObject.modelHeight];
+					this.draggedObject.setCoords(options);
+					this.draggedObject.addHelp("lng: " + options[0] + "&#176;, lat: " + options[1] + "&#176;");
 					return;
 				}
 
 				//check if being moved on altitude
-				if (e.originalEvent.ctrlKey && draggedObject) {
+				if (e.originalEvent.ctrlKey && this.draggedObject) {
 					if (!map.tb.enableDraggingObjects) return;
 					draggedAction = 'altitude';
 					// Set a UI indicator for dragging.
 					this.getCanvasContainer().style.cursor = 'move';
 					// Capture the first xy coordinates, height must be the same to move on the same plane
 					let now = (e.point.y * this.tb.altitudeStep);
-					let options = [draggedObject.coordinates[0], draggedObject.coordinates[1], Number((- now - altDiff).toFixed(this.tb.gridStep))];
-					draggedObject.setCoords(options);
-					draggedObject.addHelp("alt: " + options[2] + "m");
+					let options = [this.draggedObject.coordinates[0], this.draggedObject.coordinates[1], Number((- now - altDiff).toFixed(this.tb.gridStep))];
+					this.draggedObject.setCoords(options);
+					this.draggedObject.addHelp("alt: " + options[2] + "m");
 					return;
 				}
 
@@ -9318,15 +9317,15 @@ Threebox.prototype = {
 				if (intersectionExists) {
 					let nearestObject = Threebox.prototype.findParent3DObject(intersects[0]);
 					if (nearestObject) {
-						unoverFeature(overedFeature, this);
+						this.unoverFeature(this.overedFeature);
 						this.getCanvasContainer().style.cursor = 'pointer';
-						if (!selectedObject || nearestObject.uuid != selectedObject.uuid) {
-							if (overedObject) {
-								overedObject.over = false;
-								overedObject = null;
+						if (!this.selectedObject || nearestObject.uuid != this.selectedObject.uuid) {
+							if (this.overedObject) {
+								this.overedObject.over = false;
+								this.overedObject = null;
 							}
 							nearestObject.over = true;
-							overedObject = nearestObject;
+							this.overedObject = nearestObject;
 						}
 						this.repaint = true;
 						e.preventDefault();
@@ -9334,25 +9333,25 @@ Threebox.prototype = {
 				}
 				else {
 					//clean the object overed
-					if (overedObject) { overedObject.over = false; overedObject = null; }
+					if (this.overedObject) { this.overedObject.over = false; this.overedObject = null; }
 					//now let's check the extrusion layer objects
 					let features = [];
 					if (map.tb.enableSelectingFeatures) {
 						features = this.queryRenderedFeatures(e.point);
 					}
 					if (features.length > 0) {
-						unoverFeature(features[0], this);
+						this.unoverFeature(features[0]);
 
 						if (features[0].layer.type == 'fill-extrusion' && typeof features[0].id != 'undefined') {
-							if ((!selectedFeature || selectedFeature.id != features[0].id)) {
+							if ((!this.selectedFeature || this.selectedFeature.id != features[0].id)) {
 								this.getCanvasContainer().style.cursor = 'pointer';
-								overedFeature = features[0];
+								this.overedFeature = features[0];
 								this.setFeatureState(
-									{ source: overedFeature.source, sourceLayer: overedFeature.sourceLayer, id: overedFeature.id },
+									{ source: this.overedFeature.source, sourceLayer: this.overedFeature.sourceLayer, id: this.overedFeature.id },
 									{ hover: true }
 								);
-								overedFeature = map.queryRenderedFeatures({ layers: [overedFeature.layer.id], filter: ["==", ['id'], overedFeature.id] })[0];
-								addTooltip(overedFeature, this);
+								this.overedFeature = map.queryRenderedFeatures({ layers: [this.overedFeature.layer.id], filter: ["==", ['id'], this.overedFeature.id] })[0];
+								this.addTooltip(this.overedFeature);
 
 							}
 						}
@@ -9361,10 +9360,10 @@ Threebox.prototype = {
 
 			}
 
-			map.onMouseDown = function (e) {
+			this.onMouseDown = function (e) {
 
 				// Continue the rest of the function shiftkey or altkey are pressed, and if object is selected
-				if (!((e.originalEvent.shiftKey || e.originalEvent.altKey || e.originalEvent.ctrlKey) && e.originalEvent.button === 0 && selectedObject)) return;
+				if (!((e.originalEvent.shiftKey || e.originalEvent.altKey || e.originalEvent.ctrlKey) && e.originalEvent.button === 0 && this.selectedObject)) return;
 				if (!map.tb.enableDraggingObjects && !map.tb.enableRotatingObjects) return;
 
 				e.preventDefault();
@@ -9375,66 +9374,63 @@ Threebox.prototype = {
 				//map.dragPan.disable();
 
 				// Call functions for the following events
-				map.once('mouseup', map.onMouseUp);
-				map.once('mouseout', map.onMouseUp);
+				map.once('mouseup', this.onMouseUp);
+				//map.once('mouseout', this.onMouseUp);
 
 				// move the selected object
-				draggedObject = selectedObject;
+				this.draggedObject = this.selectedObject;
 
 				// Capture the first xy coordinates
 				start = mousePos(e);
-				startCoords = draggedObject.coordinates;
+				startCoords = this.draggedObject.coordinates;
 
-				rotationDiff = utils.degreeify(draggedObject.rotation);
+				rotationDiff = utils.degreeify(this.draggedObject.rotation);
 				lngDiff = startCoords[0] - e.lngLat.lng;
 				latDiff = startCoords[1] - e.lngLat.lat;
-				altDiff = -draggedObject.modelHeight - (e.point.y * this.tb.altitudeStep);
+				altDiff = -this.draggedObject.modelHeight - (e.point.y * this.tb.altitudeStep);
 			}
 
-			map.onMouseUp = function (e) {
+			this.onMouseUp = function (e) {
 
 				// Set a UI indicator for dragging.
 				this.getCanvasContainer().style.cursor = 'default';
 
 				// Remove these events now that finish has been called.
 				//map.off('mousemove', onMouseMove);
-				this.off('mouseup', map.onMouseUp);
-				this.off('mouseout', map.onMouseUp);
+				this.off('mouseup', this.onMouseUp);
+				this.off('mouseout', this.onMouseUp);
 				this.dragPan.enable();
 
-				if (draggedObject) {
-					draggedObject.dispatchEvent(new CustomEvent('ObjectDragged', { detail: { draggedObject: draggedObject, draggedAction: draggedAction }, bubbles: true, cancelable: true }));
-					draggedObject.removeHelp();
-					draggedObject = null;
+				if (this.draggedObject) {
+					this.draggedObject.dispatchEvent(new CustomEvent('ObjectDragged', { detail: { draggedObject: this.draggedObject, draggedAction: draggedAction }, bubbles: true, cancelable: true }));
+					this.draggedObject.removeHelp();
+					this.draggedObject = null;
 					draggedAction = null;
 				};
 			}
 
-			map.onMouseOut = function (e) {
-				if (overedFeature) {
+			this.onMouseOut = function (e) {
+				if (this.overedFeature) {
 					let features = this.queryRenderedFeatures(e.point);
-					if (features.length > 0 && overedFeature.id != features[0].id) {
+					if (features.length > 0 && this.overedFeature.id != features[0].id) {
 						this.getCanvasContainer().style.cursor = 'default';
 						//only unover when new feature is another
-						unoverFeature(features[0], this);
+						this.unoverFeature(features[0]);
 					}
 				}
 			}
 
-			map.onZoomEnd = function (e) {
-				this.tb.zoomLayers.every((layerId) => {
-					this.tb.setLayerZoomVisibility(layerId);
-					return true;
-				});
+			this.onZoomEnd = function (e) {
+				this.tb.zoomLayers.forEach((l) => {this.tb.toggleLayer(l);});
 			}
 
 			//listener to the events
 			//this.on('contextmenu', map.onContextMenu);
-			this.on('click', map.onClick);
-			this.on('mousemove', map.onMouseMove);
-			this.on('mouseout', map.onMouseOut)
-			this.on('mousedown', map.onMouseDown);
-			this.on('zoom', map.onZoomEnd);
+			this.on('click', this.onClick);
+			this.on('mousemove', this.onMouseMove);
+			this.on('mouseout', this.onMouseOut)
+			this.on('mousedown', this.onMouseDown);
+			this.on('zoom', this.onZoomEnd);
 
 		});
 	},
@@ -9590,7 +9586,7 @@ Threebox.prototype = {
 		if (this.map.getLayer(layerId)) {
 			this.map.setLayerZoomRange(layerId, minZoomLayer, maxZoomLayer);
 			if (!this.zoomLayers.includes(layerId)) this.zoomLayers.push(layerId);
-			this.setLayerZoomVisibility(layerId);
+			this.toggleLayer(layerId);
 		}
 	},
 
@@ -9625,25 +9621,26 @@ Threebox.prototype = {
 		});
 	},
 
-	//[jscastro] method to toggle Layer visibility
-	toggleLayer: function (layerId, visible) {
-		if (this.map.getLayer(layerId)) {
-			//call
-			this.setLayoutProperty(layerId, 'visibility', (visible ? 'visible' : 'none'))
-			this.labelRenderer.toggleLabels(layerId, visible);
+	//[jscastro] method to toggle Layer visibility checking zoom range
+	toggleLayer: function (layerId, visible = true) {
+		let l = this.map.getLayer(layerId);
+		if (l) {
+			if (!visible) {
+				this.toggle(l.id, false);
+				return;
+			}
+			let z = this.map.getZoom();
+			if (l.minzoom && z < l.minzoom) { console.log("< minzoom"); this.toggle(l.id, false); return; };
+			if (l.maxzoom && z >= l.maxzoom) { console.log(">= maxzoom"); this.toggle(l.id, false); return; };
+			this.toggle(l.id, true);
 		};
 	},
 
-	setLayerZoomVisibility: function (layerId) {
-		let z = this.map.getZoom();
-		let l = this.map.getLayer(layerId);
-		let v = l.visibility;
-		let u = typeof v === 'undefined';
-		if (l) {
-			if (l.minzoom && z < l.minzoom) { this.toggleLayer(l.id, false); return; };
-			if (l.maxzoom && z >= l.maxzoom) { this.toggleLayer(l.id, false); return; };
-			this.toggleLayer(l.id, true);
-		}
+	//[jscastro] method to toggle Layer visibility
+	toggle: function (layerId, visible) {
+		//call
+		this.setLayoutProperty(layerId, 'visibility', (visible ? 'visible' : 'none'))
+		this.labelRenderer.toggleLabels(layerId, visible);
 	},
 
 	update: function () {
@@ -9888,7 +9885,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.1.1',
+	version: '2.1.2',
 
 }
 
@@ -9903,12 +9900,11 @@ var defaultOptions = {
 	enableRotatingObjects: false,
 	enableTooltips: false,
 	multiLayer: false,
-
 }
 module.exports = exports = Threebox;
 
 
-},{"./animation/AnimationManager.js":74,"./camera/CameraSync.js":75,"./objects/LabelRenderer.js":77,"./objects/Object3D.js":78,"./objects/effects/BuildingShadows.js":80,"./objects/extrusion.js":81,"./objects/label.js":82,"./objects/line.js":83,"./objects/loadObj.js":84,"./objects/objects.js":90,"./objects/sphere.js":91,"./objects/tooltip.js":92,"./objects/tube.js":93,"./three.js":94,"./utils/constants.js":95,"./utils/material.js":96,"./utils/suncalc.js":97,"./utils/utils.js":98}],74:[function(require,module,exports){
+},{"./camera/CameraSync.js":75,"./objects/LabelRenderer.js":77,"./objects/Object3D.js":78,"./objects/effects/BuildingShadows.js":80,"./objects/extrusion.js":81,"./objects/label.js":82,"./objects/line.js":83,"./objects/loadObj.js":84,"./objects/objects.js":90,"./objects/sphere.js":91,"./objects/tooltip.js":92,"./objects/tube.js":93,"./three.js":94,"./utils/constants.js":95,"./utils/material.js":96,"./utils/suncalc.js":97,"./utils/utils.js":98}],74:[function(require,module,exports){
 /**
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
@@ -25680,20 +25676,27 @@ Objects.prototype = {
 				get() { return _wireframe; },
 				set(value) {
 					if (_wireframe != value) {
-
+						if (!obj.model) return;
 						obj.model.traverse(function (c) {
 							if (c.type == "Mesh" || c.type == "SkinnedMesh") {
-								let arrMaterial = [];
+								let materials = [];
 								if (!Array.isArray(c.material)) {
-									arrMaterial.push(c.material);
+									materials.push(c.material);
 								} else {
-									arrMaterial = c.material;
+									materials = c.material;
 								}
-								arrMaterial.forEach(function (m) {
-									m.opacity = (value ? 0.5 : 1);
-									//m.transparent = value;
-									m.wireframe = value;
-								});
+								if (value) {
+									c.userData.materials = materials;
+									c.material = Objects.prototype._defaults.materials.wireframeMaterial;
+									c.material.opacity = (value ? 0.5 : 1);
+									c.material.wireframe = value;
+									c.material.transparent = value;
+
+								} else {
+									let mc = c.userData.materials;
+									c.material = (mc.length > 1 ? mc : mc[0]);
+									c.userData.materials = null;
+								}
 								if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
 							}
 							if (c.type == "LineSegments") {
@@ -26055,6 +26058,7 @@ Objects.prototype = {
 		},
 
 		materials: {
+			wireframeMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xffffff) }),
 			boxNormalMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xff0000) }),
 			boxOverMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xffff00) }),
 			boxSelectedMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0x00ff00) })

@@ -42,7 +42,8 @@
 				"min_height": 0,
 				"iso_3166_2": "US-NY",
 				"uuid": "802C4B41-D2F4-4A51-B2F7-18894CF2C6FE",
-				"center": [ -74.001234, 40.715092 ]
+				"center": [ -74.001234, 40.715092 ],
+				"tooltip": "The Louis J. Lefkowitz - State Office Building"
 			},
 			"id": 3359447,
 			"layer": {
@@ -247,7 +248,8 @@
 				"min_height": 0,
 				"iso_3166_2": "US-NY",
 				"uuid": "82594BCA-C3AD-4440-84A4-8EE82BA3073D",
-				"center": [ -74.00157, 40.714276 ]
+				"center": [ -74.00157, 40.714276 ],
+				"tooltip": "New York Supreme Court"
 			},
 			"id": 3696430,
 			"layer": {
@@ -386,7 +388,8 @@
 				"min_height": 0,
 				"iso_3166_2": "US-NY",
 				"uuid": "170894F0-BA9C-43AE-AFC5-45C669DDA0DD",
-				"center": [ -74.002338, 40.713651 ]
+				"center": [ -74.002338, 40.713651 ],
+				"tooltip": "Thurgood Marshall United States Courthouse"
 			},
 			"id": 3696564,
 			"layer": {

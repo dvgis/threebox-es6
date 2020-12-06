@@ -506,20 +506,27 @@ Objects.prototype = {
 				get() { return _wireframe; },
 				set(value) {
 					if (_wireframe != value) {
-
+						if (!obj.model) return;
 						obj.model.traverse(function (c) {
 							if (c.type == "Mesh" || c.type == "SkinnedMesh") {
-								let arrMaterial = [];
+								let materials = [];
 								if (!Array.isArray(c.material)) {
-									arrMaterial.push(c.material);
+									materials.push(c.material);
 								} else {
-									arrMaterial = c.material;
+									materials = c.material;
 								}
-								arrMaterial.forEach(function (m) {
-									m.opacity = (value ? 0.5 : 1);
-									//m.transparent = value;
-									m.wireframe = value;
-								});
+								if (value) {
+									c.userData.materials = materials;
+									c.material = Objects.prototype._defaults.materials.wireframeMaterial;
+									c.material.opacity = (value ? 0.5 : 1);
+									c.material.wireframe = value;
+									c.material.transparent = value;
+
+								} else {
+									let mc = c.userData.materials;
+									c.material = (mc.length > 1 ? mc : mc[0]);
+									c.userData.materials = null;
+								}
 								if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
 							}
 							if (c.type == "LineSegments") {
@@ -881,6 +888,7 @@ Objects.prototype = {
 		},
 
 		materials: {
+			wireframeMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xffffff) }),
 			boxNormalMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xff0000) }),
 			boxOverMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xffff00) }),
 			boxSelectedMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0x00ff00) })

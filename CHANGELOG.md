@@ -4,11 +4,18 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 #### :sparkles: Enhancements
 
-- [**#127**](https://github.com/jscastro76/threebox/issues/127) Create a new example with Three.js extrusions based on standard geoJson #127 Added a new example [17-extrusions.html](https://github.com/jscastro76/threebox/blob/master/examples/17-extrusions.html)
-- [**#126**](https://github.com/jscastro76/threebox/issues/126) add options.rotate and options.scale for Objects3D #126
-- [**#125**](https://github.com/jscastro76/threebox/issues/125) three.js draw geojson #125
+- three.js draw geojson #125
+- add options.rotate and options.scale for Objects3D #126
+- Create a new example with Three.js extrusions based on standard geoJson #127 Added a new example [17-extrusions.html](https://github.com/jscastro76/threebox/blob/master/examples/17-extrusions.html)
+- Convert internal variables (`selectedObject`, `draggedObject`, ...) into instance variables #130
+- Deprecate `tb.setLayerZoomVisibility`, overlaps with `tb.toggleLayer` #134
 
 #### :beetle: Bug fixes
+
+- when an object is wireframed, all its clones are too #124
+- Error when wireframing all the objects #131
+- While dragging an object if mouse overs a label it stops dragging #132
+- A layer shouldn't be shown explicitely if it's not in the right zoom range #133
 
 <br>
 
