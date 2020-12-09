@@ -31,6 +31,9 @@
     function fromJulian(j) { return new Date((j + 0.5 - J1970) * dayMs); }
     function toDays(date) { return toJulian(date) - J2000; }
 
+    SunCalc.toJulian = function (date) {
+        return toJulian(date);
+    };
 
     // general calculations for position
 

@@ -286,6 +286,24 @@ This method gets Sun light position (azimuth, altitude) based on `suncalc.js.` m
 tb.getSunTimes(date, coords)
 ```
 This method gets Sun times based on `suncalc.js.` module which calculates the times for the different light phases (sunrise, sunset, etc..) from a given datetime, lng, lat and alt. This is used to change the map style based on day/night hour.
+Returns an object with the following properties (each is a `Date` object):
+
+| Property        | Description                                                              |
+| --------------- | ------------------------------------------------------------------------ |
+| `sunrise`       | sunrise (top edge of the sun appears on the horizon)                     |
+| `sunriseEnd`    | sunrise ends (bottom edge of the sun touches the horizon)                |
+| `goldenHourEnd` | morning golden hour (soft light, best time for photography) ends         |
+| `solarNoon`     | solar noon (sun is in the highest position)                              |
+| `goldenHour`    | evening golden hour starts                                               |
+| `sunsetStart`   | sunset starts (bottom edge of the sun touches the horizon)               |
+| `sunset`        | sunset (sun disappears below the horizon, evening civil twilight starts) |
+| `dusk`          | dusk (evening nautical twilight starts)                                  |
+| `nauticalDusk`  | nautical dusk (evening astronomical twilight starts)                     |
+| `night`         | night starts (dark enough for astronomical observations)                 |
+| `nadir`         | nadir (darkest moment of the night, sun is in the lowest position)       |
+| `nightEnd`      | night ends (morning astronomical twilight starts)                        |
+| `nauticalDawn`  | nautical dawn (morning nautical twilight starts)                         |
+| `dawn`          | dawn (morning nautical twilight ends, morning civil twilight starts)     |
 <br>
 
 

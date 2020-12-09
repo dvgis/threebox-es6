@@ -692,8 +692,8 @@ Threebox.prototype = {
 				return;
 			}
 			let z = this.map.getZoom();
-			if (l.minzoom && z < l.minzoom) { console.log("< minzoom"); this.toggle(l.id, false); return; };
-			if (l.maxzoom && z >= l.maxzoom) { console.log(">= maxzoom"); this.toggle(l.id, false); return; };
+			if (l.minzoom && z < l.minzoom) { this.toggle(l.id, false); return; };
+			if (l.maxzoom && z >= l.maxzoom) { this.toggle(l.id, false); return; };
 			this.toggle(l.id, true);
 		};
 	},
@@ -18621,6 +18621,9 @@ module.exports = exports = material;
     function fromJulian(j) { return new Date((j + 0.5 - J1970) * dayMs); }
     function toDays(date) { return toJulian(date) - J2000; }
 
+    SunCalc.toJulian = function (date) {
+        return toJulian(date);
+    };
 
     // general calculations for position
 

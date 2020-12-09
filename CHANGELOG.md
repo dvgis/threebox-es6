@@ -4,19 +4,19 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 #### :sparkles: Enhancements
 
-- three.js draw geojson #125
-- add options.rotate and options.scale for Objects3D #126
-- Create a new example with Three.js extrusions based on standard geoJson #127 Added a new example [17-extrusions.html](https://github.com/jscastro76/threebox/blob/master/examples/17-extrusions.html)
-- Convert internal variables (`selectedObject`, `draggedObject`, ...) into instance variables #130
-- Deprecate `tb.setLayerZoomVisibility`, overlaps with `tb.toggleLayer` #134
+- #125 three.js draw geojson.
+- #126 add options.rotate and options.scale for Objects3D. 
+- #127 Create a new example with Three.js extrusions based on standard geoJson. Added a new example [17-extrusions.html](https://github.com/jscastro76/threebox/blob/master/examples/17-extrusions.html)
+- #130 Convert internal variables (`selectedObject`, `draggedObject`, ...) into instance variables .
+- #134 Deprecate `tb.setLayerZoomVisibility`, overlaps with `tb.toggleLayer`.
+- #138 expose `SunCalc.toJulian`
 
 #### :beetle: Bug fixes
 
-- when an object is wireframed, all its clones are too #124
-- Error when wireframing all the objects #131
-- While dragging an object if mouse overs a label it stops dragging #132
-- A layer shouldn't be shown explicitely if it's not in the right zoom range #133
-
+- #124 when an object is wireframed, all its clones are too.
+- #131 Error when wireframing all the objects.
+- #132 While dragging an object if mouse overs a label it stops dragging.
+- #133 A layer shouldn't be shown explicitely if it's not in the right zoom range. 
 <br>
 
 - - - 
