@@ -1,3 +1,18 @@
+## 2.1.3
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+
+
+#### :beetle: Bug fixes
+
+#142 CRITICAL BUG: Cannot set property 'toJulian' of undefined
+
+<br>
+
+- - - 
+
 ## 2.1.2
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
