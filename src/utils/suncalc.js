@@ -31,10 +31,6 @@
     function fromJulian(j) { return new Date((j + 0.5 - J1970) * dayMs); }
     function toDays(date) { return toJulian(date) - J2000; }
 
-    SunCalc.toJulian = function (date) {
-        return toJulian(date);
-    };
-
     // general calculations for position
 
     var e = rad * 23.4397; // obliquity of the Earth
@@ -100,6 +96,9 @@
         };
     };
 
+    SunCalc.toJulian = function (date) {
+        return toJulian(date);
+    };
 
     // sun times configuration (angle, morning name, evening name)
 
