@@ -62,7 +62,7 @@ class BuildingShadows {
 		gl.useProgram(this.program);
 		const source = this.map.style.sourceCaches['composite'];
 		const coords = source.getVisibleCoordinates().reverse();
-		const buildingsLayer = map.getLayer(this.buildingsLayerId);
+		const buildingsLayer = this.map.getLayer(this.buildingsLayerId);
 		const context = this.map.painter.context;
 		const { lng, lat } = this.map.getCenter();
 		const pos = this.tb.getSunPosition(this.tb.lightDateTime, [lng, lat]);

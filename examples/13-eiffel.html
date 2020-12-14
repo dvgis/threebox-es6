@@ -57,7 +57,7 @@
 <body>
 	<div id='map' class='map'>
 		<div class="mapboxgl-ctrl-top-left">
-			<div id="toolsControl" class="tools-i mapboxgl-ctrl mapboxgl-ctrl-group btn-group btn-group-toggle" style="margin-left:20px;" data-toggle="buttons">
+			<div id="toolsControl" class="tools-i mapboxgl-ctrl mapboxgl-ctrl-group btn-group btn-group-toggle" style="margin-left:120px;" data-toggle="buttons">
 				<!--<button type="button" name="ALL" id="ALL" title="All" alt="All"><i class="fas fa-globe-americas"></i></button>-->
 				<button type="button" name="NYC" id="NYC" title="Statue of Liberty, NYC" alt="Statue of Liberty, NYC"><i style="width: 26px; height: 26px; background: url(./images/statue-of-liberty.png) no-repeat center center; background-size: contain; display: block;"></i></button>
 				<button type="button" name="PAR" id="PAR" title="Eiffel Tower, Paris" alt="Eiffel Tower, Paris"><i style="width: 26px; height: 26px; background: url(./images/eiffel-tower.png) no-repeat center center; background-size: contain; display: block;"></i></button>
@@ -67,7 +67,7 @@
 	</div>
 	<div id="hour" class="mapboxgl-map"></div>
 	<input id='time' type='range' min="0" max="86400" />
-	<script>
+	<script type="module">
 		//This demo shows a satellite mapbox style the following features:
 		//- Built-in sunlight through 'realSunlight' that sets the scene and map lights based on 'setSunlight'
 		//- Built-in shadows through 'castShadow' and 'tb.setBuildingShadows'
@@ -146,12 +146,23 @@
 			map.triggerRepaint();
 		};
 
+		let stats;
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+		}
+
 		// The 'building' layer in the mapbox-streets vector source contains building-height
 		// data from OpenStreetMap.
 		map.on('style.load', function () {
+			// stats
+			stats = new Stats();
+			map.getContainer().appendChild(stats.dom);
+			animate();
 
 			let mapCenter = map.getCenter();
-			center = [mapCenter.lng, mapCenter.lat];
+			let center = [mapCenter.lng, mapCenter.lat];
 			p.innerHTML = "Local time: " + dateToTimezone(date, point.timezone).toLocaleTimeString();
 
 			map.addSource(mapConfig.names.fillExtrusion, {

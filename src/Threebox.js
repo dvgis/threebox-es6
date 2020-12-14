@@ -154,7 +154,6 @@ Threebox.prototype = {
 					y: e.originalEvent.clientY - rect.top - canvas.clientTop
 				};
 			}
-
 			
 			this.unselectObject = function (o) {
 				//deselect, reset and return
@@ -942,7 +941,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.1.3',
+	version: '2.1.2',
 
 }
 

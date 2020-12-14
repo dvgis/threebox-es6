@@ -108,8 +108,7 @@
 
 		});
 
-		function addBuildings(data, info, height) {
-			height = height ? height : 1;
+		function addBuildings(data, info, height = 1) {
 
 			data.forEach((b) => {
 				let center = b.properties.center;

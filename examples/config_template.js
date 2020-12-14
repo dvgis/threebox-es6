@@ -1,4 +1,3 @@
 var config = {
-    accessToken: '',
-    subscriptionKey: ''
+    accessToken: ''
 };

@@ -29,7 +29,7 @@
 </head>
 <body>
 	<div id='map' class='map'></div>
-	<div id="menu">
+	<div id="menu" style="margin-left:120px">
 		<input id="streets-v11" type="radio" name="rtoggle" value="streets" checked="checked" />
 		<label for="streets-v11">streets</label>
 		<input id="light-v10" type="radio" name="rtoggle" value="light" />
@@ -41,7 +41,7 @@
 		<input id="satellite-v9" type="radio" name="rtoggle" value="outdoors" />
 		<label for="satellite-v9">satellite</label>
 	</div>
-	<script>
+	<script type="module">
 		// This example downloads a tower model from an external OBJ/MTL file, adds it to the map, and drives it around via paths fetched from the Mapbox Directions API
 
 		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
@@ -87,15 +87,26 @@
 		for (let i = 0; i < inputs.length; i++) {
 			inputs[i].onclick = switchLayer;
 		}
+		let stats;
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+		}
 
 		map.on('style.load', () => {
+			// stats
+			stats = new Stats();
+			map.getContainer().appendChild(stats.dom);
+			animate();
+
 			map.addLayer({
 				id: mapConfig.names.customLayer,
 				type: 'custom',
 				renderingMode: '3d',
 				onAdd: function (map, mbxContext) {
 
-					options = {
+					let options = {
 						obj: './models/eiffel.glb',
 						type: 'gltf',
 						scale: mapConfig.PAR.scale,

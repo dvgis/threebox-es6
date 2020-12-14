@@ -109,7 +109,13 @@ Add threebox to your project via **npm package** [![NPM version](http://img.shie
 `npm install threebox-plugin`
 
 #### Use the bundle
-Download the bundle from [`dist/threebox.js`](dist/threebox.js) or [`dist/threebox.min.js`](dist/threebox.min.js) and include it in a `<script>` tag on your page.
+Download the bundle from [`dist/threebox.js`](dist/threebox.js) or [`dist/threebox.min.js`](dist/threebox.min.js) and include it in a `<script>` tag on your page.  
+If you want to use styles predefined, add the link to the cascade style sheet.  
+If deployed in other folder structure or a CDN, just ensure you use your `src` and `href` attributes are pointing to relative or absolute url path. 
+```html
+<script src="../dist/threebox.js" type="text/javascript"></script>
+<link href="./css/threebox.css" rel="stylesheet" />
+```
 
 #### Test the samples 
 Several introductory examples are [here](https://github.com/jscastro76/threebox/tree/master/examples). To run them, create a `config.js` file with your Mapbox-gl-js access token, alongside and in the format of [the template](https://github.com/jscastro76/threebox/blob/master/examples/config_template.js).

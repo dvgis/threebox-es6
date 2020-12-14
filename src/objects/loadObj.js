@@ -34,7 +34,8 @@ function loadObj(options, cb, promise) {
 			loader = objLoader;
 			break;
 		case "gltf":
-			// [jscastro] Support for GLTF
+		case "glb":
+			// [jscastro] Support for GLTF/GLB
 			loader = gltfLoader;
 			break;
 		case "fbx":
@@ -65,6 +66,7 @@ function loadObj(options, cb, promise) {
 					obj = obj.children[0];
 					break;
 				case "gltf":
+				case "glb":
 				case "dae":
 					animations = obj.animations;
 					obj = obj.scene;

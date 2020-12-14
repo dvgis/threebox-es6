@@ -100,6 +100,12 @@
         let zoomStep = (maxZoom - minZoom) / 5;
         let toggleableLayerIds = [];
 
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+        }
+
         map.on('style.load', function () {
 
             // stats
@@ -124,12 +130,6 @@
             });
 
         });
-
-		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
-		function animate() {
-			requestAnimationFrame(animate);
-			stats.update();
-        }
 
 		function createCustomLayer(layerId, origin, scale) {
 			//create the layer

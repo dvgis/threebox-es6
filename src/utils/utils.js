@@ -98,6 +98,14 @@ var utils = {
 		return Math.abs(Constants.WORLD_SIZE / Math.cos(Constants.DEG2RAD * latitude) / Constants.EARTH_CIRCUMFERENCE);
 	},
 
+	_circumferenceAtLatitude: function (latitude) {
+		return Constants.EARTH_CIRCUMFERENCE * Math.cos(latitude * Math.PI / 180);
+	},
+
+	mercatorZfromAltitude: function (altitude, lat) {
+		return altitude / this._circumferenceAtLatitude(lat);
+	},
+
 	_scaleVerticesToMeters: function (centerLatLng, vertices) {
 		var pixelsPerMeter = this.projectedUnitsPerMeter(centerLatLng[1]);
 		var centerProjected = this.projectToWorld(centerLatLng);
