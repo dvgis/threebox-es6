@@ -3,10 +3,11 @@
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
 #### :sparkles: Enhancements
-- #144 Improve 07-alignmentTest.html adding 3D objects inside the building 
-- #143 CameraSync adjustment to avoid depth issues between 3D objects and Fill-extrusions 
-- #139 Add a full dispose button to 15-Performance.html demo 
 - #1 Collisions detection (Depth calculation) 
+- #102 Add stats performance to all the demos 
+- #139 Add a full dispose button to 15-Performance.html demo 
+- #143 CameraSync adjustment to avoid depth issues between 3D objects and Fill-extrusions 
+- #144 Improve 07-alignmentTest.html adding 3D objects inside the building 
 
 #### :beetle: Bug fixes
 - #147 Error in BuildingShadows when used from a script module 
