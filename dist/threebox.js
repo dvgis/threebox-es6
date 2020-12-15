@@ -16305,6 +16305,7 @@ Objects.prototype = {
 		const labelName = "label";
 		const tooltipName = "tooltip";
 		const helpName = "help";
+		const shadowPlane = "shadowPlane";
 
 		if (isStatic) {
 
@@ -16362,7 +16363,8 @@ Objects.prototype = {
 				obj.set({ position: lnglat });
 				//Each time the object is positioned, set modelHeight property and project the floor
 				obj.modelHeight = obj.coordinates[2] || 0;
-				if (obj.boxGroup) obj.setBoundingBoxShadowFloor();
+				obj.setBoundingBoxShadowFloor();
+				obj.setCastShadowFloor();
 				return obj;
 
 			}
@@ -16496,7 +16498,7 @@ Objects.prototype = {
 
 			//[jscastro] added method to position the shadow box on the floor depending the object height
 			obj.setBoundingBoxShadowFloor = function () {
-				if (obj.boundingBox) {
+				if (obj.boxGroup && obj.boundingBox) {
 					obj.boundingBoxShadow.box.max.z = -obj.modelHeight;
 					obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
 				}
@@ -16691,6 +16693,11 @@ Objects.prototype = {
 				}
 			}
 
+			//[jscastro] added property for help
+			Object.defineProperty(obj, 'shadowPlane', {
+				get() { return obj.getObjectByName(shadowPlane); }
+			});
+
 			let _castShadow = false;
 			//[jscastro] added property for traverse an object to cast a shadow
 			Object.defineProperty(obj, 'castShadow', {
@@ -16709,6 +16716,7 @@ Objects.prototype = {
 							const planeMat = new THREE.ShadowMaterial();
 							planeMat.opacity = 0.5;
 							let plane = new THREE.Mesh(planeGeo, planeMat);
+							plane.name = shadowPlane;
 							plane.layers.enable(1); plane.layers.disable(0); // it makes the object invisible for the raycaster
 							plane.receiveShadow = value;
 							obj.add(plane);
@@ -16724,6 +16732,13 @@ Objects.prototype = {
 					}
 				}
 			})
+
+			//[jscastro] added method to position the shadow box on the floor depending the object height
+			obj.setCastShadowFloor = function () {
+				if (obj.castShadow) {
+					obj.shadowPlane.position.z = -obj.modelHeight;
+				}
+			}
 
 			let _receiveShadow = false;
 			//[jscastro] added property for traverse an object to receive a shadow
