@@ -116,7 +116,7 @@ Objects.prototype = {
 
 				// CSS2DObjects could bring an specific vertical positioning to correct in units
 				if (obj.userData.topMargin && obj.userData.feature) {
-					lnglat[2] += (obj.userData.feature.properties.height - (obj.userData.feature.properties.base_height || obj.userData.feature.properties.min_height || 0)) * obj.userData.topMargin;
+					lnglat[2] += ((obj.userData.feature.properties.height || 0) - (obj.userData.feature.properties.base_height || obj.userData.feature.properties.min_height || 0)) * (obj.userData.topMargin || 0);
 				}
 
 				obj.coordinates = lnglat;
@@ -463,33 +463,34 @@ Objects.prototype = {
 			Object.defineProperty(obj, 'castShadow', {
 				get() { return _castShadow; },
 				set(value) {
-					if (_castShadow != value) {
-						obj.model.traverse(function (c) {
-							if (c.isMesh) c.castShadow = true;
-						});
-						if (value) {
-							// we add the shadow plane automatically 
-							const s = obj.modelSize;
-							const sizes = [s.x, s.y, s.z];
-							const planeSize = Math.max(...sizes) * 10;
-							const planeGeo = new THREE.PlaneBufferGeometry(planeSize, planeSize);
-							const planeMat = new THREE.ShadowMaterial();
-							planeMat.opacity = 0.5;
-							let plane = new THREE.Mesh(planeGeo, planeMat);
-							plane.name = shadowPlane;
-							plane.layers.enable(1); plane.layers.disable(0); // it makes the object invisible for the raycaster
-							plane.receiveShadow = value;
-							obj.add(plane);
-						} else {
-							// or we remove it 
-							obj.traverse(function (c) {
-								if (c.isMesh && c.material instanceof THREE.ShadowMaterial)
-									obj.remove(c);	
-							});
+					if (!obj.model || _castShadow === value) return;
 
-						}
-						_castShadow = value;
+					obj.model.traverse(function (c) {
+						if (c.isMesh) c.castShadow = true;
+					});
+					if (value) {
+						// we add the shadow plane automatically 
+						const s = obj.modelSize;
+						const sizes = [s.x, s.y, s.z];
+						const planeSize = Math.max(...sizes) * 10;
+						const planeGeo = new THREE.PlaneBufferGeometry(planeSize, planeSize);
+						const planeMat = new THREE.ShadowMaterial();
+						planeMat.opacity = 0.5;
+						let plane = new THREE.Mesh(planeGeo, planeMat);
+						plane.name = shadowPlane;
+						plane.layers.enable(1); plane.layers.disable(0); // it makes the object invisible for the raycaster
+						plane.receiveShadow = value;
+						obj.add(plane);
+					} else {
+						// or we remove it 
+						obj.traverse(function (c) {
+							if (c.isMesh && c.material instanceof THREE.ShadowMaterial)
+								obj.remove(c);
+						});
+
 					}
+					_castShadow = value;
+
 				}
 			})
 
@@ -505,13 +506,11 @@ Objects.prototype = {
 			Object.defineProperty(obj, 'receiveShadow', {
 				get() { return _receiveShadow; },
 				set(value) {
-					if (_receiveShadow != value) {
-
-						obj.model.traverse(function (c) {
-							if (c.isMesh) c.receiveShadow = true;
-						});
-						_receiveShadow = value;
-					}
+					if (!obj.model || _receiveShadow === value) return;
+					obj.model.traverse(function (c) {
+						if (c.isMesh) c.receiveShadow = true;
+					});
+					_receiveShadow = value;
 				}
 			})
 
@@ -520,38 +519,36 @@ Objects.prototype = {
 			Object.defineProperty(obj, 'wireframe', {
 				get() { return _wireframe; },
 				set(value) {
-					if (_wireframe != value) {
-						if (!obj.model) return;
-						obj.model.traverse(function (c) {
-							if (c.type == "Mesh" || c.type == "SkinnedMesh") {
-								let materials = [];
-								if (!Array.isArray(c.material)) {
-									materials.push(c.material);
-								} else {
-									materials = c.material;
-								}
-								if (value) {
-									c.userData.materials = materials;
-									c.material = Objects.prototype._defaults.materials.wireframeMaterial;
-									c.material.opacity = (value ? 0.5 : 1);
-									c.material.wireframe = value;
-									c.material.transparent = value;
+					if (!obj.model || _wireframe === value) return;
+					obj.model.traverse(function (c) {
+						if (c.type == "Mesh" || c.type == "SkinnedMesh") {
+							let materials = [];
+							if (!Array.isArray(c.material)) {
+								materials.push(c.material);
+							} else {
+								materials = c.material;
+							}
+							if (value) {
+								c.userData.materials = materials;
+								c.material = Objects.prototype._defaults.materials.wireframeMaterial;
+								c.material.opacity = (value ? 0.5 : 1);
+								c.material.wireframe = value;
+								c.material.transparent = value;
 
-								} else {
-									let mc = c.userData.materials;
-									c.material = (mc.length > 1 ? mc : mc[0]);
-									c.userData.materials = null;
-								}
-								if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
+							} else {
+								let mc = c.userData.materials;
+								c.material = (mc.length > 1 ? mc : mc[0]);
+								c.userData.materials = null;
 							}
-							if (c.type == "LineSegments") {
-								c.layers.disableAll();
-							}
-						});
-						_wireframe = value;
-						// Dispatch new event WireFramed
-						obj.dispatchEvent(new CustomEvent('Wireframed', { detail: obj, bubbles: true, cancelable: true }));
-					}
+							if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
+						}
+						if (c.type == "LineSegments") {
+							c.layers.disableAll();
+						}
+					});
+					_wireframe = value;
+					// Dispatch new event WireFramed
+					obj.dispatchEvent(new CustomEvent('Wireframed', { detail: obj, bubbles: true, cancelable: true }));
 				}
 			})
 
@@ -588,6 +585,21 @@ Objects.prototype = {
 					}
 				}
 			})
+
+			let _raycasted = true;
+			//[jscastro] added property for including/excluding an object from raycast
+			Object.defineProperty(obj, 'raycasted', {
+				get() { return _raycasted; },
+				set(value) {
+					if (!obj.model || _raycasted === value) return;
+					obj.model.traverse(function (c) {
+						if (c.type == "Mesh" || c.type == "SkinnedMesh") {
+							if (!value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
+						}
+					});
+					_raycasted = value;
+				}
+			});
 
 			let _over = false;
 			//[jscastro] added property for over state
@@ -924,7 +936,8 @@ Objects.prototype = {
 			material: 'MeshBasicMaterial',
 			anchor: 'bottom-left',
 			bbox: false,
-			tooltip: false
+			tooltip: false,
+			raycasted: true
 		},
 
 		label: {
@@ -950,7 +963,8 @@ Objects.prototype = {
 			material: 'MeshBasicMaterial',
 			anchor: 'center',
 			bbox: false,
-			tooltip: false
+			tooltip: false,
+			raycasted: true
 		},
 
 		loadObj: {
@@ -962,7 +976,8 @@ Objects.prototype = {
 			defaultAnimation: 0,
 			anchor: 'bottom-left',
 			bbox: false,
-			tooltip: false
+			tooltip: false,
+			raycasted: true
 		},
 
 		Object3D: {
@@ -970,7 +985,8 @@ Objects.prototype = {
 			units: 'scene',
 			anchor: 'bottom-left',
 			bbox: false,
-			tooltip: false
+			tooltip: false, 
+			raycasted: true
 		},
 
 		extrusion: {
@@ -982,9 +998,9 @@ Objects.prototype = {
 			rotation: 0,
 			units: 'scene',
 			anchor: 'center',
-			point: [0, 0],
 			bbox: false,
-			tooltip: false
+			tooltip: false,
+			raycasted: true
 		}
 	},
 

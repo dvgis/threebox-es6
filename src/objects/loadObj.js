@@ -90,6 +90,8 @@ function loadObj(options, cb, promise) {
 			userScaleGroup.setAnchor(options.anchor);
 			//[jscastro] override the center calculated if the object has adjustments
 			userScaleGroup.setCenter(options.adjustment);
+			//[jscastro] if the object is excluded from raycasting
+			userScaleGroup.raycasted = options.raycasted;
 			//[jscastro] return to cache
 			promise(userScaleGroup);
 			//[jscastro] then return to the client-side callback

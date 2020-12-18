@@ -217,7 +217,11 @@ AnimationManager.prototype = {
 
 			if (q) this.quaternion.setFromAxisAngle(q[0], q[1]);
 
-			if (w) this.position.copy(w);
+			if (w) {
+				this.position.copy(w);
+				let p = utils.unprojectFromWorld(w);
+				this.coordinates = p;
+			} 
 
 			this.updateMatrixWorld();
 			tb.map.repaint = true

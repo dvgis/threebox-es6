@@ -9884,7 +9884,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.1.4',
+	version: '2.1.5',
 
 }
 
@@ -10123,7 +10123,11 @@ AnimationManager.prototype = {
 
 			if (q) this.quaternion.setFromAxisAngle(q[0], q[1]);
 
-			if (w) this.position.copy(w);
+			if (w) {
+				this.position.copy(w);
+				let p = utils.unprojectFromWorld(w);
+				this.coordinates = p;
+			} 
 
 			this.updateMatrixWorld();
 			tb.map.repaint = true
@@ -10400,7 +10404,7 @@ CameraSync.prototype = {
         const offset = { x: t.width / 2, y: t.height / 2 };//t.centerOffset;
         const cameraToCenterDistance = 0.5 / Math.tan(this.halfFov) * t.height;
         const maxPitch = t._maxPitch * Math.PI / 180;
-        this.acuteAngle = Math.PI / 3 - maxPitch;
+        this.acuteAngle = Math.PI / 2 - maxPitch;
 
         this.state.cameraToCenterDistance = cameraToCenterDistance;
         this.state.offset = offset;
@@ -10409,6 +10413,62 @@ CameraSync.prototype = {
 
         this.updateCamera();
 
+        this.updateCameraUser = function (nearZUser, farZUser) {
+            if (!this.camera) {
+                console.log('nocamera')
+                return;
+            }
+            this.camera.matrixAutoUpdate = false;
+            // Furthest distance optimized by @satorbs
+            // https://github.com/satorbs/threebox/blob/master/src/camera/CameraSync.js
+            const t = this.map.transform;
+            const groundAngle = Math.PI / 2 + t._pitch;
+            this.cameraToCenterDistance = 0.5 / Math.tan(this.halfFov) * t.height;
+            this.state.cameraTranslateZ = new THREE.Matrix4().makeTranslation(0, 0, this.cameraToCenterDistance);
+
+            const fovAboveCenter = this.state.fov * (0.5 + this.state.offset.y / t.height);
+            const topHalfSurfaceDistance = Math.sin(fovAboveCenter) * this.state.cameraToCenterDistance / Math.sin(utils.clamp(Math.PI - groundAngle - fovAboveCenter, 0.01, Math.PI - 0.01));
+
+            this.state.maxFurthestDistance = cameraToCenterDistance * 0.95 * (Math.cos(this.acuteAngle) * Math.sin(this.halfFov) / Math.sin(Math.max(0.01, Math.min(Math.PI - 0.01, this.acuteAngle - this.halfFov))) + 1);
+            // Calculate z distance of the farthest fragment that should be rendered.
+            const furthestDistance = Math.cos(Math.PI / 2 - t._pitch) * topHalfSurfaceDistance + this.state.cameraToCenterDistance;
+
+            // Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
+            const farZ = farZUser;
+
+            // someday @ansis set further near plane to fix precision for deckgl,so we should fix it to use mapbox-gl v1.3+ correctly
+            // https://github.com/mapbox/mapbox-gl-js/commit/5cf6e5f523611bea61dae155db19a7cb19eb825c#diff-5dddfe9d7b5b4413ee54284bc1f7966d
+            const nearZ = nearZUser;
+
+            this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, t.width / t.height, nearZ, farZ);
+
+            // Unlike the Mapbox GL JS camera, separate camera translation and rotation out into its world matrix
+            // If this is applied directly to the projection matrix, it will work OK but break raycasting
+            let cameraWorldMatrix = this.calcCameraMatrix(t._pitch, t.angle);
+            this.camera.matrixWorld.copy(cameraWorldMatrix);
+
+            let zoomPow = t.scale * this.state.worldSizeRatio;
+            // Handle scaling and translation of objects in the map in the world's matrix transform, not the camera
+            let scale = new THREE.Matrix4;
+            let translateMap = new THREE.Matrix4;
+            let rotateMap = new THREE.Matrix4;
+
+            scale.makeScale(zoomPow, zoomPow, zoomPow);
+
+            let x = t.x || t.point.x;
+            let y = t.y || t.point.y;
+            translateMap.makeTranslation(-x, y, 0);
+            rotateMap.makeRotationZ(Math.PI);
+
+            this.world.matrix = new THREE.Matrix4()
+                .premultiply(rotateMap)
+                .premultiply(this.state.translateCenter)
+                .premultiply(scale)
+                .premultiply(translateMap)
+            this.map.repaint = true;
+            // utils.prettyPrintMatrix(this.camera.projectionMatrix.elements);
+            this.map.fire('CameraSyncedUser', { detail: { nearZ: nearZ, farZ: farZ, pitch: t._pitch, angle: t.angle, furthestDistance: furthestDistance, maxFurthestDistance: this.state.maxFurthestDistance, t: this.map.transform, tbProjMatrix: this.camera.projectionMatrix.elements, tbWorldMatrix: this.world.matrix.elements, cameraSyn: CameraSync } });
+        }
     },
 
     updateCamera: function (ev) {
@@ -10423,14 +10483,13 @@ CameraSync.prototype = {
         this.cameraToCenterDistance = 0.5 / Math.tan(this.halfFov) * t.height;
         this.state.cameraTranslateZ = new THREE.Matrix4().makeTranslation(0, 0, this.cameraToCenterDistance);
         const topHalfSurfaceDistance = Math.sin(this.halfFov) * this.state.cameraToCenterDistance / Math.sin(Math.PI - groundAngle - this.halfFov);
-        const pitchAngle = Math.cos((Math.PI / 3) - t._pitch); //pitch seems to influence heavily the depth calculation and cannot be more than 60 = PI/3
-        const maxZoom = 26;
+        const pitchAngle = Math.cos((Math.PI / 2) - t._pitch); //pitch seems to influence heavily the depth calculation and cannot be more than 60 = PI/3
 
-        // Calculate z distance of the farthest fragment that should be rendered. Add pitchAngle instead of cos(Pi/2 - pitch) and adjust with zoom multiplier because it changes the distance
-        const furthestDistance = Math.max(this.state.cameraToCenterDistance, pitchAngle * topHalfSurfaceDistance + this.state.cameraToCenterDistance - ((maxZoom - t.zoom) * maxZoom));
+        // Calculate z distance of the farthest fragment that should be rendered. 
+        const furthestDistance = pitchAngle * topHalfSurfaceDistance + this.state.cameraToCenterDistance;
 
         // Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
-        const farZ = Math.min(furthestDistance * 1.01, this.state.maxFurthestDistance);
+        const farZ = furthestDistance * 1.01;
 
         // someday @ansis set further near plane to fix precision for deckgl,so we should fix it to use mapbox-gl v1.3+ correctly
         // https://github.com/mapbox/mapbox-gl-js/commit/5cf6e5f523611bea61dae155db19a7cb19eb825c#diff-5dddfe9d7b5b4413ee54284bc1f7966d
@@ -10464,7 +10523,7 @@ CameraSync.prototype = {
             .premultiply(translateMap)
 
         // utils.prettyPrintMatrix(this.camera.projectionMatrix.elements);
-        this.map.fire('CameraSynced', { detail: { nearZ: nearZ, farZ: farZ, pitch: t._pitch, angle: t.angle, furthestDistance: furthestDistance, maxFurthestDistance: this.state.maxFurthestDistance, cameraToCenterDistance: this.cameraToCenterDistance, t: this.map.transform, tbProjMatrix: this.camera.projectionMatrix.elements, tbWorldMatrix: this.world.matrix.elements, cameraSyn: CameraSync } });
+        this.map.fire('CameraSynced', { detail: { nearZ: nearZ, farZ: farZ, pitch: t._pitch, angle: t.angle, furthestDistance: furthestDistance, cameraToCenterDistance: this.cameraToCenterDistance, t: this.map.transform } });
     },
 
 
@@ -10804,6 +10863,8 @@ function Object3D(opt) {
 	userScaleGroup.setAnchor(opt.anchor);
 	//[jscastro] override the center calculated if the object has adjustments
 	userScaleGroup.setCenter(opt.adjustment);
+	//[jscastro] if the object is excluded from raycasting
+	userScaleGroup.raycasted = opt.raycasted;
 	userScaleGroup.visibility = true;
 
 	return userScaleGroup
@@ -12128,6 +12189,8 @@ function loadObj(options, cb, promise) {
 			userScaleGroup.setAnchor(options.anchor);
 			//[jscastro] override the center calculated if the object has adjustments
 			userScaleGroup.setCenter(options.adjustment);
+			//[jscastro] if the object is excluded from raycasting
+			userScaleGroup.raycasted = options.raycasted;
 			//[jscastro] return to cache
 			promise(userScaleGroup);
 			//[jscastro] then return to the client-side callback
@@ -25294,7 +25357,7 @@ Objects.prototype = {
 
 				// CSS2DObjects could bring an specific vertical positioning to correct in units
 				if (obj.userData.topMargin && obj.userData.feature) {
-					lnglat[2] += (obj.userData.feature.properties.height - (obj.userData.feature.properties.base_height || obj.userData.feature.properties.min_height || 0)) * obj.userData.topMargin;
+					lnglat[2] += ((obj.userData.feature.properties.height || 0) - (obj.userData.feature.properties.base_height || obj.userData.feature.properties.min_height || 0)) * (obj.userData.topMargin || 0);
 				}
 
 				obj.coordinates = lnglat;
@@ -25641,33 +25704,34 @@ Objects.prototype = {
 			Object.defineProperty(obj, 'castShadow', {
 				get() { return _castShadow; },
 				set(value) {
-					if (_castShadow != value) {
-						obj.model.traverse(function (c) {
-							if (c.isMesh) c.castShadow = true;
-						});
-						if (value) {
-							// we add the shadow plane automatically 
-							const s = obj.modelSize;
-							const sizes = [s.x, s.y, s.z];
-							const planeSize = Math.max(...sizes) * 10;
-							const planeGeo = new THREE.PlaneBufferGeometry(planeSize, planeSize);
-							const planeMat = new THREE.ShadowMaterial();
-							planeMat.opacity = 0.5;
-							let plane = new THREE.Mesh(planeGeo, planeMat);
-							plane.name = shadowPlane;
-							plane.layers.enable(1); plane.layers.disable(0); // it makes the object invisible for the raycaster
-							plane.receiveShadow = value;
-							obj.add(plane);
-						} else {
-							// or we remove it 
-							obj.traverse(function (c) {
-								if (c.isMesh && c.material instanceof THREE.ShadowMaterial)
-									obj.remove(c);	
-							});
+					if (!obj.model || _castShadow === value) return;
 
-						}
-						_castShadow = value;
+					obj.model.traverse(function (c) {
+						if (c.isMesh) c.castShadow = true;
+					});
+					if (value) {
+						// we add the shadow plane automatically 
+						const s = obj.modelSize;
+						const sizes = [s.x, s.y, s.z];
+						const planeSize = Math.max(...sizes) * 10;
+						const planeGeo = new THREE.PlaneBufferGeometry(planeSize, planeSize);
+						const planeMat = new THREE.ShadowMaterial();
+						planeMat.opacity = 0.5;
+						let plane = new THREE.Mesh(planeGeo, planeMat);
+						plane.name = shadowPlane;
+						plane.layers.enable(1); plane.layers.disable(0); // it makes the object invisible for the raycaster
+						plane.receiveShadow = value;
+						obj.add(plane);
+					} else {
+						// or we remove it 
+						obj.traverse(function (c) {
+							if (c.isMesh && c.material instanceof THREE.ShadowMaterial)
+								obj.remove(c);
+						});
+
 					}
+					_castShadow = value;
+
 				}
 			})
 
@@ -25683,13 +25747,11 @@ Objects.prototype = {
 			Object.defineProperty(obj, 'receiveShadow', {
 				get() { return _receiveShadow; },
 				set(value) {
-					if (_receiveShadow != value) {
-
-						obj.model.traverse(function (c) {
-							if (c.isMesh) c.receiveShadow = true;
-						});
-						_receiveShadow = value;
-					}
+					if (!obj.model || _receiveShadow === value) return;
+					obj.model.traverse(function (c) {
+						if (c.isMesh) c.receiveShadow = true;
+					});
+					_receiveShadow = value;
 				}
 			})
 
@@ -25698,38 +25760,36 @@ Objects.prototype = {
 			Object.defineProperty(obj, 'wireframe', {
 				get() { return _wireframe; },
 				set(value) {
-					if (_wireframe != value) {
-						if (!obj.model) return;
-						obj.model.traverse(function (c) {
-							if (c.type == "Mesh" || c.type == "SkinnedMesh") {
-								let materials = [];
-								if (!Array.isArray(c.material)) {
-									materials.push(c.material);
-								} else {
-									materials = c.material;
-								}
-								if (value) {
-									c.userData.materials = materials;
-									c.material = Objects.prototype._defaults.materials.wireframeMaterial;
-									c.material.opacity = (value ? 0.5 : 1);
-									c.material.wireframe = value;
-									c.material.transparent = value;
+					if (!obj.model || _wireframe === value) return;
+					obj.model.traverse(function (c) {
+						if (c.type == "Mesh" || c.type == "SkinnedMesh") {
+							let materials = [];
+							if (!Array.isArray(c.material)) {
+								materials.push(c.material);
+							} else {
+								materials = c.material;
+							}
+							if (value) {
+								c.userData.materials = materials;
+								c.material = Objects.prototype._defaults.materials.wireframeMaterial;
+								c.material.opacity = (value ? 0.5 : 1);
+								c.material.wireframe = value;
+								c.material.transparent = value;
 
-								} else {
-									let mc = c.userData.materials;
-									c.material = (mc.length > 1 ? mc : mc[0]);
-									c.userData.materials = null;
-								}
-								if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
+							} else {
+								let mc = c.userData.materials;
+								c.material = (mc.length > 1 ? mc : mc[0]);
+								c.userData.materials = null;
 							}
-							if (c.type == "LineSegments") {
-								c.layers.disableAll();
-							}
-						});
-						_wireframe = value;
-						// Dispatch new event WireFramed
-						obj.dispatchEvent(new CustomEvent('Wireframed', { detail: obj, bubbles: true, cancelable: true }));
-					}
+							if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
+						}
+						if (c.type == "LineSegments") {
+							c.layers.disableAll();
+						}
+					});
+					_wireframe = value;
+					// Dispatch new event WireFramed
+					obj.dispatchEvent(new CustomEvent('Wireframed', { detail: obj, bubbles: true, cancelable: true }));
 				}
 			})
 
@@ -25766,6 +25826,21 @@ Objects.prototype = {
 					}
 				}
 			})
+
+			let _raycasted = true;
+			//[jscastro] added property for including/excluding an object from raycast
+			Object.defineProperty(obj, 'raycasted', {
+				get() { return _raycasted; },
+				set(value) {
+					if (!obj.model || _raycasted === value) return;
+					obj.model.traverse(function (c) {
+						if (c.type == "Mesh" || c.type == "SkinnedMesh") {
+							if (!value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
+						}
+					});
+					_raycasted = value;
+				}
+			});
 
 			let _over = false;
 			//[jscastro] added property for over state
@@ -26102,7 +26177,8 @@ Objects.prototype = {
 			material: 'MeshBasicMaterial',
 			anchor: 'bottom-left',
 			bbox: false,
-			tooltip: false
+			tooltip: false,
+			raycasted: true
 		},
 
 		label: {
@@ -26128,7 +26204,8 @@ Objects.prototype = {
 			material: 'MeshBasicMaterial',
 			anchor: 'center',
 			bbox: false,
-			tooltip: false
+			tooltip: false,
+			raycasted: true
 		},
 
 		loadObj: {
@@ -26140,7 +26217,8 @@ Objects.prototype = {
 			defaultAnimation: 0,
 			anchor: 'bottom-left',
 			bbox: false,
-			tooltip: false
+			tooltip: false,
+			raycasted: true
 		},
 
 		Object3D: {
@@ -26148,7 +26226,8 @@ Objects.prototype = {
 			units: 'scene',
 			anchor: 'bottom-left',
 			bbox: false,
-			tooltip: false
+			tooltip: false, 
+			raycasted: true
 		},
 
 		extrusion: {
@@ -26160,9 +26239,9 @@ Objects.prototype = {
 			rotation: 0,
 			units: 'scene',
 			anchor: 'center',
-			point: [0, 0],
 			bbox: false,
-			tooltip: false
+			tooltip: false,
+			raycasted: true
 		}
 	},
 
@@ -26191,7 +26270,7 @@ function Sphere(opt) {
 	let mat = material(opt)
 	let output = new THREE.Mesh(geometry, mat);
 	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
-	return new Object3D({ obj: output, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip });
+	return new Object3D({ obj: output, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip, raycasted: opt.raycasted });
 
 }
 
@@ -26245,7 +26324,7 @@ function tube(opt, world){
 	let mat = material(opt);
 	let obj = new THREE.Mesh(geom, mat);
 	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
-	return new Object3D({ obj: obj, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip });
+	return new Object3D({ obj: obj, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip, raycasted: opt.raycasted });
 }
 
 tube.prototype = {

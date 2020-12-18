@@ -1,3 +1,20 @@
+## 2.1.5
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+- #3 Make Color of the boundingBox and boundingBoxShadow configurable
+- #29 Make one object not selectable or draggable independently of Threebox params 
+- #150 Check methods doing traverse to avoid doing unnecessary loops 
+
+#### :beetle: Bug fixes
+- #145 Worldwide view demos, have precision issues after #143 
+- #149 `obj.set` with `options.coords` doesn't change the z axis in obj.coordinates 
+ 
+<br>
+
+- - - 
+
 ## 2.1.4
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
@@ -18,10 +35,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 ## 2.1.3
 
-Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
-
-#### :sparkles: Enhancements
-
+Minor version by [@jscastro76](https://github.com/jscastro76), just one hot fix for a critical bug. 
 
 #### :beetle: Bug fixes
 

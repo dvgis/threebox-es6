@@ -120,9 +120,9 @@
 		map.on('style.load', () => {
 
 			//// stats
-			//stats = new Stats();
-			//map.getContainer().appendChild(stats.dom);
-			//animate();
+			stats = new Stats();
+			map.getContainer().appendChild(stats.dom);
+			animate();
 
 			if (map.getLayer('building')) {
 				map.removeLayer('building');
