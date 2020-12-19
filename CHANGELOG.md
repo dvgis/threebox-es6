@@ -10,7 +10,11 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 #### :beetle: Bug fixes
 - #145 Worldwide view demos, have precision issues after #143 
 - #149 `obj.set` with `options.coords` doesn't change the z axis in obj.coordinates 
- 
+
+#### :pencil: Documentation
+- Updated [documentation](/docs/Threebox.md) (`tb.raycasted`, `tb.extrusion`, `tb.loadObj` and `tb.Object3D` params, mime types)
+- Updated [README.md](/).
+- updated [Examples](/examples) documentation. 
 <br>
 
 - - - 

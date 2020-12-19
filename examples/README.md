@@ -23,7 +23,7 @@ These are the examples included in Threebox.
 
 #### [04-mercator.html](https://github.com/jscastro76/threebox/blob/master/examples/04-mercator.html) 
 <img alt="threebox" src="images/mercator.png" width="50%"><br/>
-- This sample creates 100 spheres all around the world at the same height, but they look different because the height is calculated based on the latitude. 
+- This sample creates 100 spheres duplicated all around the world at the same height, but they look different because the height is calculated based on the latitude. 
 - - - -
 
 #### [05-logistics.html](https://github.com/jscastro76/threebox/blob/master/examples/05-logistics.html) 
@@ -32,14 +32,14 @@ These are the examples included in Threebox.
 - - - -
 
 #### [06-object3d.html](https://github.com/jscastro76/threebox/blob/master/examples/06-object3d.html) 
-<img alt="threebox" src="images/object3D.png" width="50%">
+<img alt="threebox" src="images/object3D.png" width="50%"><br/>  
 - This sample loads a 3D `.glb` model of a soldier. <br /><br/>
 - - - -
 
 #### [07-alignmentTest.html](https://github.com/jscastro76/threebox/blob/master/examples/07-alignmentTest.html) 
 <img alt="threebox" src="images/alignmentTest.png" width="50%"><br/>
-- This sample shows camera alignment between fill-extrusion layer and a 3DObject created through Threebox.<br />
-- - - -
+- This sample shows camera perspective and depth alignment between fill-extrusion layer and some Object3D created through Threebox.<br />
+- - - -  
 
 #### [08-3dbuildings.html](https://github.com/jscastro76/threebox/blob/master/examples/08-3dbuildings.html) 
 <img alt="threebox" src="images/3dbuildings.png" width="50%"><br/>
@@ -104,7 +104,7 @@ These are the examples included in Threebox.
 - - - -
 
 
-#### [16-multilayer.html](https://github.com/jscastro76/threebox/blob/master/examples/16-multiLayer.html) 
+#### [16-multilayer.html](https://github.com/jscastro76/threebox/blob/master/examples/16-multilayer.html) 
 <img alt="threebox" src="images/multilayer.png" width="50%"><br/>
 - This sample shows how to create multiple layers dynamically with Threebox and manage different zoom ranges for each one. 
 - Create multiple 3D layers in Mapbox is a heavy consumer of resources because every layer is rendered separately.

@@ -5,7 +5,7 @@
 [![NPM license](http://img.shields.io/npm/l/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin)
 ![npm](https://img.shields.io/npm/dt/threebox-plugin?style=social)
 
-A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://docs.mapbox.com/mapbox-gl-js/examples/)** and **[Azure Maps](https://azure.microsoft.com/en-us/services/azure-maps/)** using the [`CustomLayerInterface`](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface) feature. Provides convenient methods to manage objects in lnglat coordinates, and to synchronize the map and scene cameras.
+A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://docs.mapbox.com/mapbox-gl-js/examples/)** and **[*Azure Maps*](https://azure.microsoft.com/en-us/services/azure-maps/)** using the [`CustomLayerInterface`](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface) feature. Provides convenient methods to manage objects in lnglat coordinates, and to synchronize the map and scene cameras.
 <img alt="threebox" src="docs/gallery.jpg">
 
 <br>
@@ -53,21 +53,21 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Support for multiple 3D format objects (FBX, GLTF/GLB, Collada, OBJ/MTL).
 - Support for CSS2D labels supporting rich HTML controls through a new LabelManager.
 - Support for CSS2D tooltips/title browser-like and mapbox-like.
-- Support for built-in shadows and real Sun light positioning for a given datetime and lnglat coords.
 - Support for built-in Raycaster in Object3D and fill-extrusions together.
 - Support for built-in MouseOver/Mouseout, Selected, Drag&Drop, Drag&Rotate, Wireframe in loadedObjects including events.
+- Support for wireframing on any Object3D, removing them from the raycast.
 - Support for [GeoJson](https://geojson.org/) standard features format import and export in different layers.
 - Support for Object3D embedded animations, and custom animations on AnimationManager (i.e. embedded animation + translate + rotate).
-- Support for multi-floor/layer design of spaces.
-- Support for Non-AABB Non Axes Aligned Bounding Box and real model size. 
-- Support for wireframing on any Object3D, removing them from the raycast.
+- Support for multi-layer and multi-floor design of spaces.
+- Support for built-in shadows and real Sun light positioning for a given datetime and lnglat coords.
+- Support for Non-AABB Non Axes Aligned Bounding Box and real model size, including floor projection. 
+- Support for Object3D auto-centering and 9 default anchor positions customizable through adjustments.
 - Support for `setLayerZoomRange` and `setLayoutProperty` on Custom Layers (not available in Mapbox).
 - Support for `removeLayer` considering Object3D.
 - Support for style change through `setStyle` and keeping Object3D.
 - Support for partial and full dispose of Mapbox, Three and Threebox resources and memory.
-- Support for Object3D auto-centering, bounding box and floor projection.
 - Optimization for loading thousands of objects through cache.
-- Optimization of Camera perspective to have Raycast with pixel-precision level.
+- Optimization of Camera perspective to have Raycast with pixel-precision level and depth sync between Mapbox and Threebox objects.
 - Available as [npm package](https://www.npmjs.com/package/threebox-plugin)
 - Check out [change log](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md) for more detail.
 
