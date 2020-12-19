@@ -59,62 +59,6 @@ CameraSync.prototype = {
 
         this.updateCamera();
 
-        this.updateCameraUser = function (nearZUser, farZUser) {
-            if (!this.camera) {
-                console.log('nocamera')
-                return;
-            }
-            this.camera.matrixAutoUpdate = false;
-            // Furthest distance optimized by @satorbs
-            // https://github.com/satorbs/threebox/blob/master/src/camera/CameraSync.js
-            const t = this.map.transform;
-            const groundAngle = Math.PI / 2 + t._pitch;
-            this.cameraToCenterDistance = 0.5 / Math.tan(this.halfFov) * t.height;
-            this.state.cameraTranslateZ = new THREE.Matrix4().makeTranslation(0, 0, this.cameraToCenterDistance);
-
-            const fovAboveCenter = this.state.fov * (0.5 + this.state.offset.y / t.height);
-            const topHalfSurfaceDistance = Math.sin(fovAboveCenter) * this.state.cameraToCenterDistance / Math.sin(utils.clamp(Math.PI - groundAngle - fovAboveCenter, 0.01, Math.PI - 0.01));
-
-            this.state.maxFurthestDistance = cameraToCenterDistance * 0.95 * (Math.cos(this.acuteAngle) * Math.sin(this.halfFov) / Math.sin(Math.max(0.01, Math.min(Math.PI - 0.01, this.acuteAngle - this.halfFov))) + 1);
-            // Calculate z distance of the farthest fragment that should be rendered.
-            const furthestDistance = Math.cos(Math.PI / 2 - t._pitch) * topHalfSurfaceDistance + this.state.cameraToCenterDistance;
-
-            // Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
-            const farZ = farZUser;
-
-            // someday @ansis set further near plane to fix precision for deckgl,so we should fix it to use mapbox-gl v1.3+ correctly
-            // https://github.com/mapbox/mapbox-gl-js/commit/5cf6e5f523611bea61dae155db19a7cb19eb825c#diff-5dddfe9d7b5b4413ee54284bc1f7966d
-            const nearZ = nearZUser;
-
-            this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, t.width / t.height, nearZ, farZ);
-
-            // Unlike the Mapbox GL JS camera, separate camera translation and rotation out into its world matrix
-            // If this is applied directly to the projection matrix, it will work OK but break raycasting
-            let cameraWorldMatrix = this.calcCameraMatrix(t._pitch, t.angle);
-            this.camera.matrixWorld.copy(cameraWorldMatrix);
-
-            let zoomPow = t.scale * this.state.worldSizeRatio;
-            // Handle scaling and translation of objects in the map in the world's matrix transform, not the camera
-            let scale = new THREE.Matrix4;
-            let translateMap = new THREE.Matrix4;
-            let rotateMap = new THREE.Matrix4;
-
-            scale.makeScale(zoomPow, zoomPow, zoomPow);
-
-            let x = t.x || t.point.x;
-            let y = t.y || t.point.y;
-            translateMap.makeTranslation(-x, y, 0);
-            rotateMap.makeRotationZ(Math.PI);
-
-            this.world.matrix = new THREE.Matrix4()
-                .premultiply(rotateMap)
-                .premultiply(this.state.translateCenter)
-                .premultiply(scale)
-                .premultiply(translateMap)
-            this.map.repaint = true;
-            // utils.prettyPrintMatrix(this.camera.projectionMatrix.elements);
-            this.map.fire('CameraSyncedUser', { detail: { nearZ: nearZ, farZ: farZ, pitch: t._pitch, angle: t.angle, furthestDistance: furthestDistance, maxFurthestDistance: this.state.maxFurthestDistance, t: this.map.transform, tbProjMatrix: this.camera.projectionMatrix.elements, tbWorldMatrix: this.world.matrix.elements, cameraSyn: CameraSync } });
-        }
     },
 
     updateCamera: function (ev) {
@@ -167,11 +111,7 @@ CameraSync.prototype = {
             .premultiply(this.state.translateCenter)
             .premultiply(scale)
             .premultiply(translateMap)
-
-        // utils.prettyPrintMatrix(this.camera.projectionMatrix.elements);
-        this.map.fire('CameraSynced', { detail: { nearZ: nearZ, farZ: farZ, pitch: t._pitch, angle: t.angle, furthestDistance: furthestDistance, cameraToCenterDistance: this.cameraToCenterDistance, t: this.map.transform } });
     },
-
 
     calcCameraMatrix(pitch, angle, trz) {
         const t = this.map.transform;
