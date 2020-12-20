@@ -575,6 +575,7 @@ Objects.prototype = {
 							obj.remove(obj.boxGroup);
 						}
 						if (obj.label && !obj.label.alwaysVisible) obj.label.visible = false;
+						obj.removeHelp();
 					}
 					if (obj.tooltip) obj.tooltip.visible = value;
 					//only fire the event if value is different
@@ -685,7 +686,6 @@ Objects.prototype = {
 			Object.defineProperty(obj, 'modelSize', {
 				get() {
 					_modelSize = obj.getSize();
-					//console.log(_modelSize);
 					return _modelSize;
 				},
 				set(value) {

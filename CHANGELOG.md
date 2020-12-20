@@ -1,3 +1,16 @@
+## 2.1.6
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+
+- #111 Show the dimensions of a model 
+- #151 Remove auxiliary test method on CameraSync used to debug #145 
+
+<br>
+
+- - - 
+
 ## 2.1.5
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 

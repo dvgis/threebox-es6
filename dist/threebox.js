@@ -485,6 +485,44 @@ Threebox.prototype = {
 				this.tb.zoomLayers.forEach((l) => {this.tb.toggleLayer(l);});
 			}
 
+			let ctrlDown = false;
+			let shiftDown = false;
+			let ctrlKey = 17, cmdKey = 91, shiftKey = 16, sK = 83; dK = 68;
+
+			function onKeyDown(e) {
+
+				if (e.which === ctrlKey || e.which === cmdKey) ctrlDown = true;
+				if (e.which === shiftKey) shiftDown = true;
+				let obj = this.selectedObject;
+				if (shiftDown && e.which === sK && obj) {
+					//shift + sS
+					let dc = utils.toDecimal;
+					if (!obj.help) {
+						let s = obj.modelSize;
+						let sf = 1;
+						if (obj.userData.units !== 'meters') {
+							//if not meters, calculate scale to the current lat
+							sf = utils.projectedUnitsPerMeter(obj.coordinates[1]);
+							if (!sf) { sf = 1; };
+							sf = dc(sf, 7);
+						}
+
+						obj.addHelp("size(m): " + dc((s.x / sf), 3) + " W, " + dc((s.y / sf), 3) + " L, " + dc((s.z / sf), 3) + " H");
+						this.repaint = true;
+					}
+					else {
+						obj.removeHelp();
+					}
+					return false;
+				}
+
+			};
+
+			function onKeyUp (e) {
+				if (e.which == ctrlKey || e.which == cmdKey) ctrlDown = false;
+				if (e.which === shiftKey) shiftDown = false;
+			}
+
 			//listener to the events
 			//this.on('contextmenu', map.onContextMenu);
 			this.on('click', this.onClick);
@@ -492,6 +530,9 @@ Threebox.prototype = {
 			this.on('mouseout', this.onMouseOut)
 			this.on('mousedown', this.onMouseDown);
 			this.on('zoom', this.onZoomEnd);
+
+			document.addEventListener('keydown', onKeyDown.bind(this), true);
+			document.addEventListener('keyup', onKeyUp.bind(this));
 
 		});
 	},
@@ -16818,6 +16859,7 @@ Objects.prototype = {
 							obj.remove(obj.boxGroup);
 						}
 						if (obj.label && !obj.label.alwaysVisible) obj.label.visible = false;
+						obj.removeHelp();
 					}
 					if (obj.tooltip) obj.tooltip.visible = value;
 					//only fire the event if value is different
@@ -16928,7 +16970,6 @@ Objects.prototype = {
 			Object.defineProperty(obj, 'modelSize', {
 				get() {
 					_modelSize = obj.getSize();
-					//console.log(_modelSize);
 					return _modelSize;
 				},
 				set(value) {
