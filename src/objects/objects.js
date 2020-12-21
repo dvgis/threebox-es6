@@ -364,7 +364,7 @@ Objects.prototype = {
 						if (obj.model) {
 							obj.model.traverse(function (c) {
 								if (c.type == "Mesh" || c.type == "SkinnedMesh") {
-									if (_value) {
+									if (_value && obj.raycasted) {
 										c.layers.enable(0); //this makes the meshes visible for raycast
 									} else {
 										c.layers.disable(0); //this makes the meshes invisible for raycast
