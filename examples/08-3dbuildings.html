@@ -10,16 +10,6 @@
 </head>
 <body>
 	<div id='map' class='map'>
-		<div class="mapboxgl-ctrl helpDiv">
-
-			<div id="help" class="help">
-				This demo shows over a default fill-extrusion composite layer:<br />
-				- Built-in raycasting and selection through 'enableSelectingFeatures' <br />
-				- Built-in default Labels on altitude for fill-extrusions through 'enableTooltips' <br />
-				- Event handler management for Features through 'map.on('SelectedFeatureChange', ...)'
-			</div>
-		</div>
-
 	</div>
 	<script type="module">
 
@@ -31,7 +21,7 @@
 		let popup;
 		let minZoom = 12;
 		let mapConfig = {
-			ALL: { center: [-73.983964, 40.759475, 0], zoom: 16.84, pitch: 46, bearing: 27.4 },
+			ALL: { center: [-73.983964, 40.759475, 0], zoom: 16.84, pitch: 46, bearing: 0 },
 			names: {
 				compositeSource: "composite",
 				compositeSourceLayer: "building",
@@ -61,20 +51,40 @@
 			}
 		);
 
-		let stats;
+		import { GUI } from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
 		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+
+		let stats, gui;
 		function animate() {
 			requestAnimationFrame(animate);
 			stats.update();
 		}
 
-		// The 'building' layer in the mapbox-streets vector source contains building-height
-		// data from OpenStreetMap.
-		map.on('style.load', function () {
+		let api = {
+			fov: Math.atan(3 / 4) * 180 / Math.PI
+		};
+
+		function init() {
 			// stats
 			stats = new Stats();
 			map.getContainer().appendChild(stats.dom);
 			animate();
+			// gui
+			gui = new GUI();
+			// going below 2.5 degrees will start to generate serious issues with polygons in fill-extrusions and 3D meshes
+			// going above 45 degrees will also produce clipping and performance issues
+			gui.add(api, 'fov', 2.5, 45.0).step(0.1).onChange(changeFOV);
+		}
+
+		function changeFOV() {
+			tb.fov = api.fov;
+		}
+
+		// The 'building' layer in the mapbox-streets vector source contains building-height
+		// data from OpenStreetMap.
+		map.on('style.load', function () {
+
+			init();
 
 			map.addLayer(createCompositeLayer());
 

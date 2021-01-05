@@ -19,13 +19,8 @@ function loadObj(options, cb, promise) {
 
 	if (options === undefined) return console.error("Invalid options provided to loadObj()");
 	options = utils._validate(options, Objects.prototype._defaults.loadObj);
-	this.loaded = false;
 
-	const modelComplete = (m) => {
-		console.log("Model complete!", m);
-		if (--remaining === 0) this.loaded = true;
-	}
-	var loader;
+	let loader;
 	if (!options.type) { options.type = 'mtl'; };
 	//[jscastro] support other models
 	switch (options.type) {

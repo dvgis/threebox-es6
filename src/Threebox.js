@@ -67,22 +67,19 @@ Threebox.prototype = {
 		this.labelRenderer = new LabelRenderer(this.map);
 
 		this.scene = new THREE.Scene();
-		this.camera = new THREE.PerspectiveCamera(ThreeboxConstants.FOV_DEGREES, this.map.getCanvas().clientWidth / this.map.getCanvas().clientHeight, 1, 1e21);
-		this.camera.layers.enable(0);
-		this.camera.layers.enable(1);
-
-		// The CameraSync object will keep the Mapbox and THREE.js camera movements in sync.
-		// It requires a world group to scale as we zoom in. Rotation is handled in the camera's
-		// projection matrix itself (as is field of view and near/far clipping)
-		// It automatically registers to listen for move events on the map so we don't need to do that here
 		this.world = new THREE.Group();
 		this.world.name = "world";
 		this.scene.add(this.world);
 
 		this.objectsCache = new Map();
 		this.zoomLayers = [];
-		
-		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
+
+		//this.orthographic = this.options.orthographic || false;
+		//this.fovD = this.options.fov;
+		//this.setupCamera(this.orthographic, this.fovD);
+
+		this.fov = this.options.fov;
+		this.orthographic = this.options.orthographic || false;
 
 		//raycaster for mouse events
 		this.raycaster = new THREE.Raycaster();
@@ -530,6 +527,44 @@ Threebox.prototype = {
 			document.addEventListener('keyup', onKeyUp.bind(this));
 
 		});
+
+	},
+
+	//[jscastro] added property to manage FOV for perspective camera
+	get fov() { return this.options.fov;},
+	set fov(value) {
+		if (this.camera instanceof THREE.PerspectiveCamera && this.options.fov !== value) {
+			this.map.transform.fov = value;
+			this.camera.fov = this.map.transform.fov;
+			this.cameraSync.setupCamera();
+			this.map.repaint = true;
+			this.options.fov = value;
+		}
+
+	},
+
+	//[jscastro] added property to manage camera type
+	get orthographic() { return this.options.orthographic; },
+	set orthographic(value) {
+		const h = this.map.getCanvas().clientHeight;
+		const w = this.map.getCanvas().clientWidth;
+		if (value) {
+			this.map.transform.fov = 0;
+			this.camera = new THREE.OrthographicCamera(w / - 2, w / 2, h / 2, h / - 2, 1, 1e21);
+		} else {
+			this.map.transform.fov = this.fov;
+			this.camera = new THREE.PerspectiveCamera(this.map.transform.fov, w / h, 1, 1e21);
+		}
+		this.camera.layers.enable(0);
+		this.camera.layers.enable(1);
+		// The CameraSync object will keep the Mapbox and THREE.js camera movements in sync.
+		// It requires a world group to scale as we zoom in. Rotation is handled in the camera's
+		// projection matrix itself (as is field of view and near/far clipping)
+		// It automatically registers to listen for move events on the map so we don't need to do that here
+		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
+		this.map.repaint = true; // repaint the map
+		this.options.orthographic = value;
+
 	},
 
 	// Objects
@@ -778,6 +813,8 @@ Threebox.prototype = {
 	},
 
 	remove: function (obj) {
+		if (this.map.selectedObject && obj.uuid == this.map.selectedObject.uuid) this.map.unselectObject(this.map.selectedObject);
+		if (this.map.draggedObject && obj.uuid == this.map.draggedObject.uuid) this.map.draggedObject = null;
 		if (obj.dispose) obj.dispose();
 		this.world.remove(obj);
 		obj = null;
@@ -997,6 +1034,8 @@ var defaultOptions = {
 	enableRotatingObjects: false,
 	enableTooltips: false,
 	multiLayer: false,
+	orthographic: false,
+	fov: ThreeboxConstants.FOV_DEGREES
 }
 module.exports = exports = Threebox;
 

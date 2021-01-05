@@ -5,11 +5,23 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 #### :sparkles: Enhancements
 
 - #111 Show the dimensions of a model 
-- #151 Remove auxiliary test method on CameraSync used to debug #145 
+- #151 Remove auxiliary test method on `CameraSync` used to debug #145 
+- #156 Create an Orthographic view mode 
+- #159 Create an example for FOV and Orthographic.
+  - Added to [09-raycaster.html](https://github.com/jscastro76/threebox/blob/master/examples/09-raycaster.html) as it impacts in raycast and shows fill-extrusions and 3D models together
+- #161 Remove obsolete code that is avoiding to be used from React
 
 #### :beetle: Bug fixes
-- #152 `obj.raycasted` is ignored when an object is hidden and again visible 
+- #152 `obj.raycasted` is ignored when an object is hidden and again visible. 
+- #157 Bug draggging after removing an object. 
+- #160 Bug using `utils.equal`
 
+#### :pencil: Documentation
+- #158 MERCATOR_A constant unused, added an code comment to explain why it was deprecated (nor removed)
+- Updated [documentation](/docs/Threebox.md) (`tb.orthographic`, `tb.fov`)
+- Updated [README.md](/).
+- Updated [Examples](/examples) documentation. 
+ 
 <br>
 
 - - - 
@@ -30,7 +42,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 #### :pencil: Documentation
 - Updated [documentation](/docs/Threebox.md) (`tb.raycasted`, `tb.extrusion`, `tb.loadObj` and `tb.Object3D` params, mime types)
 - Updated [README.md](/).
-- updated [Examples](/examples) documentation. 
+- Updated [Examples](/examples) documentation. 
 <br>
 
 - - - 

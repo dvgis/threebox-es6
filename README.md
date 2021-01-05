@@ -35,13 +35,17 @@ npm i threebox-plugin
 |----------|-------
 |<img alt="threebox" src="./docs/LabelsOnHeight.gif" width="100%">|<img alt="threebox" src="./docs/Depth.gif" width="100%">
 
-|Models built-in shadows|Optimized performance through cache
+|Runtime style change|Optimized performance through cache
 |----------|-------
-|<img alt="threebox" src="./docs/MapboxShadow.gif" width="100%">|<img alt="threebox" src="./docs/Performance.gif" width="100%">
+|<img alt="threebox" src="./docs/StyleChange.gif" width="100%">|<img alt="threebox" src="./docs/Performance.gif" width="100%">
 
-|Runtime style change|Sunlight illumination for a given datetime and lnglat
-|----------|-------
-|<img alt="threebox" src="./docs/StyleChange.gif" width="100%">|<img alt="threebox" src="./docs/EiffelShadow.gif" width="100%">
+|Models built-in shadows|Sunlight illumination for a given datetime and lnglat
+|---------|-------
+|<img alt="threebox" src="./docs/MapboxShadow.gif" width="100%">|<img alt="threebox" src="./docs/EiffelShadow.gif" width="100%">
+
+|Customizable FOV|Geojson and Points Extrusions
+|---------|-------
+|<img alt="threebox" src="./docs/CustomizeFOV.gif" width="100%">|<img alt="threebox" src="./docs/extrusions.gif" width="100%">
 
 <br>
 
@@ -51,11 +55,12 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Updated to Azure Maps v2.0.31.
 - [18 examples](https://github.com/jscastro76/threebox/tree/master/examples) with all the new features.
 - Support for multiple 3D format objects (FBX, GLTF/GLB, Collada, OBJ/MTL).
-- Support for CSS2D labels supporting rich HTML controls through a new LabelManager.
+- Support for 3D extruded shapes from [GeoJson](https://geojson.org/) features or points array.
+- Support for CSS2D labels and rich HTML controls through a new LabelManager.
 - Support for CSS2D tooltips/title browser-like and mapbox-like.
 - Support for built-in Raycaster in Object3D and fill-extrusions together.
 - Support for built-in MouseOver/Mouseout, Selected, Drag&Drop, Drag&Rotate, Wireframe in loadedObjects including events.
-- Support for wireframing on any Object3D, removing them from the raycast.
+- Support for wireframing on any Object3D, removing them from the Raycaster.
 - Support for [GeoJson](https://geojson.org/) standard features format import and export in different layers.
 - Support for Object3D embedded animations, and custom animations on AnimationManager (i.e. embedded animation + translate + rotate).
 - Support for multi-layer and multi-floor design of spaces.
@@ -66,8 +71,9 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Support for `removeLayer` considering Object3D.
 - Support for style change through `setStyle` and keeping Object3D.
 - Support for partial and full dispose of Mapbox, Three and Threebox resources and memory.
-- Optimization for loading thousands of objects through cache.
+- Support for Orthographic view and customizable Perspective FOV.
 - Optimization of Camera perspective to have Raycast with pixel-precision level and depth sync between Mapbox and Threebox objects.
+- Optimization for loading thousands of objects through cache.
 - Available as [npm package](https://www.npmjs.com/package/threebox-plugin)
 - Check out [change log](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md) for more detail.
 

@@ -62,12 +62,14 @@ Sets up a threebox scene inside a [*Mapbox GL* custom layer's onAdd function](ht
 | `enableRotatingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'rotate'`|
 | `enableToltips`     | no       | false   | boolean  | Enables the default tooltips on fill-extrusion features and 3D Objects|
 | `multiLayer`     | no       | false   | boolean  | Enables the option for multi layer pages where a default layer will be created internally that will manage the `tb.update` calls  |
+| `orthographic`     | no       | false   | boolean  | Enables the option to set a `THREE.OrthographicCamera` instead of a `THREE.PerspectiveCamera` which is the default in Mapbox  |
+| `fov`     | no       | ThreeboxConstants.FOV_DEGREES | number | Enables to set the FOV of the default `THREE.PerspectiveCamera`. This value has no effect if `orthographic: true`  |
 
 The setup will require to call recursively to `tb.update();` to render the Threebox scene. This 
 [CustomLayerInterface#render](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface#render)
 
 Rerender the threebox scene. Fired in the custom layer's `render` function.
-                                                              
+                                                             
 
 The `mapboxGLContext` instance can be obtained in different ways. The most usual one is to get the context from the instance of the member [`onAdd(map, gl)`](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface#onadd), but that implies that it's created in every call to the method [`addLayer(layer[, beforeId])`](https://docs.mapbox.com/mapbox-gl-js/api/map/#map#addlayer)
 ```js
@@ -350,7 +352,14 @@ map.addLayer({
 		window.tb = new Threebox(
 			map,
 			gl,
-			{ defaultLights: true }
+			{ 
+				defaultLights: true 
+              enableSelectingFeatures: true, //omit or change this to false to disable fill-extrusion features selection
+              enableSelectingObjects: true, //omit or change this to false to disable 3D objects selection
+              enableDraggingObjects: true, //omit or change this to false to disable 3D objects drag & move once selected
+              enableRotatingObjects: true, //omit or change this to false to disable 3D objects rotation once selected
+              enableTooltips: true, //omit or change this to false to disable default tooltips on fill-extrusion and 3D models
+			}
 		);
 
 		var options = {
@@ -746,6 +755,22 @@ This property requires `tb.enableSelectingFeature` is set to true.
 When this property is true, and an object is overed or selected, its tooltip will be shown.
 
 <br>
+
+#### fov
+
+```js
+tb.fov : Number (degrees)
+```
+By default is `ThreeboxConstants.FOV_DEGREES`.  
+This get/set property sets and returns the value of the Field of View (FOV) used in the Camera. 
+This value is only valid when `tb.orthographic` is false which implicitly means the camera being used is a perspective camera.
+When `tb.orthographic` is true, this value has no effect because the FOV for orthographic view is always 0.
+
+**IMPORTANT**  
+This property accepts values between 0 and 60 (that's the maximum range of FOV by Mapbox), but **below 2.5 degrees** will generate serious issues with polygons in fill-extrusions and 3D meshes, and **above 45 degrees** will also produce clipping and performance issues that can freeze your map.
+Mapbox minimum value for the FOV cannot be `0`, so if it receives a `0` value, it will be converted to `0.01` by Mapbox `map.transform.fov` property to it's minimum value.
+
+<br>
   
 
 #### gridStep
@@ -755,6 +780,34 @@ tb.gridStep : Number(integer)
 ```
 This get/set property receives and returns the size in precision decimals of the step to use when an object is dragged horizontally reducing the number of decimals managed by Mapbox in its coords. 
 By default the precision of this step is set to 6 decimals = 11.1 cm, setting this property to 7 the grid will be reduced to 1.1 cm.  
+Mapbox minimum value for the FOV is `0.01`, so if it receives a `0` value, it will be converted to `0.01` by Mapbox `map.transform.fov` property to it's minimum value.
+
+<br>
+
+#### multiLayer
+
+```js
+tb.multiLayer : Boolean
+```
+By default is `false`.  
+This get/set property receives and returns the value to enable the option to have multiple 3D layers, where a default layer will be created internally that will manage the `tb.update` calls
+Despite this value can be changed in runtime, the value won't take effect unless there's a style change through `tb.setStyle`. So if you know your page could have multiple 3D layers, it's recommended to initialize it to true in Threeboc constructor with the init param `multiLayer: true`. 
+
+<br>
+
+#### orthographic
+
+```js
+tb.orthographic : Boolean 
+```
+By default is `false`.  
+This get/set property sets and returns the value of the Camera to be used. 
+When `tb.orthographic` is `true`, the camera being used will be an instance of `THREE.OrthographicCamera`.  
+If `tb.orthographic` is `false`, the camera being used will be an instance of `THREE.PerspectiveCamera`.
+
+**IMPORTANT**  
+Pure orthographic view is not supported by Mapbox, as the minimum value for FOV is `0.01`, so if`tb.orthographic` is `true` will generate serious issues with polygons and depth calculations with fill-extrusions. 
+Don't set this property to `true` is you are creating fill-extrusion layers. If need to have at the same time fill-extrusions and 3D Objects at the same time but want to keep an orthographic-like camera, the recommendation is to use `tb.orthographic = false` and `tb.fov = 2.5`.
 
 <br>
 

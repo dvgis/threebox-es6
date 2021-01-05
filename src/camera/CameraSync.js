@@ -21,7 +21,6 @@ function CameraSync(map, camera, world) {
 
     // set up basic camera state
     this.state = {
-        fov: ThreeboxConstants.FOV,
         translateCenter: new THREE.Matrix4().makeTranslation(ThreeboxConstants.WORLD_SIZE / 2, -ThreeboxConstants.WORLD_SIZE / 2, 0),
         worldSizeRatio: ThreeboxConstants.TILE_SIZE / ThreeboxConstants.WORLD_SIZE,
         worldSize: ThreeboxConstants.TILE_SIZE * this.map.transform.scale
@@ -43,6 +42,7 @@ function CameraSync(map, camera, world) {
 CameraSync.prototype = {
     setupCamera: function () {
         //console.log("setupCamera");
+        this.state.fov = this.map.transform._fov;
         const t = this.map.transform;
         this.camera.aspect = t.width / t.height; //bug fixed, if aspect is not reset raycast will fail on map resize
         this.camera.updateProjectionMatrix();
@@ -86,8 +86,13 @@ CameraSync.prototype = {
         const nz = (t.height / 50); //min near z as coded by @ansis
         const nearZ = Math.max(nz * pitchAngle, nz); //on changes in the pitch nz could be too low
 
-        this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, t.width / t.height, nearZ, farZ);
-
+        const h = t.height;
+        const w = t.width;
+        if (this.camera instanceof THREE.OrthographicCamera) {
+            this.camera.projectionMatrix = utils.makeOrthographicMatrix(w / - 2, w / 2, h / 2, h / - 2, nearZ, farZ);
+        } else {
+            this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, w / h, nearZ, farZ);
+        }
         // Unlike the Mapbox GL JS camera, separate camera translation and rotation out into its world matrix
         // If this is applied directly to the projection matrix, it will work OK but break raycasting
         let cameraWorldMatrix = this.calcCameraMatrix(t._pitch, t.angle);
@@ -111,7 +116,9 @@ CameraSync.prototype = {
             .premultiply(this.state.translateCenter)
             .premultiply(scale)
             .premultiply(translateMap)
+
     },
+
 
     calcCameraMatrix(pitch, angle, trz) {
         const t = this.map.transform;

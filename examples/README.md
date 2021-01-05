@@ -47,14 +47,17 @@ These are the examples included in Threebox.
 - Built-in raycasting and selection through `enableSelectingFeatures` 
 - Built-in default Labels on altitude for fill-extrusions through `enableTooltips` 
 - Event handler management for Features through `map.on('SelectedFeatureChange', ...)`<br />
+- Enables the user to change dynamically the FOV for Perspective camera.<br/>
 - - - -
+
 #### [09-raycaster.html](https://github.com/jscastro76/threebox/blob/master/examples/09-raycaster.html) 
 <img alt="threebox" src="images/raycaster.png" width="50%"><br/>
-- This sample shows how to create 3 objects over a default fill-extrusion composite layer.
+- This sample shows how to create 3 objects over a default fill-extrusion composite layer and how they are affected by the perspective FOV.
 - Enabled built-in raycasting and selection both for fill-extrusion and 3D objects through `enableSelectingFeatures` and `enableSelectingObjects`, all objects can be selected and unselected.
 - Enabled built-in dragging mode for 3D objects through `enableDraggingObjects`, 3D objects are dragabble, once selected, using [Shift] key for translation and [Ctrl] for altitude.
 - Enabled built-in rotation mode for 3D objects through `enableRotatingObjects`, 3D objects are rotable on it's vertical axis, once selected, using [Alt] key.
 - Enabled built-in default Labels on altitude both for fill-extrusions and 3D objects through `enableTooltips`.<br/>
+- Enables the user to change dynamically the FOV for Perspective camera and the option to set an Orthographic camera.<br/>
 - - - -
 #### [10-stylechange.html](https://github.com/jscastro76/threebox/blob/master/examples/10-stylechange.html) 
 <img alt="threebox" src="images/stylechange.png" width="50%"><br/>
@@ -99,7 +102,7 @@ These are the examples included in Threebox.
 #### [15-performance.html](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html) 
 <img alt="threebox" src="images/performance.png" width="50%"><br/>
 - This sample shows the performance of Threebox creating up to 1000 objects in a single layer. <br/>
-- Added performance stats indicator.
+- Added performance stats indicator.<br />
 
 - - - -
 
@@ -110,7 +113,7 @@ These are the examples included in Threebox.
 - Create multiple 3D layers in Mapbox is a heavy consumer of resources because every layer is rendered separately.
 - Enabled built-in multilayer support through `multiLayer` param, this param will create an embedded internal layer in Threebox that will manage the render with a single call to tb.update so it's not needed in each layer definition. This saves a lot of resources as mapbox render loop only calls once to three.js render.
 - Each layer can be hidden explicitly with a button, but also each layer has a different zoom range through `tb.setLayoutZoomRange` so the layers will hide depending on zoom level. 
-- Added performance stats indicator.
+- Added performance stats indicator.<br />
 
 - - - -
 

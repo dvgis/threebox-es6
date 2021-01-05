@@ -31,6 +31,29 @@ var utils = {
 		return out;
 	},
 
+	//[jscastro] new orthographic matrix calculations https://en.wikipedia.org/wiki/Orthographic_projection and validated with https://bit.ly/3rPvB9Y
+	makeOrthographicMatrix: function (left, right, top, bottom, near, far) {
+		var out = new THREE.Matrix4();
+
+		const w = 1.0 / (right - left);
+		const h = 1.0 / (top - bottom);
+		const p = 1.0 / (far - near);
+
+		const x = (right + left) * w;
+		const y = (top + bottom) * h;
+		const z = near * p;
+
+		var newMatrix = [
+			2 * w, 0, 0, 0,
+			0, 2 * h, 0, 0,
+			0, 0, - 1 * p, 0,
+			- x, -y, -z, 1
+		]
+
+		out.elements = newMatrix
+		return out;
+	},
+
 	//gimme radians
 	radify: function (deg) {
 
@@ -322,7 +345,7 @@ var utils = {
 			const val2 = obj2[key];
 			const areObjects = this.isObject(val1) && this.isObject(val2);
 			if (
-				areObjects && !deepEqual(val1, val2) ||
+				areObjects && !equal(val1, val2) ||
 				!areObjects && val1 !== val2
 			) {
 				return false;

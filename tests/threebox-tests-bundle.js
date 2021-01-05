@@ -9010,22 +9010,19 @@ Threebox.prototype = {
 		this.labelRenderer = new LabelRenderer(this.map);
 
 		this.scene = new THREE.Scene();
-		this.camera = new THREE.PerspectiveCamera(ThreeboxConstants.FOV_DEGREES, this.map.getCanvas().clientWidth / this.map.getCanvas().clientHeight, 1, 1e21);
-		this.camera.layers.enable(0);
-		this.camera.layers.enable(1);
-
-		// The CameraSync object will keep the Mapbox and THREE.js camera movements in sync.
-		// It requires a world group to scale as we zoom in. Rotation is handled in the camera's
-		// projection matrix itself (as is field of view and near/far clipping)
-		// It automatically registers to listen for move events on the map so we don't need to do that here
 		this.world = new THREE.Group();
 		this.world.name = "world";
 		this.scene.add(this.world);
 
 		this.objectsCache = new Map();
 		this.zoomLayers = [];
-		
-		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
+
+		//this.orthographic = this.options.orthographic || false;
+		//this.fovD = this.options.fov;
+		//this.setupCamera(this.orthographic, this.fovD);
+
+		this.fov = this.options.fov;
+		this.orthographic = this.options.orthographic || false;
 
 		//raycaster for mouse events
 		this.raycaster = new THREE.Raycaster();
@@ -9473,6 +9470,44 @@ Threebox.prototype = {
 			document.addEventListener('keyup', onKeyUp.bind(this));
 
 		});
+
+	},
+
+	//[jscastro] added property to manage FOV for perspective camera
+	get fov() { return this.options.fov;},
+	set fov(value) {
+		if (this.camera instanceof THREE.PerspectiveCamera && this.options.fov !== value) {
+			this.map.transform.fov = value;
+			this.camera.fov = this.map.transform.fov;
+			this.cameraSync.setupCamera();
+			this.map.repaint = true;
+			this.options.fov = value;
+		}
+
+	},
+
+	//[jscastro] added property to manage camera type
+	get orthographic() { return this.options.orthographic; },
+	set orthographic(value) {
+		const h = this.map.getCanvas().clientHeight;
+		const w = this.map.getCanvas().clientWidth;
+		if (value) {
+			this.map.transform.fov = 0;
+			this.camera = new THREE.OrthographicCamera(w / - 2, w / 2, h / 2, h / - 2, 1, 1e21);
+		} else {
+			this.map.transform.fov = this.fov;
+			this.camera = new THREE.PerspectiveCamera(this.map.transform.fov, w / h, 1, 1e21);
+		}
+		this.camera.layers.enable(0);
+		this.camera.layers.enable(1);
+		// The CameraSync object will keep the Mapbox and THREE.js camera movements in sync.
+		// It requires a world group to scale as we zoom in. Rotation is handled in the camera's
+		// projection matrix itself (as is field of view and near/far clipping)
+		// It automatically registers to listen for move events on the map so we don't need to do that here
+		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
+		this.map.repaint = true; // repaint the map
+		this.options.orthographic = value;
+
 	},
 
 	// Objects
@@ -9721,6 +9756,8 @@ Threebox.prototype = {
 	},
 
 	remove: function (obj) {
+		if (this.map.selectedObject && obj.uuid == this.map.selectedObject.uuid) this.map.unselectObject(this.map.selectedObject);
+		if (this.map.draggedObject && obj.uuid == this.map.draggedObject.uuid) this.map.draggedObject = null;
 		if (obj.dispose) obj.dispose();
 		this.world.remove(obj);
 		obj = null;
@@ -9940,6 +9977,8 @@ var defaultOptions = {
 	enableRotatingObjects: false,
 	enableTooltips: false,
 	multiLayer: false,
+	orthographic: false,
+	fov: ThreeboxConstants.FOV_DEGREES
 }
 module.exports = exports = Threebox;
 
@@ -10416,7 +10455,6 @@ function CameraSync(map, camera, world) {
 
     // set up basic camera state
     this.state = {
-        fov: ThreeboxConstants.FOV,
         translateCenter: new THREE.Matrix4().makeTranslation(ThreeboxConstants.WORLD_SIZE / 2, -ThreeboxConstants.WORLD_SIZE / 2, 0),
         worldSizeRatio: ThreeboxConstants.TILE_SIZE / ThreeboxConstants.WORLD_SIZE,
         worldSize: ThreeboxConstants.TILE_SIZE * this.map.transform.scale
@@ -10438,6 +10476,7 @@ function CameraSync(map, camera, world) {
 CameraSync.prototype = {
     setupCamera: function () {
         //console.log("setupCamera");
+        this.state.fov = this.map.transform._fov;
         const t = this.map.transform;
         this.camera.aspect = t.width / t.height; //bug fixed, if aspect is not reset raycast will fail on map resize
         this.camera.updateProjectionMatrix();
@@ -10481,8 +10520,13 @@ CameraSync.prototype = {
         const nz = (t.height / 50); //min near z as coded by @ansis
         const nearZ = Math.max(nz * pitchAngle, nz); //on changes in the pitch nz could be too low
 
-        this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, t.width / t.height, nearZ, farZ);
-
+        const h = t.height;
+        const w = t.width;
+        if (this.camera instanceof THREE.OrthographicCamera) {
+            this.camera.projectionMatrix = utils.makeOrthographicMatrix(w / - 2, w / 2, h / 2, h / - 2, nearZ, farZ);
+        } else {
+            this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, w / h, nearZ, farZ);
+        }
         // Unlike the Mapbox GL JS camera, separate camera translation and rotation out into its world matrix
         // If this is applied directly to the projection matrix, it will work OK but break raycasting
         let cameraWorldMatrix = this.calcCameraMatrix(t._pitch, t.angle);
@@ -10506,7 +10550,9 @@ CameraSync.prototype = {
             .premultiply(this.state.translateCenter)
             .premultiply(scale)
             .premultiply(translateMap)
+
     },
+
 
     calcCameraMatrix(pitch, angle, trz) {
         const t = this.map.transform;
@@ -12099,13 +12145,8 @@ function loadObj(options, cb, promise) {
 
 	if (options === undefined) return console.error("Invalid options provided to loadObj()");
 	options = utils._validate(options, Objects.prototype._defaults.loadObj);
-	this.loaded = false;
 
-	const modelComplete = (m) => {
-		console.log("Model complete!", m);
-		if (--remaining === 0) this.loaded = true;
-	}
-	var loader;
+	let loader;
 	if (!options.type) { options.type = 'mtl'; };
 	//[jscastro] support other models
 	switch (options.type) {
@@ -27540,23 +27581,25 @@ Ba;k.WebGLRenderTargetCube=function(a,b,c){console.warn("THREE.WebGLRenderTarget
 return new Ta(a)};k.ZeroCurvatureEnding=2400;k.ZeroFactor=200;k.ZeroSlopeEnding=2401;k.ZeroStencilOp=0;k.sRGBEncoding=3001;Object.defineProperty(k,"__esModule",{value:!0})});
 
 },{}],95:[function(require,module,exports){
-const WORLD_SIZE = 1024000;
-const MERCATOR_A = 6378137.0; // 900913 projection property
-const FOV = Math.atan(3 / 4);
+const WORLD_SIZE = 1024000; //TILE_SIZE * 2000
+const MERCATOR_A = 6378137.0; // 900913 projection property. (Deprecated) Replaced by EARTH_RADIUS
+const FOV_ORTHO = 0.1 / 180 * Math.PI; //Mapbox doesn't accept 0 as FOV
+const FOV = Math.atan(3 / 4); //from Mapbox https://github.com/mapbox/mapbox-gl-js/blob/main/src/geo/transform.js#L93
 const EARTH_RADIUS = 6371008.8; //from Mapbox  https://github.com/mapbox/mapbox-gl-js/blob/0063cbd10a97218fb6a0f64c99bf18609b918f4c/src/geo/lng_lat.js#L11
-const EARTH_CIRCUMFERENCE_EQUATOR = 40075017
+const EARTH_CIRCUMFERENCE_EQUATOR = 40075017 //from Mapbox https://github.com/mapbox/mapbox-gl-js/blob/0063cbd10a97218fb6a0f64c99bf18609b918f4c/src/geo/lng_lat.js#L117
 
 module.exports = exports = {
     WORLD_SIZE: WORLD_SIZE,
     PROJECTION_WORLD_SIZE: WORLD_SIZE / (EARTH_RADIUS * Math.PI * 2),
-    MERCATOR_A: EARTH_RADIUS, // 900913 projection property
+    MERCATOR_A: EARTH_RADIUS, 
     DEG2RAD: Math.PI / 180,
     RAD2DEG: 180 / Math.PI,
     EARTH_RADIUS: EARTH_RADIUS,
     EARTH_CIRCUMFERENCE: 2 * Math.PI * EARTH_RADIUS, //40075000, // In meters
-    EARTH_CIRCUMFERENCE_EQUATOR: EARTH_CIRCUMFERENCE_EQUATOR, //https://github.com/mapbox/mapbox-gl-js/blob/0063cbd10a97218fb6a0f64c99bf18609b918f4c/src/geo/lng_lat.js#L117
+    EARTH_CIRCUMFERENCE_EQUATOR: EARTH_CIRCUMFERENCE_EQUATOR, 
+    FOV_ORTHO: FOV_ORTHO, // closest to 0
     FOV: FOV, // Math.atan(3/4) radians. If this value is changed, FOV_DEGREES must be calculated
-    FOV_DEGREES: FOV * 360 / (Math.PI * 2), // Math.atan(3/4) in degrees
+    FOV_DEGREES: FOV * 180 / Math.PI, // Math.atan(3/4) in degrees
     TILE_SIZE: 512
 }
 },{}],96:[function(require,module,exports){
@@ -27969,6 +28012,29 @@ var utils = {
 		return out;
 	},
 
+	//[jscastro] new orthographic matrix calculations https://en.wikipedia.org/wiki/Orthographic_projection and validated with https://bit.ly/3rPvB9Y
+	makeOrthographicMatrix: function (left, right, top, bottom, near, far) {
+		var out = new THREE.Matrix4();
+
+		const w = 1.0 / (right - left);
+		const h = 1.0 / (top - bottom);
+		const p = 1.0 / (far - near);
+
+		const x = (right + left) * w;
+		const y = (top + bottom) * h;
+		const z = near * p;
+
+		var newMatrix = [
+			2 * w, 0, 0, 0,
+			0, 2 * h, 0, 0,
+			0, 0, - 1 * p, 0,
+			- x, -y, -z, 1
+		]
+
+		out.elements = newMatrix
+		return out;
+	},
+
 	//gimme radians
 	radify: function (deg) {
 
@@ -28260,7 +28326,7 @@ var utils = {
 			const val2 = obj2[key];
 			const areObjects = this.isObject(val1) && this.isObject(val2);
 			if (
-				areObjects && !deepEqual(val1, val2) ||
+				areObjects && !equal(val1, val2) ||
 				!areObjects && val1 !== val2
 			) {
 				return false;
