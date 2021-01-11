@@ -1024,7 +1024,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.1.6',
+	version: '2.1.7',
 
 }
 
@@ -1257,22 +1257,35 @@ AnimationManager.prototype = {
 				this.translateX(c.x);
 				this.translateY(c.y);
 				this.translateZ(c.z);
+				options.position = this.coordinates;
 			}
 
-			if (r) this.rotation.set(r[0], r[1], r[2]);
+			if (r) {
+				this.rotation.set(r[0], r[1], r[2]);
+				options.rotation = new THREE.Vector3(r[0], r[1], r[2]);
+			}
 
-			if (s) this.scale.set(s[0], s[1], s[2]);
+			if (s) {
+				this.scale.set(s[0], s[1], s[2]);
+				options.scale = this.scale;
+			}
 
-			if (q) this.quaternion.setFromAxisAngle(q[0], q[1]);
+			if (q) {
+				this.quaternion.setFromAxisAngle(q[0], q[1]);
+				options.rotation = q[0].multiplyScalar(q[1]);
+			}
 
 			if (w) {
 				this.position.copy(w);
 				let p = utils.unprojectFromWorld(w);
-				this.coordinates = p;
+				this.coordinates = options.position = p;
 			} 
 
 			this.updateMatrixWorld();
-			tb.map.repaint = true
+			tb.map.repaint = true;
+			// fire the ObjectChanged event to notify UI object change
+			this.dispatchEvent(new CustomEvent('ObjectChanged', { detail: { object: this, action: { position: options.position, rotation: options.rotation, scale: options.scale } }, bubbles: true, cancelable: true }));
+
 		};
 
 		//[jscastro] play default animation
@@ -19332,7 +19345,6 @@ var utils = {
 	},
 
 	// retrieve object parameters from an options object
-
 	types: {
 
 		rotation: function (r, currentRotation) {
@@ -19400,6 +19412,36 @@ var utils = {
 
 	isObject: function (object) {
 		return object != null && typeof object === 'object';
+	},
+
+	curveToLine: (curve, params) => {
+		let { width, color } = params;
+		let geometry = new THREE.BufferGeometry().setFromPoints(
+			curve.getPoints(100)
+		);
+
+		let material = new THREE.LineBasicMaterial({
+			color: color,
+			linewidth: width,
+		});
+
+		let line = new THREE.Line(geometry, material);
+
+		return line;
+	},
+
+	curvesToLines: (curves) => {
+		var colors = [0xff0000, 0x1eff00, 0x2600ff];
+		var lines = curves.map((curve, i) => {
+			let params = {
+				width: 3,
+				color: colors[i] || 'purple',
+			};
+			let curveline = curveToLine(curve, params);
+
+			return curveline;
+		});
+		return lines;
 	},
 
 	_validate: function (userInputs, defaults) {

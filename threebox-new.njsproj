@@ -6,7 +6,7 @@
     <RootNamespace>threebox-new</RootNamespace>
     <LastActiveSolutionConfig>Debug|Any CPU</LastActiveSolutionConfig>
     <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
-    <LaunchUrl>/examples/01-basic.html</LaunchUrl>
+    <LaunchUrl>/examples/05-logistics.html</LaunchUrl>
     <JavaScriptTestFramework>Tape</JavaScriptTestFramework>
     <JavaScriptTestRoot>tests\unit\</JavaScriptTestRoot>
   </PropertyGroup>
@@ -80,7 +80,9 @@
     <Content Include=".npmrc" />
     <Content Include="CHANGELOG.md" />
     <Content Include="docs\AnimationVideo.gif" />
+    <Content Include="docs\CustomizeFOV.gif" />
     <Content Include="docs\Depth.gif" />
+    <Content Include="docs\extrusions.gif" />
     <Content Include="docs\gallery.jpg" />
     <Content Include="docs\img\features-3D-paths.png" />
     <Content Include="docs\img\features-3D-symbols.png" />

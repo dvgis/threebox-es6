@@ -175,12 +175,14 @@
 						soldier = model.setCoords(origin);
 
 						// Listening to the events
-						model.addEventListener('SelectedChange', onSelectedChange, false);
-						model.addEventListener('Wireframed', onWireframed, false);
-						model.addEventListener('IsPlayingChanged', onIsPlayingChanged, false);
-						model.addEventListener('ObjectDragged', onDraggedObject, false);
-						model.addEventListener('ObjectMouseOver', onObjectMouseOver, false);
-						model.addEventListener('ObjectMouseOut', onObjectMouseOut, false);
+						soldier.addEventListener('SelectedChange', onSelectedChange, false);
+						soldier.addEventListener('Wireframed', onWireframed, false);
+						soldier.addEventListener('IsPlayingChanged', onIsPlayingChanged, false);
+						soldier.addEventListener('ObjectDragged', onDraggedObject, false);
+						soldier.addEventListener('ObjectMouseOver', onObjectMouseOver, false);
+						soldier.addEventListener('ObjectMouseOut', onObjectMouseOut, false);
+						soldier.addEventListener('ObjectChanged', onObjectChanged, false);
+
 
 						tb.add(soldier);
 					})
@@ -319,6 +321,12 @@
 		//actions to execute onObjectMouseOut
 		function onObjectMouseOut(e) {
 			console.log("onObjectMouseOut");
+		}
+
+		function onObjectChanged(e) {
+			let model = e.detail.object; //here's the object already modified
+			let action = e.detail.action; //here's the action that changed the object
+			console.log(action);
 		}
 
 		//wire / unwire object

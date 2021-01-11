@@ -12,7 +12,7 @@ Threebox works by adding a *Three.js* scene to *Mapbox GL*, creating a new *Mapb
 
 ## Examples
 
-Threebox contains [17 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.
+Threebox contains [18 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.
 - [01-basic.html](https://github.com/jscastro76/threebox/blob/master/examples/01-basic.html) 
 - [02-line.html](https://github.com/jscastro76/threebox/blob/master/examples/02-line.html) 
 - [03-tube.html](https://github.com/jscastro76/threebox/blob/master/examples/03-tube.html) 
@@ -1372,6 +1372,41 @@ function onIsPlayingChanged(eventArgs) {
 
 <br>
 
+#### ObjectChanged
+
+```js
+obj.addEventListener('ObjectChanged', onObjectChanged, false)
+```
+
+This event is fired when an object is changed by any method, including animations.  
+The event can be listened at any time once the `tb.loadObj` callback method is being executed.
+An instance of the object that changes is returned in `eventArgs.detail`, and the action made to the object that cound be one or more of the following:
+- `position`: defined as lnglat + alt coords (i.e. `[-122.43471544901193, 37.73719686062993, 0]`), `undefined` if the change doesn't affect position.
+- `rotation`: defined as radians in Vector3 format (i.e. `{x: 0, y: 0, z: -3.026900303641103}`), `undefined` if the change doesn't affect rotation.
+- `scale`: defined as a Vector3 (i.e. `{x: 1, y: 1, z: 1}`), , `undefined` if the change doesn't affect scale.
+
+```js
+map.addLayer({
+	...
+	tb.loadObj(options, function (model) {
+		model.setCoords(origin);
+		model.addEventListener('ObjectChanged', onObjectChanged, false);
+		tb.add(model);
+	})
+
+	...
+});
+...
+function onObjectChanged(e) {
+	let object = e.detail.object; // the object that has changed
+	let action = e.detail.action; // the action that defines the change
+	//do something in the UI such as changing a button state or updating the new position and rotation
+}
+```
+
+<br>
+
+
 #### ObjectDragged
 
 ```js
@@ -1397,7 +1432,7 @@ map.addLayer({
 	...
 });
 ...
-function onDraggedObject(eventArgs) {
+function onDraggedObject(e) {
 	let draggedObject = e.detail.draggedObject; // the object dragged
 	let draggedAction = e.detail.draggedAction; // the action during dragging
 
@@ -1433,7 +1468,7 @@ map.addLayer({
 	...
 });
 ...
-function onObjectMouseOver(eventArgs) {
+function onObjectMouseOver(e) {
 	//do something in the UI such as adding help or showing this object attributes
 }
 ```
@@ -1466,7 +1501,7 @@ map.addLayer({
 	...
 });
 ...
-function onObjectMouseOut(eventArgs) {
+function onObjectMouseOut(e) {
 	//do something in the UI such as removing help
 }
 ```
@@ -1497,8 +1532,8 @@ map.addLayer({
 	...
 });
 ...
-function onSelectedChange(eventArgs) {
-	let selectedObject = eventArgs.detail; //we get the object selected/unselected
+function onSelectedChange(e) {
+	let selectedObject = e.detail; //we get the object selected/unselected
 	let selectedValue = selectedObject.selected; //we get if the object is selected after the event
 }
 ```
@@ -1549,8 +1584,8 @@ map.addLayer({
 //selected extrusion feature event
 map.on('SelectedFeature', onSelectedFeature);
 ...
-function onSelectedFeature(eventArgs) {
-	let selectedObject = eventArgs.detail; //we get the object selected/unselected
+function onSelectedFeature(e) {
+	let selectedObject = e.detail; //we get the object selected/unselected
 	let selectedValue = selectedObject.selected; //we get if the object is selected after the event
 }
 ```
@@ -1582,7 +1617,7 @@ map.addLayer({
 	...
 });
 ...
-function onWireframed(eventArgs) {
+function onWireframed(e) {
 	if (e.detail.wireframe) {
 		//do something in the UI such as changing a button state
 	}

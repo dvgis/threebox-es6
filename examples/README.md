@@ -29,6 +29,7 @@ These are the examples included in Threebox.
 #### [05-logistics.html](https://github.com/jscastro76/threebox/blob/master/examples/05-logistics.html) 
 <img alt="threebox" src="images/logistics.png" width="50%"><br/>
 - This sample loads a 3D `.obj` model of a truck that is animated following a path once a point in the map is clicked. 
+- The model is attached to the event `ObjectChanged`.
 - - - -
 
 #### [06-object3d.html](https://github.com/jscastro76/threebox/blob/master/examples/06-object3d.html) 

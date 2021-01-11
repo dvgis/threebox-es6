@@ -1,6 +1,6 @@
 {
     "name": "threebox-plugin",
-    "version": "2.1.6",
+    "version": "2.1.7",
     "description": "A Three.js plugin for Mapbox GL JS, using the CustomLayerInterface feature. Provides convenient methods to manage objects in lnglat coordinates, and to synchronize the map and scene cameras.",
     "main": "main.js",
     "repository": {
@@ -39,6 +39,7 @@
         "three.js",
         "mapbox",
         "mapbox-gl-js",
+        "azure-maps",
         "3D"
     ]
 }

@@ -1,3 +1,23 @@
+## 2.1.7
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+- #167 Create a new event `ObjectChanged` every time the object has modified its position, rotation or scale.
+  - Related to #163 request to get coordinates when the model follow path with line?
+  - Modified example [05-logistics.html](https://github.com/jscastro76/threebox/blob/master/examples/05-logistics.html) to attach to the event `ObjectChanged`
+  - Modified example [11-logistics.html](https://github.com/jscastro76/threebox/blob/master/examples/11-animation.html) to attach to the event `ObjectChanged`
+ - Modified example [08-3dbuildings.html](https://github.com/jscastro76/threebox/blob/master/examples/08-3dbuildings.html) to adjust perspective and position to a more relevant zone (empire state building) 
+
+#### :pencil: Documentation
+- Updated [documentation](/docs/Threebox.md) (`ObjectChanged` and other events)
+- Updated [README.md](/).
+- Updated [Examples](/examples) documentation. 
+ 
+<br>
+
+- - - 
+
 ## 2.1.6
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 

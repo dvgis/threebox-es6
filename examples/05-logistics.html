@@ -93,6 +93,7 @@
 						tb.loadObj(options, function (model) {
 
 							truck = model.setCoords(origin);
+							truck.addEventListener('ObjectChanged', onObjectChanged, false);
 							tb.add(truck);
 						})
 
@@ -108,6 +109,11 @@
 				travelPath(pt);
 			})
 
+		function onObjectChanged(e) {
+			let model = e.detail.object; //here's the object already modified
+			let action = e.detail.action; //here's the action that changed the object
+			console.log(action);
+		}
 
 		function travelPath(destination) {
 
