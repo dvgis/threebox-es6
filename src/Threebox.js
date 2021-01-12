@@ -1011,8 +1011,8 @@ Threebox.prototype = {
 	},
 
 	setDefaultView: function (options, defOptions) {
-		options.bbox = options.bbox || defOptions.enableSelectingObjects;
-		options.tooltip = options.tooltip || defOptions.enableTooltips;
+		options.bbox = options.bbox && defOptions.enableSelectingObjects;
+		options.tooltip = options.tooltip && defOptions.enableTooltips;
 	},
 
 	memory: function () { return this.renderer.info.memory },

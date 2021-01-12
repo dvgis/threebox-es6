@@ -1016,8 +1016,8 @@ Threebox.prototype = {
 	},
 
 	setDefaultView: function (options, defOptions) {
-		options.bbox = options.bbox || defOptions.enableSelectingObjects;
-		options.tooltip = options.tooltip || defOptions.enableTooltips;
+		options.bbox = options.bbox && defOptions.enableSelectingObjects;
+		options.tooltip = options.tooltip && defOptions.enableTooltips;
 	},
 
 	memory: function () { return this.renderer.info.memory },
@@ -17273,8 +17273,8 @@ Objects.prototype = {
 			units: 'scene',
 			material: 'MeshBasicMaterial',
 			anchor: 'bottom-left',
-			bbox: false,
-			tooltip: false,
+			bbox: true,
+			tooltip: true,
 			raycasted: true
 		},
 
@@ -17300,8 +17300,8 @@ Objects.prototype = {
 			units: 'scene',
 			material: 'MeshBasicMaterial',
 			anchor: 'center',
-			bbox: false,
-			tooltip: false,
+			bbox: true,
+			tooltip: true,
 			raycasted: true
 		},
 
@@ -17313,8 +17313,8 @@ Objects.prototype = {
 			rotation: 0,
 			defaultAnimation: 0,
 			anchor: 'bottom-left',
-			bbox: false,
-			tooltip: false,
+			bbox: true,
+			tooltip: true,
 			raycasted: true
 		},
 
@@ -17322,8 +17322,8 @@ Objects.prototype = {
 			obj: null,
 			units: 'scene',
 			anchor: 'bottom-left',
-			bbox: false,
-			tooltip: false, 
+			bbox: true,
+			tooltip: true, 
 			raycasted: true
 		},
 
@@ -17336,8 +17336,8 @@ Objects.prototype = {
 			rotation: 0,
 			units: 'scene',
 			anchor: 'center',
-			bbox: false,
-			tooltip: false,
+			bbox: true,
+			tooltip: true,
 			raycasted: true
 		}
 	},

@@ -91,10 +91,11 @@
                     //// initialize geometry and material of our cube object
                     var geometry = new THREE.BoxGeometry(30, 60, 120);
 
-                    //[jscastro] we add a cube
+                    //[jscastro] we add a cube with no bbox and despite is raycasted
                     let cube = new THREE.Mesh(geometry, redMaterial);
-                    cube = tb.Object3D({ obj: cube, units: 'meters' })
+                    cube = tb.Object3D({ obj: cube, units: 'meters', bbox: false})
                         .setCoords(origin1);
+					cube.addTooltip("This object is selectable but without bounding box", true);
                     tb.add(cube);
 
                     //[jscastro] we add a sphere
