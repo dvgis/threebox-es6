@@ -568,11 +568,7 @@ Objects.prototype = {
 					}
 					else {
 						if (obj.boxGroup) {
-							obj.boundingBox.parent.visible = false;
-							obj.boundingBox.layers.disable(1);
-							obj.boundingBoxShadow.layers.disable(1);
-							obj.boundingBox.material = Objects.prototype._defaults.materials.boxNormalMaterial;
-							obj.remove(obj.boxGroup);
+							obj.remove(obj.boxGroup); //remove the box group
 						}
 						if (obj.label && !obj.label.alwaysVisible) obj.label.visible = false;
 						obj.removeHelp();
@@ -625,12 +621,8 @@ Objects.prototype = {
 					}
 					else {
 						if (!obj.selected) {
-							if (obj.boundingBox) {
-								obj.boundingBox.parent.visible = false;
-								obj.boundingBox.layers.disable(1);
-								obj.boundingBoxShadow.layers.disable(1);
-								obj.boundingBox.material = Objects.prototype._defaults.materials.boxNormalMaterial;
-								obj.remove(obj.boxGroup);
+							if (obj.boxGroup) {
+								obj.remove(obj.boxGroup); //remove the box group
 								if (obj.tooltip && !obj.tooltip.custom) obj.removeTooltip();
 							}
 							if (obj.label && !obj.label.alwaysVisible) { obj.label.visible = false; }

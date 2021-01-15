@@ -8,9 +8,10 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
   - Modified example [05-logistics.html](https://github.com/jscastro76/threebox/blob/master/examples/05-logistics.html) to attach to the event `ObjectChanged`
   - Modified example [11-logistics.html](https://github.com/jscastro76/threebox/blob/master/examples/11-animation.html) to attach to the event `ObjectChanged`
  - Modified example [08-3dbuildings.html](https://github.com/jscastro76/threebox/blob/master/examples/08-3dbuildings.html) to adjust perspective and position to a more relevant zone (empire state building) 
+- #170 Refactor internal methods  
 
 #### :beetle: Bug fixes
-- #168 Bug on init params `bbox` and `tooltip`. Related to #166  
+- #168 Bug on init params `bbox` and `tooltip`  
 
 #### :pencil: Documentation
 - Updated [documentation](/docs/Threebox.md) (`ObjectChanged` and other events)

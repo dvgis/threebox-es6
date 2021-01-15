@@ -74,10 +74,6 @@ Threebox.prototype = {
 		this.objectsCache = new Map();
 		this.zoomLayers = [];
 
-		//this.orthographic = this.options.orthographic || false;
-		//this.fovD = this.options.fov;
-		//this.setupCamera(this.orthographic, this.fovD);
-
 		this.fov = this.options.fov;
 		this.orthographic = this.options.orthographic || false;
 
@@ -114,13 +110,14 @@ Threebox.prototype = {
 
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
+
 			//[jscastro] new fields to manage events on map
 			this.selectedObject; //selected object through click
 			this.selectedFeature;//selected state id for extrusion layer features
 			this.draggedObject; //dragged object through mousedown + mousemove
 			let draggedAction; //dragged action to notify frontend
 			this.overedObject; //overed object through mouseover
-			this.overedFeature;//overed state for extrusion layer features
+			this.overedFeature; //overed state for extrusion layer features
 
 			let canvas = this.getCanvasContainer();
 			this.getCanvasContainer().style.cursor = 'default';
@@ -130,13 +127,6 @@ Threebox.prototype = {
 
 			//when object selected
 			let startCoords = [];
-
-			// Variable to hold the current xy coordinates
-			// when 'mousemove' or 'mouseup' occurs.
-			let current;
-
-			// Variable for the draw box element.
-			let box;
 
 			let lngDiff; // difference between cursor and model left corner
 			let latDiff; // difference between cursor and model bottom corner
@@ -152,10 +142,15 @@ Threebox.prototype = {
 				};
 			}
 			
-			this.unselectObject = function (o) {
+			this.unselectObject = function () {
 				//deselect, reset and return
-				o.selected = false;
+				this.selectedObject.selected = false;
 				this.selectedObject = null;
+			}
+
+			this.outObject = function () {
+				this.overedObject.over = false;
+				this.overedObject = null;
 			}
 
 			this.unselectFeature = function (f) {
@@ -186,7 +181,7 @@ Threebox.prototype = {
 
 			}
 
-			this.unoverFeature = function(f) {
+			this.outFeature = function(f) {
 				if (this.overedFeature && typeof this.overedFeature != 'undefined' && this.overedFeature.id != f) {
 					map.setFeatureState(
 						{ source: this.overedFeature.source, sourceLayer: this.overedFeature.sourceLayer, id: this.overedFeature.id },
@@ -255,7 +250,7 @@ Threebox.prototype = {
 
 						} else if (this.selectedObject.uuid == nearestObject.uuid) {
 							//deselect, reset and return
-							this.unselectObject(this.selectedObject);
+							this.unselectObject();
 							return;
 						}
 
@@ -279,7 +274,7 @@ Threebox.prototype = {
 
 							//if 3D object selected, unselect
 							if (this.selectedObject) {
-								this.unselectObject(this.selectedObject);
+								this.unselectObject();
 							}
 
 							//if not selected yet, select it
@@ -370,12 +365,11 @@ Threebox.prototype = {
 				if (intersectionExists) {
 					let nearestObject = Threebox.prototype.findParent3DObject(intersects[0]);
 					if (nearestObject) {
-						this.unoverFeature(this.overedFeature);
+						this.outFeature(this.overedFeature);
 						this.getCanvasContainer().style.cursor = 'pointer';
 						if (!this.selectedObject || nearestObject.uuid != this.selectedObject.uuid) {
-							if (this.overedObject) {
-								this.overedObject.over = false;
-								this.overedObject = null;
+							if (this.overedObject && this.overedObject.uuid != nearestObject.uuid ) {
+								this.outObject();
 							}
 							nearestObject.over = true;
 							this.overedObject = nearestObject;
@@ -386,14 +380,14 @@ Threebox.prototype = {
 				}
 				else {
 					//clean the object overed
-					if (this.overedObject) { this.overedObject.over = false; this.overedObject = null; }
+					if (this.overedObject) { this.outObject(); }
 					//now let's check the extrusion layer objects
 					let features = [];
 					if (map.tb.enableSelectingFeatures) {
 						features = this.queryRenderedFeatures(e.point);
 					}
 					if (features.length > 0) {
-						this.unoverFeature(features[0]);
+						this.outFeature(features[0]);
 
 						if (features[0].layer.type == 'fill-extrusion' && typeof features[0].id != 'undefined') {
 							if ((!this.selectedFeature || this.selectedFeature.id != features[0].id)) {
@@ -468,7 +462,7 @@ Threebox.prototype = {
 					if (features.length > 0 && this.overedFeature.id != features[0].id) {
 						this.getCanvasContainer().style.cursor = 'default';
 						//only unover when new feature is another
-						this.unoverFeature(features[0]);
+						this.outFeature(features[0]);
 					}
 				}
 			}
@@ -550,10 +544,10 @@ Threebox.prototype = {
 		const w = this.map.getCanvas().clientWidth;
 		if (value) {
 			this.map.transform.fov = 0;
-			this.camera = new THREE.OrthographicCamera(w / - 2, w / 2, h / 2, h / - 2, 1, 1e21);
+			this.camera = new THREE.OrthographicCamera(w / - 2, w / 2, h / 2, h / - 2, 0.1, 1e21);
 		} else {
 			this.map.transform.fov = this.fov;
-			this.camera = new THREE.PerspectiveCamera(this.map.transform.fov, w / h, 1, 1e21);
+			this.camera = new THREE.PerspectiveCamera(this.map.transform.fov, w / h, 0.1, 1e21);
 		}
 		this.camera.layers.enable(0);
 		this.camera.layers.enable(1);
@@ -788,11 +782,11 @@ Threebox.prototype = {
 
 		// Render the scene and repaint the map
 		this.renderer.state.reset();
+		if (this.options.realSunlight) this.renderer.state.setBlending(THREE.NormalBlending);
 		this.renderer.render(this.scene, this.camera);
 
 		// [jscastro] Render any label
 		this.labelRenderer.render(this.scene, this.camera);
-
 		if (this.options.passiveRendering === false) this.map.triggerRepaint();
 	},
 
@@ -813,7 +807,7 @@ Threebox.prototype = {
 	},
 
 	remove: function (obj) {
-		if (this.map.selectedObject && obj.uuid == this.map.selectedObject.uuid) this.map.unselectObject(this.map.selectedObject);
+		if (this.map.selectedObject && obj.uuid == this.map.selectedObject.uuid) this.map.unselectObject();
 		if (this.map.draggedObject && obj.uuid == this.map.draggedObject.uuid) this.map.draggedObject = null;
 		if (obj.dispose) obj.dispose();
 		this.world.remove(obj);
