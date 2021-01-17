@@ -405,7 +405,7 @@ AnimationManager.prototype = {
 					if (item.type === 'followPath') {
 
 						let position = options.pathCurve.getPointAt(timeProgress);
-						objectState = { worldCoordinates: position };
+						let objectState = { worldCoordinates: position };
 
 						// if we need to track heading
 						if (options.trackHeading) {

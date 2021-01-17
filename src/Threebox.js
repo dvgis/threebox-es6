@@ -473,7 +473,7 @@ Threebox.prototype = {
 
 			let ctrlDown = false;
 			let shiftDown = false;
-			let ctrlKey = 17, cmdKey = 91, shiftKey = 16, sK = 83; dK = 68;
+			let ctrlKey = 17, cmdKey = 91, shiftKey = 16, sK = 83, dK = 68;
 
 			function onKeyDown(e) {
 

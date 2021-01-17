@@ -234,7 +234,7 @@ var utils = {
 
 		var geometry = new THREE.Geometry();
 
-		for (v3 of vertices) {
+		for (var v3 of vertices) {
 			geometry.vertices.push(v3)
 		}
 
