@@ -5,7 +5,7 @@
 [![NPM license](http://img.shields.io/npm/l/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin)
 ![npm](https://img.shields.io/npm/dt/threebox-plugin?style=social)
 
-A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://docs.mapbox.com/mapbox-gl-js/examples/)** and **[Azure Maps](https://azure.microsoft.com/en-us/services/azure-maps/)** using the [`CustomLayerInterface`](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface) feature. Provides convenient methods to manage objects in lnglat coordinates, and to synchronize the map and scene cameras.
+A **[*Three.js*](https://threejs.org/)** plugin for **[*Mapbox GL JS*](https://docs.mapbox.com/mapbox-gl-js/examples/)** and **[*Azure Maps*](https://azure.microsoft.com/en-us/services/azure-maps/)** using the [`CustomLayerInterface`](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface) feature. Provides convenient methods to manage objects in lnglat coordinates, and to synchronize the map and scene cameras.
 <img alt="threebox" src="docs/gallery.jpg">
 
 <br>
@@ -35,13 +35,17 @@ npm i threebox-plugin
 |----------|-------
 |<img alt="threebox" src="./docs/LabelsOnHeight.gif" width="100%">|<img alt="threebox" src="./docs/Depth.gif" width="100%">
 
-|Models built-in shadows|Optimized performance through cache
+|Runtime style change|Optimized performance through cache
 |----------|-------
-|<img alt="threebox" src="./docs/MapboxShadow.gif" width="100%">|<img alt="threebox" src="./docs/Performance.gif" width="100%">
+|<img alt="threebox" src="./docs/StyleChange.gif" width="100%">|<img alt="threebox" src="./docs/Performance.gif" width="100%">
 
-|Runtime style change|Sunlight illumination for a given datetime and lnglat
-|----------|-------
-|<img alt="threebox" src="./docs/StyleChange.gif" width="100%">|<img alt="threebox" src="./docs/EiffelShadow.gif" width="100%">
+|Models built-in shadows|Sunlight illumination for a given datetime and lnglat
+|---------|-------
+|<img alt="threebox" src="./docs/MapboxShadow.gif" width="100%">|<img alt="threebox" src="./docs/EiffelShadow.gif" width="100%">
+
+|Customizable FOV|Geojson and Points Extrusions
+|---------|-------
+|<img alt="threebox" src="./docs/CustomizeFOV.gif" width="100%">|<img alt="threebox" src="./docs/extrusions.gif" width="100%">
 
 <br>
 
@@ -51,23 +55,25 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Updated to Azure Maps v2.0.31.
 - [18 examples](https://github.com/jscastro76/threebox/tree/master/examples) with all the new features.
 - Support for multiple 3D format objects (FBX, GLTF/GLB, Collada, OBJ/MTL).
-- Support for CSS2D labels supporting rich HTML controls through a new LabelManager.
+- Support for 3D extruded shapes from [GeoJson](https://geojson.org/) features or points array.
+- Support for CSS2D labels and rich HTML controls through a new LabelManager.
 - Support for CSS2D tooltips/title browser-like and mapbox-like.
-- Support for built-in shadows and real Sun light positioning for a given datetime and lnglat coords.
 - Support for built-in Raycaster in Object3D and fill-extrusions together.
 - Support for built-in MouseOver/Mouseout, Selected, Drag&Drop, Drag&Rotate, Wireframe in loadedObjects including events.
+- Support for wireframing on any Object3D, removing them from the Raycaster.
 - Support for [GeoJson](https://geojson.org/) standard features format import and export in different layers.
 - Support for Object3D embedded animations, and custom animations on AnimationManager (i.e. embedded animation + translate + rotate).
-- Support for multi-floor/layer design of spaces.
-- Support for Non-AABB Non Axes Aligned Bounding Box and real model size. 
-- Support for wireframing on any Object3D, removing them from the raycast.
+- Support for multi-layer and multi-floor design of spaces.
+- Support for built-in shadows and real Sun light positioning for a given datetime and lnglat coords.
+- Support for Non-AABB Non Axes Aligned Bounding Box and real model size, including floor projection. 
+- Support for Object3D auto-centering and 9 default anchor positions customizable through adjustments.
 - Support for `setLayerZoomRange` and `setLayoutProperty` on Custom Layers (not available in Mapbox).
 - Support for `removeLayer` considering Object3D.
 - Support for style change through `setStyle` and keeping Object3D.
 - Support for partial and full dispose of Mapbox, Three and Threebox resources and memory.
-- Support for Object3D auto-centering, bounding box and floor projection.
+- Support for Orthographic view and customizable Perspective FOV.
+- Optimization of Camera perspective to have Raycast with pixel-precision level and depth sync between Mapbox and Threebox objects.
 - Optimization for loading thousands of objects through cache.
-- Optimization of Camera perspective to have Raycast with pixel-precision level.
 - Available as [npm package](https://www.npmjs.com/package/threebox-plugin)
 - Check out [change log](https://github.com/jscastro76/threebox/blob/master/CHANGELOG.md) for more detail.
 
@@ -109,7 +115,13 @@ Add threebox to your project via **npm package** [![NPM version](http://img.shie
 `npm install threebox-plugin`
 
 #### Use the bundle
-Download the bundle from [`dist/threebox.js`](dist/threebox.js) or [`dist/threebox.min.js`](dist/threebox.min.js) and include it in a `<script>` tag on your page.
+Download the bundle from [`dist/threebox.js`](dist/threebox.js) or [`dist/threebox.min.js`](dist/threebox.min.js) and include it in a `<script>` tag on your page.  
+If you want to use styles predefined, add the link to the cascade style sheet.  
+If deployed in other folder structure or a CDN, just ensure you use your `src` and `href` attributes are pointing to relative or absolute url path. 
+```html
+<script src="../dist/threebox.js" type="text/javascript"></script>
+<link href="./css/threebox.css" rel="stylesheet" />
+```
 
 #### Test the samples 
 Several introductory examples are [here](https://github.com/jscastro76/threebox/tree/master/examples). To run them, create a `config.js` file with your Mapbox-gl-js access token, alongside and in the format of [the template](https://github.com/jscastro76/threebox/blob/master/examples/config_template.js).

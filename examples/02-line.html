@@ -23,7 +23,7 @@
 <body>
 	<div id='map' class='map'></div>
 
-	<script>
+	<script type="module">
 
 
 		// this demo generates lineGeometry for 50 lines, and adds them as lines to the map with random widths, and colors based on latitudes of their unique endpoints
@@ -71,9 +71,18 @@
 
 		console.log('lineGeometries of the lines: ', lines);
 
-		// instantiate threebox
+		let stats;
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+		}
 
 		map.on('style.load', function() {
+			// stats
+			stats = new Stats();
+			map.getContainer().appendChild(stats.dom);
+			animate();
 
 			map.addLayer({
 				id: 'custom_layer',
@@ -81,7 +90,8 @@
 				renderingMode: '3d',
 				onAdd: function(map, mbxContext){
 
-					tb = new Threebox(
+					// instantiate threebox
+					window.tb = new Threebox(
 						map, 
 						mbxContext,
 						{defaultLights: true}
@@ -94,7 +104,7 @@
 							width: Math.random() + 1 // random width between 1 and 2
 						}
 
-						lineMesh = tb.line(lineOptions);
+						let lineMesh = tb.line(lineOptions);
 
 						tb.add(lineMesh)
 					}

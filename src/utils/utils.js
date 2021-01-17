@@ -31,6 +31,29 @@ var utils = {
 		return out;
 	},
 
+	//[jscastro] new orthographic matrix calculations https://en.wikipedia.org/wiki/Orthographic_projection and validated with https://bit.ly/3rPvB9Y
+	makeOrthographicMatrix: function (left, right, top, bottom, near, far) {
+		var out = new THREE.Matrix4();
+
+		const w = 1.0 / (right - left);
+		const h = 1.0 / (top - bottom);
+		const p = 1.0 / (far - near);
+
+		const x = (right + left) * w;
+		const y = (top + bottom) * h;
+		const z = near * p;
+
+		var newMatrix = [
+			2 * w, 0, 0, 0,
+			0, 2 * h, 0, 0,
+			0, 0, - 1 * p, 0,
+			- x, -y, -z, 1
+		]
+
+		out.elements = newMatrix
+		return out;
+	},
+
 	//gimme radians
 	radify: function (deg) {
 
@@ -96,6 +119,14 @@ var utils = {
 
 	projectedUnitsPerMeter: function (latitude) {
 		return Math.abs(Constants.WORLD_SIZE / Math.cos(Constants.DEG2RAD * latitude) / Constants.EARTH_CIRCUMFERENCE);
+	},
+
+	_circumferenceAtLatitude: function (latitude) {
+		return Constants.EARTH_CIRCUMFERENCE * Math.cos(latitude * Math.PI / 180);
+	},
+
+	mercatorZfromAltitude: function (altitude, lat) {
+		return altitude / this._circumferenceAtLatitude(lat);
 	},
 
 	_scaleVerticesToMeters: function (centerLatLng, vertices) {
@@ -258,7 +289,6 @@ var utils = {
 	},
 
 	// retrieve object parameters from an options object
-
 	types: {
 
 		rotation: function (r, currentRotation) {
@@ -314,7 +344,7 @@ var utils = {
 			const val2 = obj2[key];
 			const areObjects = this.isObject(val1) && this.isObject(val2);
 			if (
-				areObjects && !deepEqual(val1, val2) ||
+				areObjects && !equal(val1, val2) ||
 				!areObjects && val1 !== val2
 			) {
 				return false;
@@ -326,6 +356,36 @@ var utils = {
 
 	isObject: function (object) {
 		return object != null && typeof object === 'object';
+	},
+
+	curveToLine: (curve, params) => {
+		let { width, color } = params;
+		let geometry = new THREE.BufferGeometry().setFromPoints(
+			curve.getPoints(100)
+		);
+
+		let material = new THREE.LineBasicMaterial({
+			color: color,
+			linewidth: width,
+		});
+
+		let line = new THREE.Line(geometry, material);
+
+		return line;
+	},
+
+	curvesToLines: (curves) => {
+		var colors = [0xff0000, 0x1eff00, 0x2600ff];
+		var lines = curves.map((curve, i) => {
+			let params = {
+				width: 3,
+				color: colors[i] || 'purple',
+			};
+			let curveline = curveToLine(curve, params);
+
+			return curveline;
+		});
+		return lines;
 	},
 
 	_validate: function (userInputs, defaults) {

@@ -12,7 +12,7 @@ Threebox works by adding a *Three.js* scene to *Mapbox GL*, creating a new *Mapb
 
 ## Examples
 
-Threebox contains [17 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.
+Threebox contains [18 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.
 - [01-basic.html](https://github.com/jscastro76/threebox/blob/master/examples/01-basic.html) 
 - [02-line.html](https://github.com/jscastro76/threebox/blob/master/examples/02-line.html) 
 - [03-tube.html](https://github.com/jscastro76/threebox/blob/master/examples/03-tube.html) 
@@ -28,8 +28,9 @@ Threebox contains [17 examples](https://github.com/jscastro76/threebox/blob/mast
 - [13-eiffel.html](https://github.com/jscastro76/threebox/blob/master/examples/13-eiffel.html) 
 - [14-buildingshadow.html](https://github.com/jscastro76/threebox/blob/master/examples/14-buildingshadow.html) 
 - [15-performance.html](https://github.com/jscastro76/threebox/blob/master/examples/15-performance.html) 
-- [16-multiLayer.html](https://github.com/jscastro76/threebox/blob/master/examples/16-multiLayer.html) 
+- [16-multilayer.html](https://github.com/jscastro76/threebox/blob/master/examples/16-multilayer.html) 
 - [17-azuremaps.html](https://github.com/jscastro76/threebox/blob/master/examples/17-azuremaps.html) 
+- [18-extrusions.html](https://github.com/jscastro76/threebox/blob/master/examples/18-extrusions.html) 
 
 <br>
 
@@ -61,12 +62,14 @@ Sets up a threebox scene inside a [*Mapbox GL* custom layer's onAdd function](ht
 | `enableRotatingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'rotate'`|
 | `enableToltips`     | no       | false   | boolean  | Enables the default tooltips on fill-extrusion features and 3D Objects|
 | `multiLayer`     | no       | false   | boolean  | Enables the option for multi layer pages where a default layer will be created internally that will manage the `tb.update` calls  |
+| `orthographic`     | no       | false   | boolean  | Enables the option to set a `THREE.OrthographicCamera` instead of a `THREE.PerspectiveCamera` which is the default in Mapbox  |
+| `fov`     | no       | ThreeboxConstants.FOV_DEGREES | number | Enables to set the FOV of the default `THREE.PerspectiveCamera`. This value has no effect if `orthographic: true`  |
 
 The setup will require to call recursively to `tb.update();` to render the Threebox scene. This 
 [CustomLayerInterface#render](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface#render)
 
 Rerender the threebox scene. Fired in the custom layer's `render` function.
-                                                              
+                                                             
 
 The `mapboxGLContext` instance can be obtained in different ways. The most usual one is to get the context from the instance of the member [`onAdd(map, gl)`](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface#onadd), but that implies that it's created in every call to the method [`addLayer(layer[, beforeId])`](https://docs.mapbox.com/mapbox-gl-js/api/map/#map#addlayer)
 ```js
@@ -323,14 +326,19 @@ Internally, uses [`THREE.OBJLoader`](https://github.com/mrdoob/three.js/blob/dev
 |-----------|----------|---------|--------|----------|
 | `type`  | yes       | "mtl"       | string (`"mtl"`, `"gltf"`, `"fbx"`, `"dae"`) | **BREAKING CHANGE**: Type is now required |
 | `obj`  | yes       | NA       | string | **BREAKING CHANGE**: URL path to asset's .obj, .glb, .gltf, .fbx, .dae file. |
-| `bin`  | no       | NA       | string | URL path to asset's .bin or .mtl files needed for GLTF or OBJ models respectively|
+| `mtl`  | no       | NA       | string | URL path to assets .mtl files needed for OBJ models respectively|
+| `bin`  | no       | NA       | string | URL path to assets .bin files needed for GLTF models respectively|
 | `units`    | no       | scene      | string (`"scene"` or `"meters"`) | "meters" is recommended for precision. Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
 | `rotation`     | no       | 0   | number or {x, y, z}  | Rotation of the object along the three axes, to align it to desired orientation before future rotations. Note that future rotations apply atop this transformation, and do not overwrite it. `rotate` attribute must be provided in number or per axis ((i.e. for an object rotated 90 degrees over the x axis `rotation: {x: 90, y: 0, z: 0}`|
 | `scale`     | no       | 1   | number or {x, y, z}  | Scale of the object along the three axes, to size it appropriately before future transformations. Note that future scaling applies atop this transformation, rather than overwriting it. `scale` attribute must be provided in number or per axis ((i.e. for an object transformed to 3 times higher than it's default size  `scale: {x: 1, y: 1, z: 3}`|
 | `anchor`     | no       | `bottom-left`   | string ()  | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left`. `auto` value will do nothing, so the model will use the anchor defined in the model, whatever it is. |
 | `adjustment`     | no       | 1   | {x, y, z}  | 3D models are often not centered in their axes so the object positions and rotates wrongly. `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: 0.5, y: 0.5, z: 0}`), so the model will correct the center position of the object |
-| `normalize`     | no       | 1   | bool  | This param allows to normalize specular values from some 3D models |
+| `normalize`     | no       | true   | bool  | This param allows to normalize specular values from some 3D models |
 | `feature`     | no       | 1   | [*GeoJson*](https://geojson.org/) feature  | [*GeoJson*](https://geojson.org/) feature instance. `properties` object of the *GeoJson* standard feature could be used to store relavant data to load and paint many different objects such as camera position, zoom, pitch or bearing, apart from the attributes already usually used by [*Mapbox GL* examples](https://docs.mapbox.com/mapbox-gl-js/examples/) such as `height`, `base_height`, `color`|
+| `tooltip`     | no       | false   | bool  | This param allows to have or not a tooltip, by default is set with the value of `tb.enableTooltips` |
+| `bbox`     | no       | false   | bool  | This param allows to have or not a bounding box, by default is set with the value of `tb.enableSelectingObjects`  |
+| `raycasted`     | no       | true   | bool  | This param allows to hide an object from raycast individually |
+| `defaultAnimation`     | no       | 0   | number  | This allows to assign by param a default animation. Igneored if the object does not contain animations  |
 | `callback`     | yes       | NA   | function  | A function to run after the object loads. The first argument will be the successfully loaded object, and this is normally used to finish the configuration of the model and add it to Threebox scene through `tb.add()` method. 
 
 
@@ -344,7 +352,14 @@ map.addLayer({
 		window.tb = new Threebox(
 			map,
 			gl,
-			{ defaultLights: true }
+			{ 
+				defaultLights: true 
+              enableSelectingFeatures: true, //omit or change this to false to disable fill-extrusion features selection
+              enableSelectingObjects: true, //omit or change this to false to disable 3D objects selection
+              enableDraggingObjects: true, //omit or change this to false to disable 3D objects drag & move once selected
+              enableRotatingObjects: true, //omit or change this to false to disable 3D objects rotation once selected
+              enableTooltips: true, //omit or change this to false to disable default tooltips on fill-extrusion and 3D models
+			}
 		);
 
 		var options = {
@@ -436,6 +451,8 @@ If you are using **IIS** server from an *ASP.Net* application, add the xml lines
 		  <mimeMap fileExtension=".gltf" mimeType="model/gltf+json" />
 		  <remove fileExtension=".fbx" />
 		  <mimeMap fileExtension=".fbx" mimeType="application/octet-stream" />
+		  <remove fileExtension=".dae" />
+		  <mimeMap fileExtension=".dae" mimeType="application/vnd.oipf.dae.svg+xml" />
 	  </staticContent>
 </system.webServer>
 ```
@@ -455,6 +472,7 @@ public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     provider.Mappings[".glb"] = "model/gltf-binary";
     provider.Mappings[".gltf"] = "model/gltf+json";
     provider.Mappings[".fbx"] = "application/octet-stream";
+    provider.Mappings[".dae"] = "application/vnd.oipf.dae.svg+xml";
 
     app.UseStaticFiles(new StaticFileOptions 
     {
@@ -477,6 +495,7 @@ http {
 		model/gltf+json gltf;
 		model/gltf-binary glb;
 		application/octet-stream fbx;
+		application/vnd.oipf.dae.svg+xml dae;
 	}
 	...
 }
@@ -488,6 +507,7 @@ model/obj obj
 model/gltf+json gltf
 model/gltf-binary glb
 application/octet-stream fbx
+application/vnd.oipf.dae.svg+xml dae
 ```
 
 <br>
@@ -735,6 +755,22 @@ This property requires `tb.enableSelectingFeature` is set to true.
 When this property is true, and an object is overed or selected, its tooltip will be shown.
 
 <br>
+
+#### fov
+
+```js
+tb.fov : Number (degrees)
+```
+By default is `ThreeboxConstants.FOV_DEGREES`.  
+This get/set property sets and returns the value of the Field of View (FOV) used in the Camera. 
+This value is only valid when `tb.orthographic` is false which implicitly means the camera being used is a perspective camera.
+When `tb.orthographic` is true, this value has no effect because the FOV for orthographic view is always 0.
+
+**IMPORTANT**  
+This property accepts values between 0 and 60 (that's the maximum range of FOV by Mapbox), but **below 2.5 degrees** will generate serious issues with polygons in fill-extrusions and 3D meshes, and **above 45 degrees** will also produce clipping and performance issues that can freeze your map.
+Mapbox minimum value for the FOV cannot be `0`, so if it receives a `0` value, it will be converted to `0.01` by Mapbox `map.transform.fov` property to it's minimum value.
+
+<br>
   
 
 #### gridStep
@@ -744,6 +780,34 @@ tb.gridStep : Number(integer)
 ```
 This get/set property receives and returns the size in precision decimals of the step to use when an object is dragged horizontally reducing the number of decimals managed by Mapbox in its coords. 
 By default the precision of this step is set to 6 decimals = 11.1 cm, setting this property to 7 the grid will be reduced to 1.1 cm.  
+Mapbox minimum value for the FOV is `0.01`, so if it receives a `0` value, it will be converted to `0.01` by Mapbox `map.transform.fov` property to it's minimum value.
+
+<br>
+
+#### multiLayer
+
+```js
+tb.multiLayer : Boolean
+```
+By default is `false`.  
+This get/set property receives and returns the value to enable the option to have multiple 3D layers, where a default layer will be created internally that will manage the `tb.update` calls
+Despite this value can be changed in runtime, the value won't take effect unless there's a style change through `tb.setStyle`. So if you know your page could have multiple 3D layers, it's recommended to initialize it to true in Threeboc constructor with the init param `multiLayer: true`. 
+
+<br>
+
+#### orthographic
+
+```js
+tb.orthographic : Boolean 
+```
+By default is `false`.  
+This get/set property sets and returns the value of the Camera to be used. 
+When `tb.orthographic` is `true`, the camera being used will be an instance of `THREE.OrthographicCamera`.  
+If `tb.orthographic` is `false`, the camera being used will be an instance of `THREE.PerspectiveCamera`.
+
+**IMPORTANT**  
+Pure orthographic view is not supported by Mapbox, as the minimum value for FOV is `0.01`, so if`tb.orthographic` is `true` will generate serious issues with polygons and depth calculations with fill-extrusions. 
+Don't set this property to `true` is you are creating fill-extrusion layers. If need to have at the same time fill-extrusions and 3D Objects at the same time but want to keep an orthographic-like camera, the recommendation is to use `tb.orthographic = false` and `tb.fov = 2.5`.
 
 <br>
 
@@ -795,6 +859,32 @@ Adds a line to the map, in full 3D space. Color renders independently of scene l
 
 ### Dynamic objects
 
+#### Extrusion
+
+```js
+tb.extrusion(options);
+```
+
+Add a extruded shape to the map. Internally, calls `THREE.ExtrudeBufferGeometry`, and also to `Object3D(options)` to convert it in a dynamic object.
+
+| option | required | default | type   | description                                                                                  |
+|-----------|----------|---------|--------|-------|
+| `coordinates`    | no       | [[[]]] or Vector2 array  | nested array | Nested array following the standard of a geoJson `feature.geometry.coordinates` with type polygon, or a `THREE.Vector2` array.  |
+| `geometryOptions`    | no       | {} | Object | Object that contains the options following [ExtrudeGeometry](https://threejs.org/docs/index.html#api/en/geometries/ExtrudeGeometry) |
+| `height`    | no       | 100      | Number | Length of the extruded shape.|
+| `units`    | no       | `scene`      | string ("scene" or "meters") | Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
+| `scale`     | no       | 1   | number or {x, y, z}  | Scale of the object along the three axes, to size it appropriately before future transformations. Note that future scaling applies atop this transformation, rather than overwriting it. `scale` attribute must be provided in number or per axis ((i.e. for an object transformed to 3 times higher than it's default size  `scale: {x: 1, y: 1, z: 3}`|
+| `rotation`     | no       | 0   | number or {x, y, z}  | Rotation of the object along the three axes, to align it to desired orientation before future rotations. Note that future rotations apply atop this transformation, and do not overwrite it. `rotate` attribute must be provided in number or per axis ((i.e. for an object rotated 90 degrees over the x axis `rotation: {x: 90, y: 0, z: 0}`|
+| `materials`     | no       | null   | threeMaterial or threeMaterials array  | [THREE material](https://github.com/mrdoob/three.js/tree/master/src/materials) to use. Can be invoked with a text string, or a predefined material object via THREE itself.|   
+| `anchor`     | no       | `bottom-left`   | string | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` |
+| `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
+| `tooltip`     | no       | false   | bool  | This param allows to have or not a tooltip, by default is set with the value of `tb.enableTooltips` |
+| `bbox`     | no       | false   | bool  | This param allows to have or not a bounding box, by default is set with the value of `tb.enableSelectingObjects`  |
+| `raycasted`     | no       | true   | bool  | This param allows to hide an object from raycast individually |
+
+<br>
+
+
 #### Label
 
 ```js
@@ -811,6 +901,28 @@ Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](
 | `alwaysVisible`  | no       | false       | number | Number of width and height segments. The higher the number, the smoother the sphere. |
 | `topMargin`     | no       | -0.5   | int  | If `topMargin` is defined in number, it will be added to it's vertical position in units, where 1 is the object height. By default a label will be positioned in the vertical middle of the object (`topMargin: -0.5`)|
 | `feature`     | no       | null   | [*GeoJson*](https://geojson.org/) feature  | [*GeoJson*](https://geojson.org/) feature to assign to the tooltip. It'll be used for dynamic positioning |                                                                            
+
+<br>
+
+#### Object3D
+
+```js
+tb.Object3D(options)
+```
+
+Add any geometry as [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D) or [`THREE.Mesh`](https://threejs.org/docs/index.html#api/en/objects/Mesh) instantiated elsewhere in *Three.js*, to empower it with Threebox methods below. Unnecessary for 3d models instantiated with `tb.loadObj` above.
+
+| option | required | default | type   | description                                                                                  |
+|-----------|----------|---------|--------|------------|
+| `obj`    | yes       | null      | [`THREE.Mesh`](https://threejs.org/docs/index.html#api/en/objects/Mesh) | Object to be enriched with this method adding new attributes. |
+| `units`    | no       | `scene`      | string ("scene" or "meters") | Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
+| `anchor`     | no       | `bottom-left`   | string | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` |
+| `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
+| `tooltip`     | no       | false   | bool  | This param allows to have or not a tooltip, by default is set with the value of `tb.enableTooltips` |
+| `bbox`     | no       | false   | bool  | This param allows to have or not a bounding box, by default is set with the value of `tb.enableSelectingObjects`  |
+| `raycasted`     | no       | true   | bool  | This param allows to hide an object from raycast individually |
+
+This method enriches the Object in the same way is done at 3D Models through `tb.loadObj`.
 
 <br>
 
@@ -831,7 +943,9 @@ Add a sphere to the map. Internally, calls `THREE.Mesh` with a `THREE.SphereGeom
 | `material`     | no       | MeshLambertMaterial   | threeMaterial  | [THREE material](https://github.com/mrdoob/three.js/tree/master/src/materials) to use. Can be invoked with a text string, or a predefined material object via THREE itself.|   
 | `anchor`     | no       | `bottom-left`   | string | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` |
 | `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
-| `bbox`     | no       | false   | boolean  | this value will define if the bounding box for overed and selected objects is shown. It's set automatically by Threebox option value `enableSelectingObjects`|
+| `tooltip`     | no       | false   | bool  | This param allows to have or not a tooltip, by default is set with the value of `tb.enableTooltips` |
+| `bbox`     | no       | false   | bool  | This param allows to have or not a bounding box, by default is set with the value of `tb.enableSelectingObjects`  |
+| `raycasted`     | no       | true   | bool  | This param allows to hide an object from raycast individually |
 
 <br>
 
@@ -872,27 +986,9 @@ Extrude a tube along a specific lineGeometry, with an equilateral polygon as cro
 | `opacity`     | no       | 1   | Number  | Tube opacity |                                                                                                                                                   
 | `anchor`     | no       | `bottom-left`   | string | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` |
 | `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
-| `bbox`     | no       | false   | boolean  | this value will define if the bounding box for overed and selected objects is shown. It's set automatically by Threebox option value `enableSelectingObjects`|
-
-<br>
-
-#### Object3D
-
-```js
-tb.Object3D(options)
-```
-
-Add any geometry as [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D) or [`THREE.Mesh`](https://threejs.org/docs/index.html#api/en/objects/Mesh) instantiated elsewhere in *Three.js*, to empower it with Threebox methods below. Unnecessary for 3d models instantiated with `tb.loadObj` above.
-
-| option | required | default | type   | description                                                                                  |
-|-----------|----------|---------|--------|------------|
-| `obj`    | yes       | null      | [`THREE.Mesh`](https://threejs.org/docs/index.html#api/en/objects/Mesh) | Object to be enriched with this method adding new attributes. |
-| `units`    | no       | `scene`      | string ("scene" or "meters") | Units with which to interpret the object's vertices. If meters, Threebox will also rescale the object with changes in latitude, to appear to scale with objects and geography nearby.|
-| `anchor`     | no       | `bottom-left`   | string | This param will position the pivotal center of the 3D models to the coords it's positioned. This could have the following values `top`, `bottom`, `left`, `right`, `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. Default value is `bottom-left` |
-| `adjustment`     | no       | 1   | {x, y, z}  | For geometries the center is by default {0,0,0} position, this is the point to be used for location and for rotation. For perfect positioning and heigth from floor calculations this could be redefined in normalized units, `adjustment` param must be provided in units per axis (i.e. `adjustment: {x: -0.5, y: -0.5, z: 0}` , so the model will correct the center position of the object minus half of the x axis length and minus half of the y axis length ). If you position a cube created throuhg this method with by default center in a concrete `lnglat`on 0 height, half of the cube will be below the ground map level and the object will position at it's `{x,y}` center, so you can define `adjustment: { x: -0.5, y: -0.5, z: 0.5 }` to change the center to the bottom-left corner and that corner will be exactly in the `lnglat` position at the ground level. |
-| `bbox`     | no       | false   | boolean  | this value will define if the bounding box for overed and selected objects is shown. It's set automatically by Threebox option value `enableSelectingObjects`|
-
-This method enriches the Object in the same way is done at 3D Models through `tb.loadObj`.
+| `tooltip`     | no       | false   | bool  | This param allows to have or not a tooltip, by default is set with the value of `tb.enableTooltips` |
+| `bbox`     | no       | false   | bool  | This param allows to have or not a bounding box, by default is set with the value of `tb.enableSelectingObjects`  |
+| `raycasted`     | no       | true   | bool  | This param allows to hide an object from raycast individually |
 
 <br>
 
@@ -1176,6 +1272,16 @@ This get property returns a `CSS2DObject`[`THREE.CSS2DObject`](https://threejs.o
 
 <br>
 
+#### raycasted
+
+```js
+obj.raycasted : boolean
+```
+This get/set property receives and returns a boolean value to hide a [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D.visible) from [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster)  if false. 
+By default all the objects are visible for raycaster. This value can be initialized by default through `tb.loadObj` or `tb.Object3D`.
+
+<br>
+
 
 #### receiveShadow
 
@@ -1218,9 +1324,7 @@ This get/set property receives and returns a boolean value to convert an [`THREE
 
 By Threebox design whenever an object is converted to wireframes, it's also hidden for [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) even when it's visible for the camera.
 
-
 <br>
-
 
 ---
 
@@ -1268,6 +1372,41 @@ function onIsPlayingChanged(eventArgs) {
 
 <br>
 
+#### ObjectChanged
+
+```js
+obj.addEventListener('ObjectChanged', onObjectChanged, false)
+```
+
+This event is fired when an object is changed by any method, including animations.  
+The event can be listened at any time once the `tb.loadObj` callback method is being executed.
+An instance of the object that changes is returned in `eventArgs.detail`, and the action made to the object that cound be one or more of the following:
+- `position`: defined as lnglat + alt coords (i.e. `[-122.43471544901193, 37.73719686062993, 0]`), `undefined` if the change doesn't affect position.
+- `rotation`: defined as radians in Vector3 format (i.e. `{x: 0, y: 0, z: -3.026900303641103}`), `undefined` if the change doesn't affect rotation.
+- `scale`: defined as a Vector3 (i.e. `{x: 1, y: 1, z: 1}`), , `undefined` if the change doesn't affect scale.
+
+```js
+map.addLayer({
+	...
+	tb.loadObj(options, function (model) {
+		model.setCoords(origin);
+		model.addEventListener('ObjectChanged', onObjectChanged, false);
+		tb.add(model);
+	})
+
+	...
+});
+...
+function onObjectChanged(e) {
+	let object = e.detail.object; // the object that has changed
+	let action = e.detail.action; // the action that defines the change
+	//do something in the UI such as changing a button state or updating the new position and rotation
+}
+```
+
+<br>
+
+
 #### ObjectDragged
 
 ```js
@@ -1293,7 +1432,7 @@ map.addLayer({
 	...
 });
 ...
-function onDraggedObject(eventArgs) {
+function onDraggedObject(e) {
 	let draggedObject = e.detail.draggedObject; // the object dragged
 	let draggedAction = e.detail.draggedAction; // the action during dragging
 
@@ -1329,7 +1468,7 @@ map.addLayer({
 	...
 });
 ...
-function onObjectMouseOver(eventArgs) {
+function onObjectMouseOver(e) {
 	//do something in the UI such as adding help or showing this object attributes
 }
 ```
@@ -1362,7 +1501,7 @@ map.addLayer({
 	...
 });
 ...
-function onObjectMouseOut(eventArgs) {
+function onObjectMouseOut(e) {
 	//do something in the UI such as removing help
 }
 ```
@@ -1393,8 +1532,8 @@ map.addLayer({
 	...
 });
 ...
-function onSelectedChange(eventArgs) {
-	let selectedObject = eventArgs.detail; //we get the object selected/unselected
+function onSelectedChange(e) {
+	let selectedObject = e.detail; //we get the object selected/unselected
 	let selectedValue = selectedObject.selected; //we get if the object is selected after the event
 }
 ```
@@ -1445,8 +1584,8 @@ map.addLayer({
 //selected extrusion feature event
 map.on('SelectedFeature', onSelectedFeature);
 ...
-function onSelectedFeature(eventArgs) {
-	let selectedObject = eventArgs.detail; //we get the object selected/unselected
+function onSelectedFeature(e) {
+	let selectedObject = e.detail; //we get the object selected/unselected
 	let selectedValue = selectedObject.selected; //we get if the object is selected after the event
 }
 ```
@@ -1478,7 +1617,7 @@ map.addLayer({
 	...
 });
 ...
-function onWireframed(eventArgs) {
+function onWireframed(e) {
 	if (e.detail.wireframe) {
 		//do something in the UI such as changing a button state
 	}

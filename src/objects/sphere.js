@@ -14,7 +14,7 @@ function Sphere(opt) {
 	let mat = material(opt)
 	let output = new THREE.Mesh(geometry, mat);
 	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
-	return new Object3D({ obj: output, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip });
+	return new Object3D({ obj: output, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip, raycasted: opt.raycasted });
 
 }
 

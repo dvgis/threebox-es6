@@ -1,9 +1,97 @@
-## 2.1.3
+## 2.1.7
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+- #167 Create a new event `ObjectChanged` every time the object has modified its position, rotation or scale.
+  - Related to #163 request to get coordinates when the model follow path with line?
+  - Modified example [05-logistics.html](https://github.com/jscastro76/threebox/blob/master/examples/05-logistics.html) to attach to the event `ObjectChanged`
+  - Modified example [11-logistics.html](https://github.com/jscastro76/threebox/blob/master/examples/11-animation.html) to attach to the event `ObjectChanged`
+ - Modified example [08-3dbuildings.html](https://github.com/jscastro76/threebox/blob/master/examples/08-3dbuildings.html) to adjust perspective and position to a more relevant zone (empire state building) 
+- #170 Refactor internal methods  
+
+#### :beetle: Bug fixes
+- #168 Bug on init params `bbox` and `tooltip`  
+
+#### :pencil: Documentation
+- Updated [documentation](/docs/Threebox.md) (`ObjectChanged` and other events)
+- Updated [README.md](/).
+- Updated [Examples](/examples) documentation. 
+ 
+<br>
+
+- - - 
+
+## 2.1.6
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
 #### :sparkles: Enhancements
 
+- #111 Show the dimensions of a model 
+- #151 Remove auxiliary test method on `CameraSync` used to debug #145 
+- #156 Create an Orthographic view mode 
+- #159 Create an example for FOV and Orthographic.
+  - Added to [09-raycaster.html](https://github.com/jscastro76/threebox/blob/master/examples/09-raycaster.html) as it impacts in raycast and shows fill-extrusions and 3D models together
+- #161 Remove obsolete code that is avoiding to be used from React
+
+#### :beetle: Bug fixes
+- #152 `obj.raycasted` is ignored when an object is hidden and again visible. 
+- #157 Bug draggging after removing an object. 
+- #160 Bug using `utils.equal`
+
+#### :pencil: Documentation
+- #158 MERCATOR_A constant unused, added an code comment to explain why it was deprecated (nor removed)
+- Updated [documentation](/docs/Threebox.md) (`tb.orthographic`, `tb.fov`)
+- Updated [README.md](/).
+- Updated [Examples](/examples) documentation. 
+ 
+<br>
+
+- - - 
+
+## 2.1.5
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+- #3 Make Color of the boundingBox and boundingBoxShadow configurable
+- #29 Make one object not selectable or draggable independently of Threebox params 
+- #150 Check methods doing traverse to avoid doing unnecessary loops 
+
+#### :beetle: Bug fixes
+- #145 Worldwide view demos, have precision issues after #143 
+- #149 `obj.set` with `options.coords` doesn't change the z axis in obj.coordinates 
+
+#### :pencil: Documentation
+- Updated [documentation](/docs/Threebox.md) (`tb.raycasted`, `tb.extrusion`, `tb.loadObj` and `tb.Object3D` params, mime types)
+- Updated [README.md](/).
+- Updated [Examples](/examples) documentation. 
+<br>
+
+- - - 
+
+## 2.1.4
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+- #1 Collisions detection (Depth calculation) 
+- #102 Add stats performance to all the demos 
+- #139 Add a full dispose button to 15-Performance.html demo 
+- #143 CameraSync adjustment to avoid depth issues between 3D objects and Fill-extrusions 
+- #144 Improve 07-alignmentTest.html adding 3D objects inside the building 
+
+#### :beetle: Bug fixes
+- #147 Error in BuildingShadows when used from a script module 
+
+<br>
+
+- - - 
+
+## 2.1.3
+
+Minor version by [@jscastro76](https://github.com/jscastro76), just one hot fix for a critical bug. 
 
 #### :beetle: Bug fixes
 

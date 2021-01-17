@@ -22,6 +22,8 @@ function Object3D(opt) {
 	userScaleGroup.setAnchor(opt.anchor);
 	//[jscastro] override the center calculated if the object has adjustments
 	userScaleGroup.setCenter(opt.adjustment);
+	//[jscastro] if the object is excluded from raycasting
+	userScaleGroup.raycasted = opt.raycasted;
 	userScaleGroup.visibility = true;
 
 	return userScaleGroup

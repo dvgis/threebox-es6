@@ -30,7 +30,7 @@
 			</div>
 		</div>
 	</div>
-		<script>
+		<script type="module">
 
 			// This example downloads a soldier model from an external OBJ/MTL file, adds it to the map, and drives it around via paths fetched from the Mapbox Directions API
 
@@ -38,10 +38,11 @@
 
 			mapboxgl.accessToken = config.accessToken;
 
-			var origin = [-87.61694, 41.866];
-			var origin1 = [-87.61726, 41.865559];
+			let origin = [-87.61694, 41.86625];
+			let originRex = [-87.616191, 41.866212];
+			let origin1 = [-87.61726, 41.865559];
 
-			var map = new mapboxgl.Map({
+			let map = new mapboxgl.Map({
 				container: 'map',
 				style: 'mapbox://styles/mapbox/streets-v11',
 				//center: [-87.61694, 41.86625],
@@ -52,40 +53,44 @@
 				antialias: true
 			});
 
-			var opis = {
-				"features": [
-					{
-						"type": "Feature",
-						"properties": {
-							"level": 1,
-							"name": "outer-walls",
-							"base_height": 0,
-							"height": 40,
-							"color": "grey"
-						},
-						"geometry": {
-							"coordinates": [
-								[
-									[-87.618087, 41.86666], [-87.618087, 41.866674], [-87.618319, 41.866674], [-87.618298, 41.865757], [-87.618326, 41.865756], [-87.618347, 41.866693], [-87.618068, 41.866696], [-87.618067, 41.866675], [-87.61741, 41.866684], [-87.617416, 41.86680], [-87.617247, 41.866803], [-87.617246, 41.866866], [-87.616846, 41.866868], [-87.616848, 41.866807], [-87.61669, 41.866811], [-87.616693, 41.866693], [-87.615992, 41.866701], [-87.615992, 41.866729], [-87.615703, 41.866733], [-87.615689, 41.866377], [-87.615412, 41.866382], [-87.615411, 41.866122], [-87.615689, 41.866119], [-87.615682, 41.865781], [-87.615966, 41.865779], [-87.615969, 41.865798], [-87.616669, 41.865794], [-87.616663, 41.865662], [-87.6168, 41.865661], [-87.616796, 41.865571], [-87.61726, 41.865559], [-87.617258, 41.865654], [-87.617388, 41.865652], [-87.617395, 41.865778], [-87.618045, 41.865773], [-87.618044, 41.865742], [-87.618325, 41.865739], [-87.618326, 41.865758], [-87.61807, 41.865761], [-87.61807, 41.865789], [-87.617356, 41.8658], [-87.617356, 41.865672], [-87.617218, 41.865677], [-87.617215, 41.86559], [-87.616822, 41.865595], [-87.616827, 41.86568], [-87.616694, 41.865681], [-87.616697, 41.865813], [-87.615939, 41.865824], [-87.615937, 41.8658], [-87.615706, 41.865802], [-87.615713, 41.866143], [-87.615441, 41.86615], [-87.61545, 41.866357], [-87.615724, 41.866353], [-87.615733, 41.866712], [-87.615959, 41.86671], [-87.615959, 41.866688], [-87.616719, 41.866672], [-87.61672, 41.866791], [-87.616869, 41.86679], [-87.616868, 41.86685], [-87.617223, 41.866847], [-87.617227, 41.866786], [-87.617387, 41.866785], [-87.617383, 41.86667], [-87.618087, 41.86666]
-								]
-							],
-							"type": "Polygon"
-						},
-						"id": "ef6512f46485e27963c248bcc945c3db"
-					}
-				],
-				"type": "FeatureCollection"
+			let lineGeometry1 = [[-87.61726, 41.865559, 0], [-87.61726, 41.865559, 80]];
+
+			let stats;
+			import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+			function animate(timestamp) {
+			
+				// clamp the rotation between 0 -360 degrees
+				// Divide timestamp by 100 to slow rotation to ~10 degrees / sec
+				//rotateCamera(Date.now());
+				stats.update();
+				requestAnimationFrame(animate);
 			}
 
-			var lineGeometry1 = [[-87.61726, 41.865559, 0], [-87.61726, 41.865559, 80]];
+			function rotateCamera(timestamp) {
+				// clamp the rotation between 0 -360 degrees
+				// Divide timestamp by 100 to slow rotation to ~10 degrees / sec
+				map.rotateTo((timestamp / 100) % 360, { duration: 0 });
+			}
+
+			window.tb = new Threebox(
+				map,
+				map.getCanvas().getContext('webgl'),
+				{
+					defaultLights: true
+				}
+			);
 
 			map.on('style.load', function () {
+				// stats
+				stats = new Stats();
+				map.getContainer().appendChild(stats.dom);
+				animate();
 
 				map.addSource('floorplan', {
 					// GeoJSON Data source used in vector tiles, documented at
 					// https://gist.github.com/ryanbaumann/a7d970386ce59d11c16278b90dde094d
 					'type': 'geojson',
-					'data': opis //'https://docs.mapbox.com/mapbox-gl-js/assets/indoor-3d-map.geojson'
+					'data': './geojson/indoor-3d-map.json'
 				});
 
 				map.addLayer({
@@ -116,13 +121,7 @@
 					renderingMode: '3d',
 					onAdd: function (map, mbxContext) {
 
-						window.tb = new Threebox(
-							map,
-							mbxContext,
-							{ defaultLights: true }
-						);
-
-						var tubeOptions = {
+						let tubeOptions = {
 							geometry: lineGeometry1,
 							radius: .01,
 							sides: 12,
@@ -131,15 +130,45 @@
 							material: 'MeshPhysicalMaterial',
 							color: '#00ffff'
 						}
-						tube = tb.tube(tubeOptions);
+						let tube = tb.tube(tubeOptions);
 						tube.setCoords(origin1);
 						tb.add(tube);
+
+						let dino = {
+							type: 'fbx', //'gltf'/'mtl'
+							obj: './models/history/dinosaur.fbx', //model url
+							bin: '', //replace by mtl attribute
+							units: 'meters', //units in the default values are always in meters
+							scale: 60,
+							rotation: { x: 90, y: 0, z: 0 }, //default rotation
+							anchor: 'center'
+						}
+						tb.loadObj(dino, function (model) {
+							model.setCoords([origin[0], origin[1], 0]);
+							tb.add(model);
+						});
+
+						let rex = {
+							type: 'fbx', //'gltf'/'mtl'
+							obj: './models/history/rex.fbx', //model url
+							bin: '', //replace by mtl attribute
+							units: 'meters', //units in the default values are always in meters
+							scale: 50,
+							rotation: { x: 90, y: 0, z: 0 }, //default rotation
+							anchor: 'center'
+						}
+						tb.loadObj(rex, function (model) {
+							model.setCoords(originRex);
+							tb.add(model);
+						});
+
 
 					},
 					render: function (gl, matrix) {
 						tb.update();
 					}
 				}, 'room-extrusion');
+
 			})
 
 		</script>

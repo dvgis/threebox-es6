@@ -22,7 +22,7 @@
 <body>
     <div id='map' class='map'></div>
 
-    <script>
+    <script type="module">
 
         // this example demonstrates the use of duplicate(), to replicate a sphere many times with minimal performance implications. Also shows the distortion effects of mercator: despite their appearance, all spheres have a radius of 500km, at an altitude of 2000km.
 
@@ -51,8 +51,20 @@
             }
         );
 
+		let stats;
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+        }
+
         var active = false
         map.on('style.load', function () {
+
+			// stats
+			stats = new Stats();
+			map.getContainer().appendChild(stats.dom);
+            animate();
 
             map.addLayer({
                 id: 'custom_layer',
@@ -61,11 +73,11 @@
                 onAdd: function (map, mbxContext) {
 
                     // generate 100 points around the world, at random locations but the same altitude
-                    var randomPoints = [];
+                    let randomPoints = [];
 
                     for (var i = 0; i < 100; i++) {
 
-                        var point = [
+                        let point = [
                             360 * (Math.random() - 0.5),
                             160 * (Math.random() - 0.5),
                             2000000

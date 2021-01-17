@@ -61,8 +61,19 @@
 			side: THREE.DoubleSide
 		});
 
+		let stats;
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+		}
+
 		let buildings = [];
 		map.on('style.load', function () {
+			//// stats
+			stats = new Stats();
+			map.getContainer().appendChild(stats.dom);
+			animate();
 
 			map.addLayer({
 				id: 'custom_layer',
@@ -108,8 +119,7 @@
 
 		});
 
-		function addBuildings(data, info, height) {
-			height = height ? height : 1;
+		function addBuildings(data, info, height = 1) {
 
 			data.forEach((b) => {
 				let center = b.properties.center;

@@ -52,7 +52,7 @@
 	<input id='time' type='range' min="0" max="86399" />
 	<div id="hour" class="mapboxgl-map"></div>
 
-	<script>
+	<script type="module">
 		//- Built-in sunlight through 'realSunlight' that sets the scene and map lights based on 'setSunlight'
 		//- Built-in shadows through 'castShadow' and 'tb.setBuildingShadows'
 
@@ -110,7 +110,20 @@
 
 		map.addControl(new mapboxgl.NavigationControl());
 
+		let stats;
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+		}
+
 		map.on('style.load', () => {
+
+			//// stats
+			stats = new Stats();
+			map.getContainer().appendChild(stats.dom);
+			animate();
+
 			if (map.getLayer('building')) {
 				map.removeLayer('building');
 			}

@@ -7,6 +7,14 @@
 	<script src="config.js"></script>
 	<script src="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
 	<link href="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.css" rel="stylesheet" />
+
+	<script src="plugins/jquery.min.js"></script>
+	<!-- Place your kit's code here -->
+	<script src="css/fontawesome.js"></script>
+	<link href="css/free.min.css" rel="stylesheet" />
+	<link href="css/free-v4-font-face-min.css" rel="stylesheet" />
+	<link href="css/free-v4-shims.min.css" rel="stylesheet" />
+
 	<style>
 		body, html {
 			width: 100%;
@@ -18,6 +26,7 @@
 			width: 100%;
 			height: 100%;
 		}
+
 		#info {
 			background-color: rgba(0,0,0,1);
 		}
@@ -25,11 +34,27 @@
 		.dg .folder .gui-stats {
 			height: auto;
 		}
+
+		.top-right-tools {
+			display: flex;
+			right: 40px;
+			z-index: 10;
+		}
+
+		.tools-i.mapboxgl-ctrl {
+			margin: 10px 20px 0 0;
+			display: inline-flex;
+		}
 	</style>
 </head>
 <body>
 
 	<div id='map' class='map'>
+		<div class="mapboxgl-ctrl-top-right top-right-tools" aria-label="Map Tools Control" style="margin-right: 220px">
+			<div class="tools-i mapboxgl-ctrl mapboxgl-ctrl-group">
+				<button type="button" name="dispose" id="dispose" title="Dispose all resources" alt="Dispose all resources"><i class="fas fa-broom"></i></button>
+			</div>
+		</div>
 	</div>
 
 	<script type="module">
@@ -55,7 +80,6 @@
 			map.getCanvas().getContext('webgl'),
 			{
 				defaultLights: true,
-				enableSelectingFeatures: true, //change this to false to disable fill-extrusion features selection
 				enableTooltips: true // change this to false to disable default tooltips on fill-extrusion and 3D models
 			}
 		);
@@ -157,6 +181,7 @@
 					let lat = origin[1] + Math.random() * 0.4 - 0.2;
 					let alt = origin[2] + Math.random() * 0.4 - 0.2;
 					let obj = model.setCoords([lng, lat, alt]);
+
 					tb.add(obj);
 
 					if (api.animation) {
@@ -279,6 +304,12 @@
 			return popup;
 		}
 
+
+		$('#dispose').on('click', function () {
+			const result = window.tb.dispose();
+			console.log(result);
+			window.tb = {};
+		});
 
 	</script>
 

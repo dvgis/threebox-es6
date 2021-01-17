@@ -104,7 +104,7 @@
 	</div>
 	<div id='explainer'>Select the soldier, drag, rotate, wireframe and play animation</div>
 
-	<script>
+	<script type="module">
 
 		// This example downloads a soldier model from an external OBJ/MTL file, adds it to the map, and drives it around via paths fetched from the Mapbox Directions API
 
@@ -126,60 +126,73 @@
 		});
 		map.addControl(new mapboxgl.NavigationControl());
 
+		let stats;
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+		}
+
 		map.on('style.load', function () {
+			// stats
+			stats = new Stats();
+			map.getContainer().appendChild(stats.dom);
+			animate();
 
-			map
-				.addLayer({
-					id: 'custom_layer',
-					type: 'custom',
-					renderingMode: '3d',
-					onAdd: function (map, mbxContext) {
+			map.addLayer({
+				id: 'custom_layer',
+				type: 'custom',
+				renderingMode: '3d',
+				onAdd: function (map, mbxContext) {
 
-						window.tb = new Threebox(
-							map,
-							mbxContext,
-							{
-								defaultLights: true,
-								enableSelectingFeatures: true,
-								enableSelectingObjects: true,
-								enableDraggingObjects: true,
-								enableRotatingObjects: true,
-								enableTooltips: true }
-						);
-
-						// import soldier from an external glb file, scaling up its size 20x
-						// IMPORTANT: .glb is not a standard MIME TYPE, you'll have to add it to your web server config,
-						// otherwise you'll receive a 404 error
-						var options = {
-							obj: 'models/soldier.glb',
-							type: 'gltf',
-							scale: 20,
-							units: 'meters',
-							rotation: { x: 90, y: 0, z: 0 },
-							anchor: 'center'//default rotation
+					window.tb = new Threebox(
+						map,
+						mbxContext,
+						{
+							defaultLights: true,
+							enableSelectingFeatures: true,
+							enableSelectingObjects: true,
+							enableDraggingObjects: true,
+							enableRotatingObjects: true,
+							enableTooltips: true
 						}
+					);
 
-						tb.loadObj(options, function (model) {
-
-							soldier = model.setCoords(origin);
-
-							// Listening to the events
-							model.addEventListener('SelectedChange', onSelectedChange, false);
-							model.addEventListener('Wireframed', onWireframed, false);
-							model.addEventListener('IsPlayingChanged', onIsPlayingChanged, false);
-							model.addEventListener('ObjectDragged', onDraggedObject, false);
-							model.addEventListener('ObjectMouseOver', onObjectMouseOver, false);
-							model.addEventListener('ObjectMouseOut', onObjectMouseOut, false);
-
-							tb.add(soldier);
-						})
-
-					},
-
-					render: function (gl, matrix) {
-						tb.update();
+					// import soldier from an external glb file, scaling up its size 20x
+					// IMPORTANT: .glb is not a standard MIME TYPE, you'll have to add it to your web server config,
+					// otherwise you'll receive a 404 error
+					var options = {
+						obj: 'models/soldier.glb',
+						type: 'gltf',
+						scale: 20,
+						units: 'meters',
+						rotation: { x: 90, y: 0, z: 0 },
+						anchor: 'center'//default rotation
 					}
-				});
+
+					tb.loadObj(options, function (model) {
+
+						soldier = model.setCoords(origin);
+
+						// Listening to the events
+						soldier.addEventListener('SelectedChange', onSelectedChange, false);
+						soldier.addEventListener('Wireframed', onWireframed, false);
+						soldier.addEventListener('IsPlayingChanged', onIsPlayingChanged, false);
+						soldier.addEventListener('ObjectDragged', onDraggedObject, false);
+						soldier.addEventListener('ObjectMouseOver', onObjectMouseOver, false);
+						soldier.addEventListener('ObjectMouseOut', onObjectMouseOut, false);
+						soldier.addEventListener('ObjectChanged', onObjectChanged, false);
+
+
+						tb.add(soldier);
+					})
+
+				},
+
+				render: function (gl, matrix) {
+					tb.update();
+				}
+			});
 		}).on('click', function (e) {
 			var pt = [e.lngLat.lng, e.lngLat.lat];
 			travelPath(pt);
@@ -308,6 +321,12 @@
 		//actions to execute onObjectMouseOut
 		function onObjectMouseOut(e) {
 			console.log("onObjectMouseOut");
+		}
+
+		function onObjectChanged(e) {
+			let model = e.detail.object; //here's the object already modified
+			let action = e.detail.action; //here's the action that changed the object
+			console.log(action);
 		}
 
 		//wire / unwire object

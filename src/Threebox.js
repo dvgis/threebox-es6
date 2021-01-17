@@ -67,22 +67,15 @@ Threebox.prototype = {
 		this.labelRenderer = new LabelRenderer(this.map);
 
 		this.scene = new THREE.Scene();
-		this.camera = new THREE.PerspectiveCamera(ThreeboxConstants.FOV_DEGREES, this.map.getCanvas().clientWidth / this.map.getCanvas().clientHeight, 1, 1e21);
-		this.camera.layers.enable(0);
-		this.camera.layers.enable(1);
-
-		// The CameraSync object will keep the Mapbox and THREE.js camera movements in sync.
-		// It requires a world group to scale as we zoom in. Rotation is handled in the camera's
-		// projection matrix itself (as is field of view and near/far clipping)
-		// It automatically registers to listen for move events on the map so we don't need to do that here
 		this.world = new THREE.Group();
 		this.world.name = "world";
 		this.scene.add(this.world);
 
 		this.objectsCache = new Map();
 		this.zoomLayers = [];
-		
-		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
+
+		this.fov = this.options.fov;
+		this.orthographic = this.options.orthographic || false;
 
 		//raycaster for mouse events
 		this.raycaster = new THREE.Raycaster();
@@ -117,13 +110,14 @@ Threebox.prototype = {
 
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
+
 			//[jscastro] new fields to manage events on map
 			this.selectedObject; //selected object through click
 			this.selectedFeature;//selected state id for extrusion layer features
 			this.draggedObject; //dragged object through mousedown + mousemove
 			let draggedAction; //dragged action to notify frontend
 			this.overedObject; //overed object through mouseover
-			this.overedFeature;//overed state for extrusion layer features
+			this.overedFeature; //overed state for extrusion layer features
 
 			let canvas = this.getCanvasContainer();
 			this.getCanvasContainer().style.cursor = 'default';
@@ -133,13 +127,6 @@ Threebox.prototype = {
 
 			//when object selected
 			let startCoords = [];
-
-			// Variable to hold the current xy coordinates
-			// when 'mousemove' or 'mouseup' occurs.
-			let current;
-
-			// Variable for the draw box element.
-			let box;
 
 			let lngDiff; // difference between cursor and model left corner
 			let latDiff; // difference between cursor and model bottom corner
@@ -154,12 +141,16 @@ Threebox.prototype = {
 					y: e.originalEvent.clientY - rect.top - canvas.clientTop
 				};
 			}
-
 			
-			this.unselectObject = function (o) {
+			this.unselectObject = function () {
 				//deselect, reset and return
-				o.selected = false;
+				this.selectedObject.selected = false;
 				this.selectedObject = null;
+			}
+
+			this.outObject = function () {
+				this.overedObject.over = false;
+				this.overedObject = null;
 			}
 
 			this.unselectFeature = function (f) {
@@ -190,7 +181,7 @@ Threebox.prototype = {
 
 			}
 
-			this.unoverFeature = function(f) {
+			this.outFeature = function(f) {
 				if (this.overedFeature && typeof this.overedFeature != 'undefined' && this.overedFeature.id != f) {
 					map.setFeatureState(
 						{ source: this.overedFeature.source, sourceLayer: this.overedFeature.sourceLayer, id: this.overedFeature.id },
@@ -259,7 +250,7 @@ Threebox.prototype = {
 
 						} else if (this.selectedObject.uuid == nearestObject.uuid) {
 							//deselect, reset and return
-							this.unselectObject(this.selectedObject);
+							this.unselectObject();
 							return;
 						}
 
@@ -283,7 +274,7 @@ Threebox.prototype = {
 
 							//if 3D object selected, unselect
 							if (this.selectedObject) {
-								this.unselectObject(this.selectedObject);
+								this.unselectObject();
 							}
 
 							//if not selected yet, select it
@@ -374,12 +365,11 @@ Threebox.prototype = {
 				if (intersectionExists) {
 					let nearestObject = Threebox.prototype.findParent3DObject(intersects[0]);
 					if (nearestObject) {
-						this.unoverFeature(this.overedFeature);
+						this.outFeature(this.overedFeature);
 						this.getCanvasContainer().style.cursor = 'pointer';
 						if (!this.selectedObject || nearestObject.uuid != this.selectedObject.uuid) {
-							if (this.overedObject) {
-								this.overedObject.over = false;
-								this.overedObject = null;
+							if (this.overedObject && this.overedObject.uuid != nearestObject.uuid ) {
+								this.outObject();
 							}
 							nearestObject.over = true;
 							this.overedObject = nearestObject;
@@ -390,14 +380,14 @@ Threebox.prototype = {
 				}
 				else {
 					//clean the object overed
-					if (this.overedObject) { this.overedObject.over = false; this.overedObject = null; }
+					if (this.overedObject) { this.outObject(); }
 					//now let's check the extrusion layer objects
 					let features = [];
 					if (map.tb.enableSelectingFeatures) {
 						features = this.queryRenderedFeatures(e.point);
 					}
 					if (features.length > 0) {
-						this.unoverFeature(features[0]);
+						this.outFeature(features[0]);
 
 						if (features[0].layer.type == 'fill-extrusion' && typeof features[0].id != 'undefined') {
 							if ((!this.selectedFeature || this.selectedFeature.id != features[0].id)) {
@@ -472,13 +462,51 @@ Threebox.prototype = {
 					if (features.length > 0 && this.overedFeature.id != features[0].id) {
 						this.getCanvasContainer().style.cursor = 'default';
 						//only unover when new feature is another
-						this.unoverFeature(features[0]);
+						this.outFeature(features[0]);
 					}
 				}
 			}
 
 			this.onZoomEnd = function (e) {
 				this.tb.zoomLayers.forEach((l) => {this.tb.toggleLayer(l);});
+			}
+
+			let ctrlDown = false;
+			let shiftDown = false;
+			let ctrlKey = 17, cmdKey = 91, shiftKey = 16, sK = 83; dK = 68;
+
+			function onKeyDown(e) {
+
+				if (e.which === ctrlKey || e.which === cmdKey) ctrlDown = true;
+				if (e.which === shiftKey) shiftDown = true;
+				let obj = this.selectedObject;
+				if (shiftDown && e.which === sK && obj) {
+					//shift + sS
+					let dc = utils.toDecimal;
+					if (!obj.help) {
+						let s = obj.modelSize;
+						let sf = 1;
+						if (obj.userData.units !== 'meters') {
+							//if not meters, calculate scale to the current lat
+							sf = utils.projectedUnitsPerMeter(obj.coordinates[1]);
+							if (!sf) { sf = 1; };
+							sf = dc(sf, 7);
+						}
+
+						obj.addHelp("size(m): " + dc((s.x / sf), 3) + " W, " + dc((s.y / sf), 3) + " L, " + dc((s.z / sf), 3) + " H");
+						this.repaint = true;
+					}
+					else {
+						obj.removeHelp();
+					}
+					return false;
+				}
+
+			};
+
+			function onKeyUp (e) {
+				if (e.which == ctrlKey || e.which == cmdKey) ctrlDown = false;
+				if (e.which === shiftKey) shiftDown = false;
 			}
 
 			//listener to the events
@@ -489,7 +517,48 @@ Threebox.prototype = {
 			this.on('mousedown', this.onMouseDown);
 			this.on('zoom', this.onZoomEnd);
 
+			document.addEventListener('keydown', onKeyDown.bind(this), true);
+			document.addEventListener('keyup', onKeyUp.bind(this));
+
 		});
+
+	},
+
+	//[jscastro] added property to manage FOV for perspective camera
+	get fov() { return this.options.fov;},
+	set fov(value) {
+		if (this.camera instanceof THREE.PerspectiveCamera && this.options.fov !== value) {
+			this.map.transform.fov = value;
+			this.camera.fov = this.map.transform.fov;
+			this.cameraSync.setupCamera();
+			this.map.repaint = true;
+			this.options.fov = value;
+		}
+
+	},
+
+	//[jscastro] added property to manage camera type
+	get orthographic() { return this.options.orthographic; },
+	set orthographic(value) {
+		const h = this.map.getCanvas().clientHeight;
+		const w = this.map.getCanvas().clientWidth;
+		if (value) {
+			this.map.transform.fov = 0;
+			this.camera = new THREE.OrthographicCamera(w / - 2, w / 2, h / 2, h / - 2, 0.1, 1e21);
+		} else {
+			this.map.transform.fov = this.fov;
+			this.camera = new THREE.PerspectiveCamera(this.map.transform.fov, w / h, 0.1, 1e21);
+		}
+		this.camera.layers.enable(0);
+		this.camera.layers.enable(1);
+		// The CameraSync object will keep the Mapbox and THREE.js camera movements in sync.
+		// It requires a world group to scale as we zoom in. Rotation is handled in the camera's
+		// projection matrix itself (as is field of view and near/far clipping)
+		// It automatically registers to listen for move events on the map so we don't need to do that here
+		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
+		this.map.repaint = true; // repaint the map
+		this.options.orthographic = value;
+
 	},
 
 	// Objects
@@ -713,11 +782,11 @@ Threebox.prototype = {
 
 		// Render the scene and repaint the map
 		this.renderer.state.reset();
+		if (this.options.realSunlight) this.renderer.state.setBlending(THREE.NormalBlending);
 		this.renderer.render(this.scene, this.camera);
 
 		// [jscastro] Render any label
 		this.labelRenderer.render(this.scene, this.camera);
-
 		if (this.options.passiveRendering === false) this.map.triggerRepaint();
 	},
 
@@ -738,6 +807,8 @@ Threebox.prototype = {
 	},
 
 	remove: function (obj) {
+		if (this.map.selectedObject && obj.uuid == this.map.selectedObject.uuid) this.map.unselectObject();
+		if (this.map.draggedObject && obj.uuid == this.map.draggedObject.uuid) this.map.draggedObject = null;
 		if (obj.dispose) obj.dispose();
 		this.world.remove(obj);
 		obj = null;
@@ -934,15 +1005,15 @@ Threebox.prototype = {
 	},
 
 	setDefaultView: function (options, defOptions) {
-		options.bbox = options.bbox || defOptions.enableSelectingObjects;
-		options.tooltip = options.tooltip || defOptions.enableTooltips;
+		options.bbox = options.bbox && defOptions.enableSelectingObjects;
+		options.tooltip = options.tooltip && defOptions.enableTooltips;
 	},
 
 	memory: function () { return this.renderer.info.memory },
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.1.3',
+	version: '2.1.7',
 
 }
 
@@ -957,6 +1028,8 @@ var defaultOptions = {
 	enableRotatingObjects: false,
 	enableTooltips: false,
 	multiLayer: false,
+	orthographic: false,
+	fov: ThreeboxConstants.FOV_DEGREES
 }
 module.exports = exports = Threebox;
 

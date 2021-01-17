@@ -28,7 +28,7 @@
 <body>
 	<div id='map' class='map'></div>
 	<div id='explainer'>Click on the map to drive the truck there</div>
-	<script>
+	<script type="module">
 
 
 		// This example downloads a truck model from an external OBJ/MTL file, adds it to the map, and drives it around via paths fetched from the Mapbox Directions API
@@ -50,7 +50,18 @@
 			bearing: 90
 		});
 
+		let stats;
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+		}
+
 		map.on('style.load', function () {
+			// stats
+			stats = new Stats();
+			map.getContainer().appendChild(stats.dom);
+			animate();
 
 			map
 				.addLayer({
@@ -62,7 +73,9 @@
 						window.tb = new Threebox(
 							map,
 							mbxContext,
-							{ defaultLights: true }
+							{
+								defaultLights: true
+							}
 						);
 
 						// import truck from an external obj file, scaling up its size 10x
@@ -72,6 +85,7 @@
 							mtl: 'models/Truck.mtl',
 							scale: 20,
 							units: 'meters',
+							anchor: "bottom",
 							rotation: { x: 90, y: 180, z: 0 }, //rotation to postiion the truck and heading properly
 
 						}
@@ -79,6 +93,7 @@
 						tb.loadObj(options, function (model) {
 
 							truck = model.setCoords(origin);
+							truck.addEventListener('ObjectChanged', onObjectChanged, false);
 							tb.add(truck);
 						})
 
@@ -94,6 +109,11 @@
 				travelPath(pt);
 			})
 
+		function onObjectChanged(e) {
+			let model = e.detail.object; //here's the object already modified
+			let action = e.detail.action; //here's the action that changed the object
+			console.log(action);
+		}
 
 		function travelPath(destination) {
 

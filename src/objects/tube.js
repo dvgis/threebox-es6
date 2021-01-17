@@ -20,7 +20,7 @@ function tube(opt, world){
 	let mat = material(opt);
 	let obj = new THREE.Mesh(geom, mat);
 	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
-	return new Object3D({ obj: obj, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip });
+	return new Object3D({ obj: obj, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip, raycasted: opt.raycasted });
 }
 
 tube.prototype = {

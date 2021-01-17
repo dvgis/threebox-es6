@@ -19,13 +19,8 @@ function loadObj(options, cb, promise) {
 
 	if (options === undefined) return console.error("Invalid options provided to loadObj()");
 	options = utils._validate(options, Objects.prototype._defaults.loadObj);
-	this.loaded = false;
 
-	const modelComplete = (m) => {
-		console.log("Model complete!", m);
-		if (--remaining === 0) this.loaded = true;
-	}
-	var loader;
+	let loader;
 	if (!options.type) { options.type = 'mtl'; };
 	//[jscastro] support other models
 	switch (options.type) {
@@ -34,7 +29,8 @@ function loadObj(options, cb, promise) {
 			loader = objLoader;
 			break;
 		case "gltf":
-			// [jscastro] Support for GLTF
+		case "glb":
+			// [jscastro] Support for GLTF/GLB
 			loader = gltfLoader;
 			break;
 		case "fbx":
@@ -65,6 +61,7 @@ function loadObj(options, cb, promise) {
 					obj = obj.children[0];
 					break;
 				case "gltf":
+				case "glb":
 				case "dae":
 					animations = obj.animations;
 					obj = obj.scene;
@@ -88,6 +85,8 @@ function loadObj(options, cb, promise) {
 			userScaleGroup.setAnchor(options.anchor);
 			//[jscastro] override the center calculated if the object has adjustments
 			userScaleGroup.setCenter(options.adjustment);
+			//[jscastro] if the object is excluded from raycasting
+			userScaleGroup.raycasted = options.raycasted;
 			//[jscastro] return to cache
 			promise(userScaleGroup);
 			//[jscastro] then return to the client-side callback

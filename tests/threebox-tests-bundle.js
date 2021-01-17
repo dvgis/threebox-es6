@@ -9010,22 +9010,15 @@ Threebox.prototype = {
 		this.labelRenderer = new LabelRenderer(this.map);
 
 		this.scene = new THREE.Scene();
-		this.camera = new THREE.PerspectiveCamera(ThreeboxConstants.FOV_DEGREES, this.map.getCanvas().clientWidth / this.map.getCanvas().clientHeight, 1, 1e21);
-		this.camera.layers.enable(0);
-		this.camera.layers.enable(1);
-
-		// The CameraSync object will keep the Mapbox and THREE.js camera movements in sync.
-		// It requires a world group to scale as we zoom in. Rotation is handled in the camera's
-		// projection matrix itself (as is field of view and near/far clipping)
-		// It automatically registers to listen for move events on the map so we don't need to do that here
 		this.world = new THREE.Group();
 		this.world.name = "world";
 		this.scene.add(this.world);
 
 		this.objectsCache = new Map();
 		this.zoomLayers = [];
-		
-		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
+
+		this.fov = this.options.fov;
+		this.orthographic = this.options.orthographic || false;
 
 		//raycaster for mouse events
 		this.raycaster = new THREE.Raycaster();
@@ -9060,13 +9053,14 @@ Threebox.prototype = {
 
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
+
 			//[jscastro] new fields to manage events on map
 			this.selectedObject; //selected object through click
 			this.selectedFeature;//selected state id for extrusion layer features
 			this.draggedObject; //dragged object through mousedown + mousemove
 			let draggedAction; //dragged action to notify frontend
 			this.overedObject; //overed object through mouseover
-			this.overedFeature;//overed state for extrusion layer features
+			this.overedFeature; //overed state for extrusion layer features
 
 			let canvas = this.getCanvasContainer();
 			this.getCanvasContainer().style.cursor = 'default';
@@ -9076,13 +9070,6 @@ Threebox.prototype = {
 
 			//when object selected
 			let startCoords = [];
-
-			// Variable to hold the current xy coordinates
-			// when 'mousemove' or 'mouseup' occurs.
-			let current;
-
-			// Variable for the draw box element.
-			let box;
 
 			let lngDiff; // difference between cursor and model left corner
 			let latDiff; // difference between cursor and model bottom corner
@@ -9097,12 +9084,16 @@ Threebox.prototype = {
 					y: e.originalEvent.clientY - rect.top - canvas.clientTop
 				};
 			}
-
 			
-			this.unselectObject = function (o) {
+			this.unselectObject = function () {
 				//deselect, reset and return
-				o.selected = false;
+				this.selectedObject.selected = false;
 				this.selectedObject = null;
+			}
+
+			this.outObject = function () {
+				this.overedObject.over = false;
+				this.overedObject = null;
 			}
 
 			this.unselectFeature = function (f) {
@@ -9133,7 +9124,7 @@ Threebox.prototype = {
 
 			}
 
-			this.unoverFeature = function(f) {
+			this.outFeature = function(f) {
 				if (this.overedFeature && typeof this.overedFeature != 'undefined' && this.overedFeature.id != f) {
 					map.setFeatureState(
 						{ source: this.overedFeature.source, sourceLayer: this.overedFeature.sourceLayer, id: this.overedFeature.id },
@@ -9202,7 +9193,7 @@ Threebox.prototype = {
 
 						} else if (this.selectedObject.uuid == nearestObject.uuid) {
 							//deselect, reset and return
-							this.unselectObject(this.selectedObject);
+							this.unselectObject();
 							return;
 						}
 
@@ -9226,7 +9217,7 @@ Threebox.prototype = {
 
 							//if 3D object selected, unselect
 							if (this.selectedObject) {
-								this.unselectObject(this.selectedObject);
+								this.unselectObject();
 							}
 
 							//if not selected yet, select it
@@ -9317,12 +9308,11 @@ Threebox.prototype = {
 				if (intersectionExists) {
 					let nearestObject = Threebox.prototype.findParent3DObject(intersects[0]);
 					if (nearestObject) {
-						this.unoverFeature(this.overedFeature);
+						this.outFeature(this.overedFeature);
 						this.getCanvasContainer().style.cursor = 'pointer';
 						if (!this.selectedObject || nearestObject.uuid != this.selectedObject.uuid) {
-							if (this.overedObject) {
-								this.overedObject.over = false;
-								this.overedObject = null;
+							if (this.overedObject && this.overedObject.uuid != nearestObject.uuid ) {
+								this.outObject();
 							}
 							nearestObject.over = true;
 							this.overedObject = nearestObject;
@@ -9333,14 +9323,14 @@ Threebox.prototype = {
 				}
 				else {
 					//clean the object overed
-					if (this.overedObject) { this.overedObject.over = false; this.overedObject = null; }
+					if (this.overedObject) { this.outObject(); }
 					//now let's check the extrusion layer objects
 					let features = [];
 					if (map.tb.enableSelectingFeatures) {
 						features = this.queryRenderedFeatures(e.point);
 					}
 					if (features.length > 0) {
-						this.unoverFeature(features[0]);
+						this.outFeature(features[0]);
 
 						if (features[0].layer.type == 'fill-extrusion' && typeof features[0].id != 'undefined') {
 							if ((!this.selectedFeature || this.selectedFeature.id != features[0].id)) {
@@ -9415,13 +9405,51 @@ Threebox.prototype = {
 					if (features.length > 0 && this.overedFeature.id != features[0].id) {
 						this.getCanvasContainer().style.cursor = 'default';
 						//only unover when new feature is another
-						this.unoverFeature(features[0]);
+						this.outFeature(features[0]);
 					}
 				}
 			}
 
 			this.onZoomEnd = function (e) {
 				this.tb.zoomLayers.forEach((l) => {this.tb.toggleLayer(l);});
+			}
+
+			let ctrlDown = false;
+			let shiftDown = false;
+			let ctrlKey = 17, cmdKey = 91, shiftKey = 16, sK = 83; dK = 68;
+
+			function onKeyDown(e) {
+
+				if (e.which === ctrlKey || e.which === cmdKey) ctrlDown = true;
+				if (e.which === shiftKey) shiftDown = true;
+				let obj = this.selectedObject;
+				if (shiftDown && e.which === sK && obj) {
+					//shift + sS
+					let dc = utils.toDecimal;
+					if (!obj.help) {
+						let s = obj.modelSize;
+						let sf = 1;
+						if (obj.userData.units !== 'meters') {
+							//if not meters, calculate scale to the current lat
+							sf = utils.projectedUnitsPerMeter(obj.coordinates[1]);
+							if (!sf) { sf = 1; };
+							sf = dc(sf, 7);
+						}
+
+						obj.addHelp("size(m): " + dc((s.x / sf), 3) + " W, " + dc((s.y / sf), 3) + " L, " + dc((s.z / sf), 3) + " H");
+						this.repaint = true;
+					}
+					else {
+						obj.removeHelp();
+					}
+					return false;
+				}
+
+			};
+
+			function onKeyUp (e) {
+				if (e.which == ctrlKey || e.which == cmdKey) ctrlDown = false;
+				if (e.which === shiftKey) shiftDown = false;
 			}
 
 			//listener to the events
@@ -9432,7 +9460,48 @@ Threebox.prototype = {
 			this.on('mousedown', this.onMouseDown);
 			this.on('zoom', this.onZoomEnd);
 
+			document.addEventListener('keydown', onKeyDown.bind(this), true);
+			document.addEventListener('keyup', onKeyUp.bind(this));
+
 		});
+
+	},
+
+	//[jscastro] added property to manage FOV for perspective camera
+	get fov() { return this.options.fov;},
+	set fov(value) {
+		if (this.camera instanceof THREE.PerspectiveCamera && this.options.fov !== value) {
+			this.map.transform.fov = value;
+			this.camera.fov = this.map.transform.fov;
+			this.cameraSync.setupCamera();
+			this.map.repaint = true;
+			this.options.fov = value;
+		}
+
+	},
+
+	//[jscastro] added property to manage camera type
+	get orthographic() { return this.options.orthographic; },
+	set orthographic(value) {
+		const h = this.map.getCanvas().clientHeight;
+		const w = this.map.getCanvas().clientWidth;
+		if (value) {
+			this.map.transform.fov = 0;
+			this.camera = new THREE.OrthographicCamera(w / - 2, w / 2, h / 2, h / - 2, 0.1, 1e21);
+		} else {
+			this.map.transform.fov = this.fov;
+			this.camera = new THREE.PerspectiveCamera(this.map.transform.fov, w / h, 0.1, 1e21);
+		}
+		this.camera.layers.enable(0);
+		this.camera.layers.enable(1);
+		// The CameraSync object will keep the Mapbox and THREE.js camera movements in sync.
+		// It requires a world group to scale as we zoom in. Rotation is handled in the camera's
+		// projection matrix itself (as is field of view and near/far clipping)
+		// It automatically registers to listen for move events on the map so we don't need to do that here
+		this.cameraSync = new CameraSync(this.map, this.camera, this.world);
+		this.map.repaint = true; // repaint the map
+		this.options.orthographic = value;
+
 	},
 
 	// Objects
@@ -9656,11 +9725,11 @@ Threebox.prototype = {
 
 		// Render the scene and repaint the map
 		this.renderer.state.reset();
+		if (this.options.realSunlight) this.renderer.state.setBlending(THREE.NormalBlending);
 		this.renderer.render(this.scene, this.camera);
 
 		// [jscastro] Render any label
 		this.labelRenderer.render(this.scene, this.camera);
-
 		if (this.options.passiveRendering === false) this.map.triggerRepaint();
 	},
 
@@ -9681,6 +9750,8 @@ Threebox.prototype = {
 	},
 
 	remove: function (obj) {
+		if (this.map.selectedObject && obj.uuid == this.map.selectedObject.uuid) this.map.unselectObject();
+		if (this.map.draggedObject && obj.uuid == this.map.draggedObject.uuid) this.map.draggedObject = null;
 		if (obj.dispose) obj.dispose();
 		this.world.remove(obj);
 		obj = null;
@@ -9877,15 +9948,15 @@ Threebox.prototype = {
 	},
 
 	setDefaultView: function (options, defOptions) {
-		options.bbox = options.bbox || defOptions.enableSelectingObjects;
-		options.tooltip = options.tooltip || defOptions.enableTooltips;
+		options.bbox = options.bbox && defOptions.enableSelectingObjects;
+		options.tooltip = options.tooltip && defOptions.enableTooltips;
 	},
 
 	memory: function () { return this.renderer.info.memory },
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.1.3',
+	version: '2.1.7',
 
 }
 
@@ -9900,6 +9971,8 @@ var defaultOptions = {
 	enableRotatingObjects: false,
 	enableTooltips: false,
 	multiLayer: false,
+	orthographic: false,
+	fov: ThreeboxConstants.FOV_DEGREES
 }
 module.exports = exports = Threebox;
 
@@ -10116,18 +10189,35 @@ AnimationManager.prototype = {
 				this.translateX(c.x);
 				this.translateY(c.y);
 				this.translateZ(c.z);
+				options.position = this.coordinates;
 			}
 
-			if (r) this.rotation.set(r[0], r[1], r[2]);
+			if (r) {
+				this.rotation.set(r[0], r[1], r[2]);
+				options.rotation = new THREE.Vector3(r[0], r[1], r[2]);
+			}
 
-			if (s) this.scale.set(s[0], s[1], s[2]);
+			if (s) {
+				this.scale.set(s[0], s[1], s[2]);
+				options.scale = this.scale;
+			}
 
-			if (q) this.quaternion.setFromAxisAngle(q[0], q[1]);
+			if (q) {
+				this.quaternion.setFromAxisAngle(q[0], q[1]);
+				options.rotation = q[0].multiplyScalar(q[1]);
+			}
 
-			if (w) this.position.copy(w);
+			if (w) {
+				this.position.copy(w);
+				let p = utils.unprojectFromWorld(w);
+				this.coordinates = options.position = p;
+			} 
 
 			this.updateMatrixWorld();
-			tb.map.repaint = true
+			tb.map.repaint = true;
+			// fire the ObjectChanged event to notify UI object change
+			this.dispatchEvent(new CustomEvent('ObjectChanged', { detail: { object: this, action: { position: options.position, rotation: options.rotation, scale: options.scale } }, bubbles: true, cancelable: true }));
+
 		};
 
 		//[jscastro] play default animation
@@ -10358,6 +10448,7 @@ const utils = require("../utils/utils.js");
 const ThreeboxConstants = require("../utils/constants.js");
 
 function CameraSync(map, camera, world) {
+    //    console.log("CameraSync constructor");
     this.map = map;
     this.camera = camera;
     this.active = true;
@@ -10371,9 +10462,9 @@ function CameraSync(map, camera, world) {
 
     // set up basic camera state
     this.state = {
-        fov: ThreeboxConstants.FOV,
         translateCenter: new THREE.Matrix4().makeTranslation(ThreeboxConstants.WORLD_SIZE / 2, -ThreeboxConstants.WORLD_SIZE / 2, 0),
-        worldSizeRatio: ThreeboxConstants.TILE_SIZE / ThreeboxConstants.WORLD_SIZE
+        worldSizeRatio: ThreeboxConstants.TILE_SIZE / ThreeboxConstants.WORLD_SIZE,
+        worldSize: ThreeboxConstants.TILE_SIZE * this.map.transform.scale
     };
 
     // Listen for move events from the map and update the Three.js camera
@@ -10391,22 +10482,24 @@ function CameraSync(map, camera, world) {
 
 CameraSync.prototype = {
     setupCamera: function () {
-
+        //console.log("setupCamera");
+        this.state.fov = this.map.transform._fov;
         const t = this.map.transform;
         this.camera.aspect = t.width / t.height; //bug fixed, if aspect is not reset raycast will fail on map resize
         this.camera.updateProjectionMatrix();
-        const halfFov = this.state.fov / 2;
+        this.halfFov = this.state.fov / 2;
         const offset = { x: t.width / 2, y: t.height / 2 };//t.centerOffset;
-        const cameraToCenterDistance = 0.5 / Math.tan(halfFov) * t.height;
+        const cameraToCenterDistance = 0.5 / Math.tan(this.halfFov) * t.height;
         const maxPitch = t._maxPitch * Math.PI / 180;
-        const acuteAngle = Math.PI / 2 - maxPitch;
+        this.acuteAngle = Math.PI / 2 - maxPitch;
 
         this.state.cameraToCenterDistance = cameraToCenterDistance;
         this.state.offset = offset;
-        this.state.cameraTranslateZ = new THREE.Matrix4().makeTranslation(0, 0, cameraToCenterDistance);
-        this.state.maxFurthestDistance = cameraToCenterDistance * 0.95 * (Math.cos(acuteAngle) * Math.sin(halfFov) / Math.sin(Math.max(0.01, Math.min(Math.PI - 0.01, acuteAngle - halfFov))) + 1);
+        this.state.cameraTranslateZ = new THREE.Matrix4().makeTranslation(0, 0, this.state.cameraToCenterDistance);
+        this.state.maxFurthestDistance = this.state.cameraToCenterDistance * 0.95 * (Math.cos(this.acuteAngle) * Math.sin(this.halfFov) / Math.sin(Math.max(0.01, Math.min(Math.PI - 0.01, this.acuteAngle - this.halfFov))) + 1);
 
         this.updateCamera();
+
     },
 
     updateCamera: function (ev) {
@@ -10415,25 +10508,32 @@ CameraSync.prototype = {
             return;
         }
 
-        // Furthest distance optimized by @satorbs
-        // https://github.com/satorbs/threebox/blob/master/src/camera/CameraSync.js
+        // Furthest distance optimized by @jscastro76
         const t = this.map.transform;
         const groundAngle = Math.PI / 2 + t._pitch;
-        const fovAboveCenter = this.state.fov * (0.5 + this.state.offset.y / t.height);
-        const topHalfSurfaceDistance = Math.sin(fovAboveCenter) * this.state.cameraToCenterDistance / Math.sin(utils.clamp(Math.PI - groundAngle - fovAboveCenter, 0.01, Math.PI - 0.01));
+        this.cameraToCenterDistance = 0.5 / Math.tan(this.halfFov) * t.height;
+        this.state.cameraTranslateZ = new THREE.Matrix4().makeTranslation(0, 0, this.cameraToCenterDistance);
+        const topHalfSurfaceDistance = Math.sin(this.halfFov) * this.state.cameraToCenterDistance / Math.sin(Math.PI - groundAngle - this.halfFov);
+        const pitchAngle = Math.cos((Math.PI / 2) - t._pitch); //pitch seems to influence heavily the depth calculation and cannot be more than 60 = PI/3
 
-        // Calculate z distance of the farthest fragment that should be rendered.
-        const furthestDistance = Math.cos(Math.PI / 2 - t._pitch) * topHalfSurfaceDistance + this.state.cameraToCenterDistance;
+        // Calculate z distance of the farthest fragment that should be rendered. 
+        const furthestDistance = pitchAngle * topHalfSurfaceDistance + this.state.cameraToCenterDistance;
 
         // Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
-        const farZ = Math.min(furthestDistance * 1.01, this.state.maxFurthestDistance);
+        const farZ = furthestDistance * 1.01;
 
         // someday @ansis set further near plane to fix precision for deckgl,so we should fix it to use mapbox-gl v1.3+ correctly
         // https://github.com/mapbox/mapbox-gl-js/commit/5cf6e5f523611bea61dae155db19a7cb19eb825c#diff-5dddfe9d7b5b4413ee54284bc1f7966d
-        const nearZ = (t.height / 50);
+        const nz = (t.height / 50); //min near z as coded by @ansis
+        const nearZ = Math.max(nz * pitchAngle, nz); //on changes in the pitch nz could be too low
 
-        this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, t.width / t.height, nearZ, farZ);
-
+        const h = t.height;
+        const w = t.width;
+        if (this.camera instanceof THREE.OrthographicCamera) {
+            this.camera.projectionMatrix = utils.makeOrthographicMatrix(w / - 2, w / 2, h / 2, h / - 2, nearZ, farZ);
+        } else {
+            this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, w / h, nearZ, farZ);
+        }
         // Unlike the Mapbox GL JS camera, separate camera translation and rotation out into its world matrix
         // If this is applied directly to the projection matrix, it will work OK but break raycasting
         let cameraWorldMatrix = this.calcCameraMatrix(t._pitch, t.angle);
@@ -10458,9 +10558,8 @@ CameraSync.prototype = {
             .premultiply(scale)
             .premultiply(translateMap)
 
-
-        // utils.prettyPrintMatrix(this.camera.projectionMatrix.elements);
     },
+
 
     calcCameraMatrix(pitch, angle, trz) {
         const t = this.map.transform;
@@ -10798,6 +10897,8 @@ function Object3D(opt) {
 	userScaleGroup.setAnchor(opt.anchor);
 	//[jscastro] override the center calculated if the object has adjustments
 	userScaleGroup.setCenter(opt.adjustment);
+	//[jscastro] if the object is excluded from raycasting
+	userScaleGroup.raycasted = opt.raycasted;
 	userScaleGroup.visibility = true;
 
 	return userScaleGroup
@@ -10901,7 +11002,7 @@ class BuildingShadows {
 		gl.useProgram(this.program);
 		const source = this.map.style.sourceCaches['composite'];
 		const coords = source.getVisibleCoordinates().reverse();
-		const buildingsLayer = map.getLayer(this.buildingsLayerId);
+		const buildingsLayer = this.map.getLayer(this.buildingsLayerId);
 		const context = this.map.painter.context;
 		const { lng, lat } = this.map.getCenter();
 		const pos = this.tb.getSunPosition(this.tb.lightDateTime, [lng, lat]);
@@ -12051,13 +12152,8 @@ function loadObj(options, cb, promise) {
 
 	if (options === undefined) return console.error("Invalid options provided to loadObj()");
 	options = utils._validate(options, Objects.prototype._defaults.loadObj);
-	this.loaded = false;
 
-	const modelComplete = (m) => {
-		console.log("Model complete!", m);
-		if (--remaining === 0) this.loaded = true;
-	}
-	var loader;
+	let loader;
 	if (!options.type) { options.type = 'mtl'; };
 	//[jscastro] support other models
 	switch (options.type) {
@@ -12066,7 +12162,8 @@ function loadObj(options, cb, promise) {
 			loader = objLoader;
 			break;
 		case "gltf":
-			// [jscastro] Support for GLTF
+		case "glb":
+			// [jscastro] Support for GLTF/GLB
 			loader = gltfLoader;
 			break;
 		case "fbx":
@@ -12097,6 +12194,7 @@ function loadObj(options, cb, promise) {
 					obj = obj.children[0];
 					break;
 				case "gltf":
+				case "glb":
 				case "dae":
 					animations = obj.animations;
 					obj = obj.scene;
@@ -12120,6 +12218,8 @@ function loadObj(options, cb, promise) {
 			userScaleGroup.setAnchor(options.anchor);
 			//[jscastro] override the center calculated if the object has adjustments
 			userScaleGroup.setCenter(options.adjustment);
+			//[jscastro] if the object is excluded from raycasting
+			userScaleGroup.raycasted = options.raycasted;
 			//[jscastro] return to cache
 			promise(userScaleGroup);
 			//[jscastro] then return to the client-side callback
@@ -25235,6 +25335,7 @@ Objects.prototype = {
 		const labelName = "label";
 		const tooltipName = "tooltip";
 		const helpName = "help";
+		const shadowPlane = "shadowPlane";
 
 		if (isStatic) {
 
@@ -25285,14 +25386,15 @@ Objects.prototype = {
 
 				// CSS2DObjects could bring an specific vertical positioning to correct in units
 				if (obj.userData.topMargin && obj.userData.feature) {
-					lnglat[2] += (obj.userData.feature.properties.height - (obj.userData.feature.properties.base_height || obj.userData.feature.properties.min_height || 0)) * obj.userData.topMargin;
+					lnglat[2] += ((obj.userData.feature.properties.height || 0) - (obj.userData.feature.properties.base_height || obj.userData.feature.properties.min_height || 0)) * (obj.userData.topMargin || 0);
 				}
 
 				obj.coordinates = lnglat;
 				obj.set({ position: lnglat });
 				//Each time the object is positioned, set modelHeight property and project the floor
 				obj.modelHeight = obj.coordinates[2] || 0;
-				if (obj.boxGroup) obj.setBoundingBoxShadowFloor();
+				obj.setBoundingBoxShadowFloor();
+				obj.setCastShadowFloor();
 				return obj;
 
 			}
@@ -25426,7 +25528,7 @@ Objects.prototype = {
 
 			//[jscastro] added method to position the shadow box on the floor depending the object height
 			obj.setBoundingBoxShadowFloor = function () {
-				if (obj.boundingBox) {
+				if (obj.boxGroup && obj.boundingBox) {
 					obj.boundingBoxShadow.box.max.z = -obj.modelHeight;
 					obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
 				}
@@ -25532,7 +25634,7 @@ Objects.prototype = {
 						if (obj.model) {
 							obj.model.traverse(function (c) {
 								if (c.type == "Mesh" || c.type == "SkinnedMesh") {
-									if (_value) {
+									if (_value && obj.raycasted) {
 										c.layers.enable(0); //this makes the meshes visible for raycast
 									} else {
 										c.layers.disable(0); //this makes the meshes invisible for raycast
@@ -25621,52 +25723,64 @@ Objects.prototype = {
 				}
 			}
 
+			//[jscastro] added property for help
+			Object.defineProperty(obj, 'shadowPlane', {
+				get() { return obj.getObjectByName(shadowPlane); }
+			});
+
 			let _castShadow = false;
 			//[jscastro] added property for traverse an object to cast a shadow
 			Object.defineProperty(obj, 'castShadow', {
 				get() { return _castShadow; },
 				set(value) {
-					if (_castShadow != value) {
-						obj.model.traverse(function (c) {
-							if (c.isMesh) c.castShadow = true;
-						});
-						if (value) {
-							// we add the shadow plane automatically 
-							const s = obj.modelSize;
-							const sizes = [s.x, s.y, s.z];
-							const planeSize = Math.max(...sizes) * 10;
-							const planeGeo = new THREE.PlaneBufferGeometry(planeSize, planeSize);
-							const planeMat = new THREE.ShadowMaterial();
-							planeMat.opacity = 0.5;
-							let plane = new THREE.Mesh(planeGeo, planeMat);
-							plane.layers.enable(1); plane.layers.disable(0); // it makes the object invisible for the raycaster
-							plane.receiveShadow = value;
-							obj.add(plane);
-						} else {
-							// or we remove it 
-							obj.traverse(function (c) {
-								if (c.isMesh && c.material instanceof THREE.ShadowMaterial)
-									obj.remove(c);	
-							});
+					if (!obj.model || _castShadow === value) return;
 
-						}
-						_castShadow = value;
+					obj.model.traverse(function (c) {
+						if (c.isMesh) c.castShadow = true;
+					});
+					if (value) {
+						// we add the shadow plane automatically 
+						const s = obj.modelSize;
+						const sizes = [s.x, s.y, s.z];
+						const planeSize = Math.max(...sizes) * 10;
+						const planeGeo = new THREE.PlaneBufferGeometry(planeSize, planeSize);
+						const planeMat = new THREE.ShadowMaterial();
+						planeMat.opacity = 0.5;
+						let plane = new THREE.Mesh(planeGeo, planeMat);
+						plane.name = shadowPlane;
+						plane.layers.enable(1); plane.layers.disable(0); // it makes the object invisible for the raycaster
+						plane.receiveShadow = value;
+						obj.add(plane);
+					} else {
+						// or we remove it 
+						obj.traverse(function (c) {
+							if (c.isMesh && c.material instanceof THREE.ShadowMaterial)
+								obj.remove(c);
+						});
+
 					}
+					_castShadow = value;
+
 				}
 			})
+
+			//[jscastro] added method to position the shadow box on the floor depending the object height
+			obj.setCastShadowFloor = function () {
+				if (obj.castShadow) {
+					obj.shadowPlane.position.z = -obj.modelHeight;
+				}
+			}
 
 			let _receiveShadow = false;
 			//[jscastro] added property for traverse an object to receive a shadow
 			Object.defineProperty(obj, 'receiveShadow', {
 				get() { return _receiveShadow; },
 				set(value) {
-					if (_receiveShadow != value) {
-
-						obj.model.traverse(function (c) {
-							if (c.isMesh) c.receiveShadow = true;
-						});
-						_receiveShadow = value;
-					}
+					if (!obj.model || _receiveShadow === value) return;
+					obj.model.traverse(function (c) {
+						if (c.isMesh) c.receiveShadow = true;
+					});
+					_receiveShadow = value;
 				}
 			})
 
@@ -25675,38 +25789,36 @@ Objects.prototype = {
 			Object.defineProperty(obj, 'wireframe', {
 				get() { return _wireframe; },
 				set(value) {
-					if (_wireframe != value) {
-						if (!obj.model) return;
-						obj.model.traverse(function (c) {
-							if (c.type == "Mesh" || c.type == "SkinnedMesh") {
-								let materials = [];
-								if (!Array.isArray(c.material)) {
-									materials.push(c.material);
-								} else {
-									materials = c.material;
-								}
-								if (value) {
-									c.userData.materials = materials;
-									c.material = Objects.prototype._defaults.materials.wireframeMaterial;
-									c.material.opacity = (value ? 0.5 : 1);
-									c.material.wireframe = value;
-									c.material.transparent = value;
+					if (!obj.model || _wireframe === value) return;
+					obj.model.traverse(function (c) {
+						if (c.type == "Mesh" || c.type == "SkinnedMesh") {
+							let materials = [];
+							if (!Array.isArray(c.material)) {
+								materials.push(c.material);
+							} else {
+								materials = c.material;
+							}
+							if (value) {
+								c.userData.materials = materials;
+								c.material = Objects.prototype._defaults.materials.wireframeMaterial;
+								c.material.opacity = (value ? 0.5 : 1);
+								c.material.wireframe = value;
+								c.material.transparent = value;
 
-								} else {
-									let mc = c.userData.materials;
-									c.material = (mc.length > 1 ? mc : mc[0]);
-									c.userData.materials = null;
-								}
-								if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
+							} else {
+								let mc = c.userData.materials;
+								c.material = (mc.length > 1 ? mc : mc[0]);
+								c.userData.materials = null;
 							}
-							if (c.type == "LineSegments") {
-								c.layers.disableAll();
-							}
-						});
-						_wireframe = value;
-						// Dispatch new event WireFramed
-						obj.dispatchEvent(new CustomEvent('Wireframed', { detail: obj, bubbles: true, cancelable: true }));
-					}
+							if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
+						}
+						if (c.type == "LineSegments") {
+							c.layers.disableAll();
+						}
+					});
+					_wireframe = value;
+					// Dispatch new event WireFramed
+					obj.dispatchEvent(new CustomEvent('Wireframed', { detail: obj, bubbles: true, cancelable: true }));
 				}
 			})
 
@@ -25726,13 +25838,10 @@ Objects.prototype = {
 					}
 					else {
 						if (obj.boxGroup) {
-							obj.boundingBox.parent.visible = false;
-							obj.boundingBox.layers.disable(1);
-							obj.boundingBoxShadow.layers.disable(1);
-							obj.boundingBox.material = Objects.prototype._defaults.materials.boxNormalMaterial;
-							obj.remove(obj.boxGroup);
+							obj.remove(obj.boxGroup); //remove the box group
 						}
 						if (obj.label && !obj.label.alwaysVisible) obj.label.visible = false;
+						obj.removeHelp();
 					}
 					if (obj.tooltip) obj.tooltip.visible = value;
 					//only fire the event if value is different
@@ -25743,6 +25852,21 @@ Objects.prototype = {
 					}
 				}
 			})
+
+			let _raycasted = true;
+			//[jscastro] added property for including/excluding an object from raycast
+			Object.defineProperty(obj, 'raycasted', {
+				get() { return _raycasted; },
+				set(value) {
+					if (!obj.model || _raycasted === value) return;
+					obj.model.traverse(function (c) {
+						if (c.type == "Mesh" || c.type == "SkinnedMesh") {
+							if (!value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
+						}
+					});
+					_raycasted = value;
+				}
+			});
 
 			let _over = false;
 			//[jscastro] added property for over state
@@ -25767,12 +25891,8 @@ Objects.prototype = {
 					}
 					else {
 						if (!obj.selected) {
-							if (obj.boundingBox) {
-								obj.boundingBox.parent.visible = false;
-								obj.boundingBox.layers.disable(1);
-								obj.boundingBoxShadow.layers.disable(1);
-								obj.boundingBox.material = Objects.prototype._defaults.materials.boxNormalMaterial;
-								obj.remove(obj.boxGroup);
+							if (obj.boxGroup) {
+								obj.remove(obj.boxGroup); //remove the box group
 								if (obj.tooltip && !obj.tooltip.custom) obj.removeTooltip();
 							}
 							if (obj.label && !obj.label.alwaysVisible) { obj.label.visible = false; }
@@ -25828,7 +25948,6 @@ Objects.prototype = {
 			Object.defineProperty(obj, 'modelSize', {
 				get() {
 					_modelSize = obj.getSize();
-					//console.log(_modelSize);
 					return _modelSize;
 				},
 				set(value) {
@@ -26078,8 +26197,9 @@ Objects.prototype = {
 			units: 'scene',
 			material: 'MeshBasicMaterial',
 			anchor: 'bottom-left',
-			bbox: false,
-			tooltip: false
+			bbox: true,
+			tooltip: true,
+			raycasted: true
 		},
 
 		label: {
@@ -26104,8 +26224,9 @@ Objects.prototype = {
 			units: 'scene',
 			material: 'MeshBasicMaterial',
 			anchor: 'center',
-			bbox: false,
-			tooltip: false
+			bbox: true,
+			tooltip: true,
+			raycasted: true
 		},
 
 		loadObj: {
@@ -26116,16 +26237,18 @@ Objects.prototype = {
 			rotation: 0,
 			defaultAnimation: 0,
 			anchor: 'bottom-left',
-			bbox: false,
-			tooltip: false
+			bbox: true,
+			tooltip: true,
+			raycasted: true
 		},
 
 		Object3D: {
 			obj: null,
 			units: 'scene',
 			anchor: 'bottom-left',
-			bbox: false,
-			tooltip: false
+			bbox: true,
+			tooltip: true, 
+			raycasted: true
 		},
 
 		extrusion: {
@@ -26137,9 +26260,9 @@ Objects.prototype = {
 			rotation: 0,
 			units: 'scene',
 			anchor: 'center',
-			point: [0, 0],
-			bbox: false,
-			tooltip: false
+			bbox: true,
+			tooltip: true,
+			raycasted: true
 		}
 	},
 
@@ -26168,7 +26291,7 @@ function Sphere(opt) {
 	let mat = material(opt)
 	let output = new THREE.Mesh(geometry, mat);
 	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
-	return new Object3D({ obj: output, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip });
+	return new Object3D({ obj: output, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip, raycasted: opt.raycasted });
 
 }
 
@@ -26222,7 +26345,7 @@ function tube(opt, world){
 	let mat = material(opt);
 	let obj = new THREE.Mesh(geom, mat);
 	//[jscastro] we convert it in Object3D to add methods, bounding box, model, tooltip...
-	return new Object3D({ obj: obj, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip });
+	return new Object3D({ obj: obj, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip, raycasted: opt.raycasted });
 }
 
 tube.prototype = {
@@ -27457,19 +27580,25 @@ Ba;k.WebGLRenderTargetCube=function(a,b,c){console.warn("THREE.WebGLRenderTarget
 return new Ta(a)};k.ZeroCurvatureEnding=2400;k.ZeroFactor=200;k.ZeroSlopeEnding=2401;k.ZeroStencilOp=0;k.sRGBEncoding=3001;Object.defineProperty(k,"__esModule",{value:!0})});
 
 },{}],95:[function(require,module,exports){
-const WORLD_SIZE = 1024000;
-const MERCATOR_A = 6378137.0;
-const FOV = Math.atan(3/4);
+const WORLD_SIZE = 1024000; //TILE_SIZE * 2000
+const MERCATOR_A = 6378137.0; // 900913 projection property. (Deprecated) Replaced by EARTH_RADIUS
+const FOV_ORTHO = 0.1 / 180 * Math.PI; //Mapbox doesn't accept 0 as FOV
+const FOV = Math.atan(3 / 4); //from Mapbox https://github.com/mapbox/mapbox-gl-js/blob/main/src/geo/transform.js#L93
+const EARTH_RADIUS = 6371008.8; //from Mapbox  https://github.com/mapbox/mapbox-gl-js/blob/0063cbd10a97218fb6a0f64c99bf18609b918f4c/src/geo/lng_lat.js#L11
+const EARTH_CIRCUMFERENCE_EQUATOR = 40075017 //from Mapbox https://github.com/mapbox/mapbox-gl-js/blob/0063cbd10a97218fb6a0f64c99bf18609b918f4c/src/geo/lng_lat.js#L117
 
 module.exports = exports = {
     WORLD_SIZE: WORLD_SIZE,
-    PROJECTION_WORLD_SIZE: WORLD_SIZE / (MERCATOR_A * Math.PI * 2),
-    MERCATOR_A: MERCATOR_A, // 900913 projection property
+    PROJECTION_WORLD_SIZE: WORLD_SIZE / (EARTH_RADIUS * Math.PI * 2),
+    MERCATOR_A: EARTH_RADIUS, 
     DEG2RAD: Math.PI / 180,
     RAD2DEG: 180 / Math.PI,
-    EARTH_CIRCUMFERENCE: 40075000, // In meters
+    EARTH_RADIUS: EARTH_RADIUS,
+    EARTH_CIRCUMFERENCE: 2 * Math.PI * EARTH_RADIUS, //40075000, // In meters
+    EARTH_CIRCUMFERENCE_EQUATOR: EARTH_CIRCUMFERENCE_EQUATOR, 
+    FOV_ORTHO: FOV_ORTHO, // closest to 0
     FOV: FOV, // Math.atan(3/4) radians. If this value is changed, FOV_DEGREES must be calculated
-    FOV_DEGREES: FOV * 360 / (Math.PI * 2), // Math.atan(3/4) in degrees
+    FOV_DEGREES: FOV * 180 / Math.PI, // Math.atan(3/4) in degrees
     TILE_SIZE: 512
 }
 },{}],96:[function(require,module,exports){
@@ -27882,6 +28011,29 @@ var utils = {
 		return out;
 	},
 
+	//[jscastro] new orthographic matrix calculations https://en.wikipedia.org/wiki/Orthographic_projection and validated with https://bit.ly/3rPvB9Y
+	makeOrthographicMatrix: function (left, right, top, bottom, near, far) {
+		var out = new THREE.Matrix4();
+
+		const w = 1.0 / (right - left);
+		const h = 1.0 / (top - bottom);
+		const p = 1.0 / (far - near);
+
+		const x = (right + left) * w;
+		const y = (top + bottom) * h;
+		const z = near * p;
+
+		var newMatrix = [
+			2 * w, 0, 0, 0,
+			0, 2 * h, 0, 0,
+			0, 0, - 1 * p, 0,
+			- x, -y, -z, 1
+		]
+
+		out.elements = newMatrix
+		return out;
+	},
+
 	//gimme radians
 	radify: function (deg) {
 
@@ -27947,6 +28099,14 @@ var utils = {
 
 	projectedUnitsPerMeter: function (latitude) {
 		return Math.abs(Constants.WORLD_SIZE / Math.cos(Constants.DEG2RAD * latitude) / Constants.EARTH_CIRCUMFERENCE);
+	},
+
+	_circumferenceAtLatitude: function (latitude) {
+		return Constants.EARTH_CIRCUMFERENCE * Math.cos(latitude * Math.PI / 180);
+	},
+
+	mercatorZfromAltitude: function (altitude, lat) {
+		return altitude / this._circumferenceAtLatitude(lat);
 	},
 
 	_scaleVerticesToMeters: function (centerLatLng, vertices) {
@@ -28109,7 +28269,6 @@ var utils = {
 	},
 
 	// retrieve object parameters from an options object
-
 	types: {
 
 		rotation: function (r, currentRotation) {
@@ -28165,7 +28324,7 @@ var utils = {
 			const val2 = obj2[key];
 			const areObjects = this.isObject(val1) && this.isObject(val2);
 			if (
-				areObjects && !deepEqual(val1, val2) ||
+				areObjects && !equal(val1, val2) ||
 				!areObjects && val1 !== val2
 			) {
 				return false;
@@ -28177,6 +28336,36 @@ var utils = {
 
 	isObject: function (object) {
 		return object != null && typeof object === 'object';
+	},
+
+	curveToLine: (curve, params) => {
+		let { width, color } = params;
+		let geometry = new THREE.BufferGeometry().setFromPoints(
+			curve.getPoints(100)
+		);
+
+		let material = new THREE.LineBasicMaterial({
+			color: color,
+			linewidth: width,
+		});
+
+		let line = new THREE.Line(geometry, material);
+
+		return line;
+	},
+
+	curvesToLines: (curves) => {
+		var colors = [0xff0000, 0x1eff00, 0x2600ff];
+		var lines = curves.map((curve, i) => {
+			let params = {
+				width: 3,
+				color: colors[i] || 'purple',
+			};
+			let curveline = curveToLine(curve, params);
+
+			return curveline;
+		});
+		return lines;
 	},
 
 	_validate: function (userInputs, defaults) {

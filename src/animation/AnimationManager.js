@@ -209,18 +209,35 @@ AnimationManager.prototype = {
 				this.translateX(c.x);
 				this.translateY(c.y);
 				this.translateZ(c.z);
+				options.position = this.coordinates;
 			}
 
-			if (r) this.rotation.set(r[0], r[1], r[2]);
+			if (r) {
+				this.rotation.set(r[0], r[1], r[2]);
+				options.rotation = new THREE.Vector3(r[0], r[1], r[2]);
+			}
 
-			if (s) this.scale.set(s[0], s[1], s[2]);
+			if (s) {
+				this.scale.set(s[0], s[1], s[2]);
+				options.scale = this.scale;
+			}
 
-			if (q) this.quaternion.setFromAxisAngle(q[0], q[1]);
+			if (q) {
+				this.quaternion.setFromAxisAngle(q[0], q[1]);
+				options.rotation = q[0].multiplyScalar(q[1]);
+			}
 
-			if (w) this.position.copy(w);
+			if (w) {
+				this.position.copy(w);
+				let p = utils.unprojectFromWorld(w);
+				this.coordinates = options.position = p;
+			} 
 
 			this.updateMatrixWorld();
-			tb.map.repaint = true
+			tb.map.repaint = true;
+			// fire the ObjectChanged event to notify UI object change
+			this.dispatchEvent(new CustomEvent('ObjectChanged', { detail: { object: this, action: { position: options.position, rotation: options.rotation, scale: options.scale } }, bubbles: true, cancelable: true }));
+
 		};
 
 		//[jscastro] play default animation
