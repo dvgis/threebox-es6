@@ -253,7 +253,7 @@ var utils = {
 	//flatten an array of Vector3's into a shallow array of values in x-y-z order, for bufferGeometry
 	flattenVectors(vectors) {
 		var flattenedArray = [];
-		for (vertex of vectors) {
+		for (var vertex of vectors) {
 			flattenedArray.push(vertex.x, vertex.y, vertex.z);
 		}
 		return flattenedArray
