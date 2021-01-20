@@ -26,9 +26,9 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 - #180 Fixed scale objects not being rescaled if they are being animated  
 
 #### :pencil: Documentation
-- Updated [documentation](/docs/Threebox.md) (`ObjectChanged` and other events)
+- Updated [documentation](/docs/Threebox.md) (`ObjectChanged`, `setFixedZoom`, `setObjectScale`, `setScale`, `modelHeight`, `unitsPerMeter` and other events)
 - Updated [README.md](/).
-- Updated [Examples](/examples) documentation. 
+- Updated [Examples](/examples) documentation (`19-fixedzoom.html`). 
  
 <br>
 
