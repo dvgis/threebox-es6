@@ -41,7 +41,7 @@ npm i threebox-plugin
 
 |Customizable FOV|Geojson and Points Extrusions
 |---------|-------
-|<img alt="threebox" src="https://i.ibb.co/x53Hck6/Customize-FOV.gif" width="100%">|<img alt="threebox" src="https://i.ibb.co/WxrFtxY/extrusions.gif" width="100%">
+|<img alt="threebox" src="https://i.postimg.cc/43Lh7vvR/Customizable-FOV.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/50KqJdKv/extrusions.gif" width="100%">
 
 |Models built-in shadows|Sunlight illumination for a given datetime and lnglat
 |---------|-------
