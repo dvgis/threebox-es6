@@ -28,7 +28,7 @@
     },
     "devDependencies": {
         "browserify": "^16.5.2",
-        "tape": "^4.13.3",
+        "tape": "^5.1.1",
         "uglifyify": "^5.0.2",
         "watchify": "^3.11.1"
     },
