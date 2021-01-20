@@ -97,22 +97,8 @@ Objects.prototype = {
 			// Bestow this mesh with animation superpowers and keeps track of its movements in the global animation queue			
 			root.animationManager.enroll(obj);
 
+			// Place an object on the map at the given lnglat 
 			obj.setCoords = function (lnglat) {
-
-				/** Place the given object on the map, centered around the provided longitude and latitude
-					The object's internal coordinates are assumed to be in meter-offset format, meaning
-					1 unit represents 1 meter distance away from the provided coordinate.
-				*/
-
-				// If object already added, scale the model so that its units are interpreted as meters at the given latitude
-				//[jscastro] this method could be needed more times
-				if (obj.userData.units === 'meters') {
-					var s = utils.projectedUnitsPerMeter(lnglat[1]);
-					if (!s) { s = 1; };
-					s = Number(s.toFixed(7)); //this precision level is to avoid deviations on the size of the same object  
-					if (typeof s === 'number') obj.scale.set(s, s, s);
-					else obj.scale.set(s.x, s.y, s.z); 	//initialize the object size and it will rescale the rest
-				}
 
 				// CSS2DObjects could bring an specific vertical positioning to correct in units
 				if (obj.userData.topMargin && obj.userData.feature) {
@@ -121,10 +107,6 @@ Objects.prototype = {
 
 				obj.coordinates = lnglat;
 				obj.set({ position: lnglat });
-				//Each time the object is positioned, set modelHeight property and project the floor
-				obj.modelHeight = obj.coordinates[2] || 0;
-				obj.setBoundingBoxShadowFloor();
-				obj.setCastShadowFloor();
 				return obj;
 
 			}
@@ -258,27 +240,29 @@ Objects.prototype = {
 
 			//[jscastro] added method to position the shadow box on the floor depending the object height
 			obj.setBoundingBoxShadowFloor = function () {
-				if (obj.boxGroup && obj.boundingBox) {
-					obj.boundingBoxShadow.box.max.z = -obj.modelHeight;
-					obj.boundingBoxShadow.box.min.z = -obj.modelHeight;
+				if (obj.boundingBoxShadow) {
+					let h = -obj.modelHeight, r = obj.rotation, o = obj.boundingBoxShadow;
+					o.box.max.z = o.box.min.z = h;
+					o.rotation.y = r.y;
+					o.rotation.x = -r.x;
 				}
 			}
 
 			//[jscastro] Set the positional and pivotal anchor automatically from string param  
 			obj.setAnchor = function (anchor) {
-				const box = obj.box3();
-				const size = box.getSize(new THREE.Vector3());
-				const center = box.getCenter(new THREE.Vector3());
+				const b = obj.box3();
+				//const size = b.getSize(new THREE.Vector3());
+				const c = b.getCenter(new THREE.Vector3());
 				obj.none = { x: 0, y: 0, z: 0 };
-				obj.center = { x: center.x, y: center.y, z: box.min.z };
-				obj.bottom = { x: center.x, y: box.max.y, z: box.min.z };
-				obj.bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
-				obj.bottomRight = { x: box.min.x, y: box.max.y, z: box.min.z };
-				obj.top = { x: center.x, y: box.min.y, z: box.min.z };
-				obj.topLeft = { x: box.max.x, y: box.min.y, z: box.min.z };
-				obj.topRight = { x: box.min.x, y: box.min.y, z: box.min.z };
-				obj.left = { x: box.max.x, y: center.y, z: box.min.z };
-				obj.right = { x: box.min.x, y: center.y, z: box.min.z };
+				obj.center = { x: c.x, y: c.y, z: b.min.z };
+				obj.bottom = { x: c.x, y: b.max.y, z: b.min.z };
+				obj.bottomLeft = { x: b.max.x, y: b.max.y, z: b.min.z };
+				obj.bottomRight = { x: b.min.x, y: b.max.y, z: b.min.z };
+				obj.top = { x: c.x, y: b.min.y, z: b.min.z };
+				obj.topLeft = { x: b.max.x, y: b.min.y, z: b.min.z };
+				obj.topRight = { x: b.min.x, y: b.min.y, z: b.min.z };
+				obj.left = { x: b.max.x, y: c.y, z: b.min.z };
+				obj.right = { x: b.min.x, y: c.y, z: b.min.z };
 
 				switch (anchor) {
 					case 'center':
@@ -471,16 +455,17 @@ Objects.prototype = {
 					if (value) {
 						// we add the shadow plane automatically 
 						const s = obj.modelSize;
-						const sizes = [s.x, s.y, s.z];
-						const planeSize = Math.max(...sizes) * 10;
-						const planeGeo = new THREE.PlaneBufferGeometry(planeSize, planeSize);
-						const planeMat = new THREE.ShadowMaterial();
-						planeMat.opacity = 0.5;
-						let plane = new THREE.Mesh(planeGeo, planeMat);
-						plane.name = shadowPlane;
-						plane.layers.enable(1); plane.layers.disable(0); // it makes the object invisible for the raycaster
-						plane.receiveShadow = value;
-						obj.add(plane);
+						const sz = [s.x, s.y, s.z, obj.modelHeight];
+						const pSize = Math.max(...sz) * 10;
+						const pGeo = new THREE.PlaneBufferGeometry(pSize, pSize);
+						const pMat = new THREE.ShadowMaterial();
+						//const pMat = new THREE.MeshStandardMaterial({ color: 0x660000 });
+						pMat.opacity = 0.5;
+						let p = new THREE.Mesh(pGeo, pMat);
+						p.name = shadowPlane;
+						p.layers.enable(1); p.layers.disable(0); // it makes the object invisible for the raycaster
+						p.receiveShadow = value;
+						obj.add(p);
 					} else {
 						// or we remove it 
 						obj.traverse(function (c) {
@@ -495,9 +480,19 @@ Objects.prototype = {
 			})
 
 			//[jscastro] added method to position the shadow box on the floor depending the object height
-			obj.setCastShadowFloor = function () {
+			obj.setReceiveShadowFloor = function () {
 				if (obj.castShadow) {
-					obj.shadowPlane.position.z = -obj.modelHeight;
+					let sp = obj.shadowPlane, p = sp.position, r = sp.rotation;
+					p.z = -obj.modelHeight;
+					r.y = obj.rotation.y;
+					r.x = -obj.rotation.x;
+					if (obj.userData.units === 'meters') {
+						const s = obj.modelSize;
+						const sz = [s.x, s.y, s.z, -p.z];
+						const ps = Math.max(...sz) * 10;
+						const sc = ps / sp.geometry.parameters.width;
+						sp.scale.set(sc, sc, sc);
+					}
 				}
 			}
 
@@ -687,8 +682,67 @@ Objects.prototype = {
 				}
 			})
 
-			//[jscastro]
-			obj.modelHeight = 0;
+
+			//[jscastro] added property to get modelHeight
+			Object.defineProperty(obj, 'modelHeight', {
+				get() {
+					let h = obj.coordinates[2] || 0;
+					if (obj.userData.units === 'scene') h *= (obj.unitsPerMeter / obj.scale.x);
+					return h;
+				}
+			});
+
+			//[jscastro] added property to calculate the units per meter in a given latitude
+			//reduced to 7 decimals to avoid deviations on the size of the same object  
+			Object.defineProperty(obj, 'unitsPerMeter', {
+				get() { return Number(utils.projectedUnitsPerMeter(obj.coordinates[1]).toFixed(7)); }
+			});
+
+			let _fixedZoom = null;
+			//[jscastro] added property to have a fixed scale for some objects
+			Object.defineProperty(obj, 'fixedZoom', {
+				get() { return obj.userData.fixedZoom; },
+				set(value) {
+					if (obj.userData.fixedZoom === value) return;
+					obj.userData.fixedZoom = value;
+					obj.userData.units = (value ? 'scene' : 'meters');
+				}
+			});
+
+			//[jscastro] sets the scale of an object based fixedZoom
+			obj.setFixedZoom = function (scale) {
+				if (obj.fixedZoom != null) {
+					if (!scale) scale = obj.userData.mapScale;
+					let s = zoomScale(obj.fixedZoom);
+					if (s > scale) {
+						let calc = s / scale;
+						obj.scale.set(calc, calc, calc);
+					} else {
+						obj.scale.set(1, 1, 1);
+					}
+				}
+			}
+
+			//[jscastro] sets the scale of an object based in the scale and fixedZoom
+			obj.setScale = function (scale) {
+				// scale the model so that its units are interpreted as meters at the given latitude
+				if (obj.userData.units === 'meters' && !obj.fixedZoom) {
+					let s = obj.unitsPerMeter;
+					obj.scale.set(s, s, s);
+				} else if (obj.fixedZoom) {
+					if (scale) obj.userData.mapScale = scale;
+					obj.setFixedZoom(obj.userData.mapScale); //apply fixed zoom
+				} else obj.scale.set(1, 1, 1);
+			} 
+
+			function zoomScale(zoom) { return Math.pow(2, zoom); }
+
+			//[jscastro] sets the scale and shadows position of an object based in the scale
+			obj.setObjectScale = function (scale) {
+				obj.setScale(scale);
+				obj.setBoundingBoxShadowFloor();
+				obj.setReceiveShadowFloor();
+			} 
 
 		}
 
@@ -920,18 +974,6 @@ Objects.prototype = {
 			opacity: 1
 		},
 
-		sphere: {
-			position: [0, 0, 0],
-			radius: 1,
-			sides: 20,
-			units: 'scene',
-			material: 'MeshBasicMaterial',
-			anchor: 'bottom-left',
-			bbox: true,
-			tooltip: true,
-			raycasted: true
-		},
-
 		label: {
 			htmlElement: null,
 			cssClass: " label3D",
@@ -945,6 +987,19 @@ Objects.prototype = {
 			mapboxStyle: false,
 			topMargin: 0,
 			feature: null
+		},
+
+		sphere: {
+			position: [0, 0, 0],
+			radius: 1,
+			sides: 20,
+			units: 'scene',
+			material: 'MeshBasicMaterial',
+			anchor: 'bottom-left',
+			bbox: true,
+			tooltip: true,
+			raycasted: true
+
 		},
 
 		tube: {
@@ -993,6 +1048,7 @@ Objects.prototype = {
 			bbox: true,
 			tooltip: true,
 			raycasted: true
+
 		}
 	},
 

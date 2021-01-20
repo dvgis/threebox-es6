@@ -53,7 +53,7 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Updated to Three.js v117.
 - Updated to Mapbox-gl-js v1.11.1.
 - Updated to Azure Maps v2.0.31.
-- [18 examples](https://github.com/jscastro76/threebox/tree/master/examples) with all the new features.
+- [19 examples](https://github.com/jscastro76/threebox/tree/master/examples) with all the new features.
 - Support for multiple 3D format objects (FBX, GLTF/GLB, Collada, OBJ/MTL).
 - Support for 3D extruded shapes from [GeoJson](https://geojson.org/) features or points array.
 - Support for CSS2D labels and rich HTML controls through a new LabelManager.
@@ -71,7 +71,7 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Support for `removeLayer` considering Object3D.
 - Support for style change through `setStyle` and keeping Object3D.
 - Support for partial and full dispose of Mapbox, Three and Threebox resources and memory.
-- Support for Orthographic view and customizable Perspective FOV.
+- Support for Orthographic view, customizable Perspective FOV and fixed-size Object3D.
 - Optimization of Camera perspective to have Raycast with pixel-precision level and depth sync between Mapbox and Threebox objects.
 - Optimization for loading thousands of objects through cache.
 - Available as [npm package](https://www.npmjs.com/package/threebox-plugin)
@@ -100,6 +100,7 @@ All the [**Threebox Documentation**](/docs/Threebox.md) has been completely upda
 
 - Three.r117 (already bundled into the Threebox build). If desired, other versions can be swapped in and rebuilt [here](https://github.com/jscastro76/threebox/blob/master/src/three.js), though compatibility is not guaranteed. **(WARNING: v118.3 breaks compatibility in some cases)**
 - Mapbox-gl-js v1.11.1.
+- Azure Maps v2.0.31.
 
 <br>
 
@@ -124,7 +125,8 @@ If deployed in other folder structure or a CDN, just ensure you use your `src` a
 ```
 
 #### Test the samples 
-Several introductory examples are [here](https://github.com/jscastro76/threebox/tree/master/examples). To run them, create a `config.js` file with your Mapbox-gl-js access token, alongside and in the format of [the template](https://github.com/jscastro76/threebox/blob/master/examples/config_template.js).
+Several introductory examples are [here](https://github.com/jscastro76/threebox/tree/master/examples).  
+To run them, create a `config.js` file with your Mapbox-gl-js access token, alongside and in the format of [the template](https://github.com/jscastro76/threebox/blob/master/examples/config_template.js).
 
 <br>
 
@@ -138,18 +140,17 @@ Several introductory examples are [here](https://github.com/jscastro76/threebox/
 #### Unit tests
 Tests live [here](/tests). 
 - Build first the test bundle with `npm run test`, this will create [`tests\threebox-tests-bundle.js`](tests/threebox-tests-bundle.js)  
-- Then in your preferred browser navigate to `threebox-tests.html` and check the console for test results.
+- Then in your preferred browser navigate to [`threebox-tests.html`](https://github.com/jscastro76/threebox/blob/master/tests/threebox-tests.html) and check the console for test results.
 
 #### How to build the project in Visual Studio
 Sample to get a full build from scratch for Visual Studio:
 - Install [Node.js](https://nodejs.org/en/) 
 - Clone the repo and open a new Project using main.js
-- Update the packages @turf, tape, uglyfy, watchify
+- Install / Update the packages browserify, tape, ncp, uglyfy, watchify.
 - Right click on the project at the Solution Explorer > Open Node.js Interactive Window:
 - execute `.npm [ProjectName] init -y`
 - execute `.npm [ProjectName] install`
 - execute `.npm [ProjectName] i`
-- execute `.npm [ProjectName] [LocalPath] install azure@4.2.3`
 - execute `.npm [ProjectName] run dev` or `.npm run build
 `
 

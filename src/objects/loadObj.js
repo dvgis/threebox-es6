@@ -91,7 +91,9 @@ function loadObj(options, cb, promise) {
 			promise(userScaleGroup);
 			//[jscastro] then return to the client-side callback
 			cb(userScaleGroup);
-			// [jscastro] initialize the default animation to avoid issues with skeleton position
+			//[jscastro] apply the fixed zoom scale if needed
+			userScaleGroup.setFixedZoom(options.mapScale);
+			//[jscastro] initialize the default animation to avoid issues with skeleton position
 			userScaleGroup.idle();
 
 		}, () => (null), error => {

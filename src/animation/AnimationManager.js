@@ -141,6 +141,8 @@ AnimationManager.prototype = {
 				this.stop();
 				options.rotation = utils.radify(options.rotation);
 				this._setObject(options);
+
+
 			}
 
 			return this
@@ -190,9 +192,12 @@ AnimationManager.prototype = {
 
 		obj._setObject = function (options) {
 
+			//default scale always
+			obj.setScale();
+
 			let p = options.position; // lnglat
 			let r = options.rotation; // radians
-			let s = options.scale; // 
+			let s = options.scale; // custom scale
 			let w = options.worldCoordinates; //Vector3
 			let q = options.quaternion; // [axis, angle in rads]
 			let t = options.translate; //[jscastro] lnglat + height for 3D objects
@@ -233,8 +238,13 @@ AnimationManager.prototype = {
 				this.coordinates = options.position = p;
 			} 
 
+			//Each time the object is positioned, project the floor and correct shadow plane
+			this.setBoundingBoxShadowFloor();
+			this.setReceiveShadowFloor();
+
 			this.updateMatrixWorld();
 			tb.map.repaint = true;
+
 			// fire the ObjectChanged event to notify UI object change
 			this.dispatchEvent(new CustomEvent('ObjectChanged', { detail: { object: this, action: { position: options.position, rotation: options.rotation, scale: options.scale } }, bubbles: true, cancelable: true }));
 
@@ -405,7 +415,7 @@ AnimationManager.prototype = {
 					if (item.type === 'followPath') {
 
 						let position = options.pathCurve.getPointAt(timeProgress);
-						let objectState = { worldCoordinates: position };
+						objectState = { worldCoordinates: position };
 
 						// if we need to track heading
 						if (options.trackHeading) {

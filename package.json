@@ -20,21 +20,18 @@
         "test": "browserify tests/threebox-tests.js > tests/threebox-tests-bundle.js",
         "start": "node server.js"
     },
-    "dependencies": {
-        "@turf/turf": "^5.1.6",
-        "browserify": "^16.5.2",
-        "help": "^3.0.2",
-        "tape": "^4.13.3",
-        "turf": "^3.0.14",
-        "uglifyify": "^5.0.2",
-        "watchify": "^3.11.1"
-    },
+    "dependencies": {},
     "directories": {
         "doc": "docs",
         "example": "examples",
         "test": "tests"
     },
-    "devDependencies": {},
+    "devDependencies": {
+        "browserify": "^16.5.2",
+        "tape": "^4.13.3",
+        "uglifyify": "^5.0.2",
+        "watchify": "^3.11.1"
+    },
     "keywords": [
         "three.js",
         "mapbox",

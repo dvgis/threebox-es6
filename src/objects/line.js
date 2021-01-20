@@ -10,13 +10,13 @@ function line(obj){
     var straightProject = utils.lnglatsToWorld(obj.geometry);
 	var normalized = utils.normalizeVertices(straightProject);
     var flattenedArray = utils.flattenVectors(normalized.vertices);
-	console.log('line', normalized.vertices)
+	//console.log('line', normalized.vertices)
 
 	var geometry = new THREE.LineGeometry();
 	geometry.setPositions( flattenedArray );
 
 	// Material
-	let matLine = new THREE.LineMaterial( {
+	matLine = new THREE.LineMaterial( {
 		color: obj.color,
 		linewidth: obj.width, // in pixels
 		dashed: false,

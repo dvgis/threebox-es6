@@ -133,3 +133,11 @@ These are the examples included in Threebox.
 - The second way creates dynamically features from a gesJson file with real complex features from the composite layer. 
 
 - - - -
+
+#### [19-fixedzoom.html](https://github.com/jscastro76/threebox/blob/master/examples/19-fixedzoom.html) 
+<img alt="threebox" src="images/fixedzoom.png" width="50%"><br/>
+- This sample shows how to have a fixed scale for an object at a concrete zoom level. In that way the object with preserve the same visual size when the zoom is lower than the fixed zoom value. 
+- Enables the user to change dynamically to pan the camera to the object movement and change the fixed zoom level.<br/>
+- The model is attached to the event `ObjectChanged` to call `map.panTo` method from mapbox.
+
+- - - -

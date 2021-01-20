@@ -53,7 +53,7 @@ Threebox.prototype = {
 		this.renderer = new THREE.WebGLRenderer({
 			alpha: true,
 			antialias: true,
-			//preserveDrawingBuffer: true,
+			preserveDrawingBuffer: options.preserveDrawingBuffer,
 			canvas: map.getCanvas(),
 			context: glContext
 		});
@@ -467,8 +467,9 @@ Threebox.prototype = {
 				}
 			}
 
-			this.onZoomEnd = function (e) {
-				this.tb.zoomLayers.forEach((l) => {this.tb.toggleLayer(l);});
+			this.onZoom = function (e) {
+				this.tb.zoomLayers.forEach((l) => { this.tb.toggleLayer(l); });
+				this.tb.world.children.filter(o => (o.fixedZoom != null)).forEach((o) => { o.setObjectScale(this.transform.scale); });
 			}
 
 			let ctrlDown = false;
@@ -515,7 +516,7 @@ Threebox.prototype = {
 			this.on('mousemove', this.onMouseMove);
 			this.on('mouseout', this.onMouseOut)
 			this.on('mousedown', this.onMouseDown);
-			this.on('zoom', this.onZoomEnd);
+			this.on('zoom', this.onZoom);
 
 			document.addEventListener('keydown', onKeyDown.bind(this), true);
 			document.addEventListener('keyup', onKeyUp.bind(this));
@@ -595,7 +596,6 @@ Threebox.prototype = {
 		if (cache) {
 			cache.promise
 				.then(obj => {
-					//console.log("Cloning " + options.obj);
 					cb(obj.duplicate(options));
 				})
 				.catch(err => {
@@ -607,7 +607,6 @@ Threebox.prototype = {
 				promise: new Promise(
 					async (resolve, reject) => {
 						loader(options, cb, async (obj) => {
-							//console.log("Loading " + options.obj);
 							if (obj.duplicate) {
 								resolve(obj.duplicate());
 							} else {
@@ -1007,6 +1006,7 @@ Threebox.prototype = {
 	setDefaultView: function (options, defOptions) {
 		options.bbox = options.bbox && defOptions.enableSelectingObjects;
 		options.tooltip = options.tooltip && defOptions.enableTooltips;
+		options.mapScale = this.map.transform.scale;
 	},
 
 	memory: function () { return this.renderer.info.memory },
@@ -1022,6 +1022,7 @@ var defaultOptions = {
 	realSunlight: false,
 	realSunlightHelper: false,
 	passiveRendering: true,
+	preserveDrawingBuffer: false,
 	enableSelectingFeatures: false,
 	enableSelectingObjects: false,
 	enableDraggingObjects: false,

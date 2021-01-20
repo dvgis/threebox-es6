@@ -31,6 +31,7 @@ Threebox contains [18 examples](https://github.com/jscastro76/threebox/blob/mast
 - [16-multilayer.html](https://github.com/jscastro76/threebox/blob/master/examples/16-multilayer.html) 
 - [17-azuremaps.html](https://github.com/jscastro76/threebox/blob/master/examples/17-azuremaps.html) 
 - [18-extrusions.html](https://github.com/jscastro76/threebox/blob/master/examples/18-extrusions.html) 
+- [19-fixedzoom.html](https://github.com/jscastro76/threebox/blob/master/examples/19-fixedzoom.html) 
 
 <br>
 
@@ -1181,6 +1182,25 @@ Can be called before adding object to the map.
 
 <br>
 
+#### setFixedZoom
+```js
+obj.setFixedZoom(scale)
+```
+Sets the scale used to convert the object based on `fixedZoom` value. The received param `scale` should be always equal to `map.transform.scale`.
+This method is called from `obj.setScale` and other loading methods, so it's not needed to be called separately from the UI. 
+
+<br>
+
+#### setObjectScale
+```js
+obj.setObjectScale(scale)
+```
+Sets the scale used to convert the object considering object current `obj.unitsPerMeter` and depending the object is in units `scene` or `meters`.  
+The received param `scale` should be always equal to `map.transform.scale`.  
+This method calls internally `obj.setScale(scale)`, `obj.setBoundingBoxShadowFloor()`, `obj.setReceiveShadowFloor()` sequentially.
+
+<br>
+
 #### setRotation
 ```js
 obj.setRotation(xyz)
@@ -1198,6 +1218,16 @@ obj.setRotationAxis(xyz)
 
 Rotates the object over one of its bottom corners on z axis, the value must be provided in degrees and could be a number (it will apply the rotation to the 3 axes) or as an {x, y, z} object. 
 This rotation is applied on top of the rotation provided through loadObj(options).
+
+<br>
+
+#### setScale
+```js
+obj.setScale(scale)
+```
+Sets the scale used to convert the object considering object current `obj.unitsPerMeter` and depending the object is in units `scene` or `meters`.  
+The received param `scale` should be always equal to `map.transform.scale`, if it's null, `obj.userData.mapScale` will be use instead.  
+This method calls internally `obj.setFixedZoom`. 
 
 <br>
 
@@ -1263,12 +1293,32 @@ This get property returns a `CSS2DObject`[`THREE.CSS2DObject`](https://threejs.o
 
 <br>
 
+#### fixedZoom
+
+```js
+obj.fixedZoom : Number
+```
+This get/set property receives and returns the value for the zoom below the one the object will have a fixed scale at any zoom level. Over the value, the object will rescale as always.
+This property is very useful for models that need to be visible on very low zoom levels (i.e. an airplane describing a world route), but they also need to be visible when zoom is higher.  
+It's important to know that `fixedZoom` will use the model in `scene` units, not in `meters`.
+
+<br>
+
 #### label
 
 ```js
 obj.label : CSS2DObject
 ```
 This get property returns a `CSS2DObject`[`THREE.CSS2DObject`](https://threejs.org/docs/index.html#examples/en/renderers/CSS2DRenderer) value that represents the label of a [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D) created by `obj.addLabel` method. The label could be used as an element to show on mouse over or to be always visible. It's normally used to show attributes or status of a threebox object and can contain any HTMLElement.
+
+<br>
+
+#### modelHeight
+
+```js
+obj.modelHeight : Number
+```
+This get property returns the height of the object in meters. 
 
 <br>
 
@@ -1299,6 +1349,15 @@ obj.tooltip : CSS2DObject
 ```
 This get property returns a `CSS2DObject`[`THREE.CSS2DObject`](https://threejs.org/docs/index.html#examples/en/renderers/CSS2DRenderer) value that represents the tooltip of a [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D) created by `obj.addTooltip` method. 
 The tooltip by default shows the `uuid` value of a threebox object and it's only visible if `tb.enableTooltips` is true.
+
+<br>
+
+#### unitsPerMeter
+
+```js
+obj.unitsPerMeter : Number
+```
+This get property returns the conversion value of units per meter at the object current latitude. 
 
 <br>
 

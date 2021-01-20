@@ -3,15 +3,27 @@
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
 #### :sparkles: Enhancements
+- #155 How to keep fixed scale and size of Airplane 3D model when zoom in or out Mapbox? 
 - #167 Create a new event `ObjectChanged` every time the object has modified its position, rotation or scale.
   - Related to #163 request to get coordinates when the model follow path with line?
   - Modified example [05-logistics.html](https://github.com/jscastro76/threebox/blob/master/examples/05-logistics.html) to attach to the event `ObjectChanged`
   - Modified example [11-logistics.html](https://github.com/jscastro76/threebox/blob/master/examples/11-animation.html) to attach to the event `ObjectChanged`
  - Modified example [08-3dbuildings.html](https://github.com/jscastro76/threebox/blob/master/examples/08-3dbuildings.html) to adjust perspective and position to a more relevant zone (empire state building) 
-- #170 Refactor internal methods  
+- #170 Refactor internal methods
+- #179 Create a new example for fixed scale model 
+  - Added to [19-fixedZoom.html](https://github.com/jscastro76/threebox/blob/master/examples/19-fixedZoom.html) that shows shows how to have a fixed scale for an object at a concrete zoom level. In that way the object with preserve the same visual size when the zoom is lower than the fixed zoom value. 
+- #181 Move npm modules to devDependencies and remove not used 
 
 #### :beetle: Bug fixes
-- #168 Bug on init params `bbox` and `tooltip`  
+- #168 Bug on init params `bbox` and `tooltip` 
+- #175 Shadows are not updated if an object is moved through animations
+  - [x] Shadow plane is oriented properly when the object rotates due to a followPath animation
+  - [x] Shadow plane grows properly based on object height
+  - [x] Shadow plane positions at ground level if scale is `scene`
+  - [x] Allows to change `obj.fixedZoom` level in real time
+  - [x] Allows to change to non-fixedZoom in real time  
+- #176 `units: 'scene'` objects get wrong shadow 
+- #180 Fixed scale objects not being rescaled if they are being animated  
 
 #### :pencil: Documentation
 - Updated [documentation](/docs/Threebox.md) (`ObjectChanged` and other events)

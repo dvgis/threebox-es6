@@ -1,0 +1,152 @@
+<!doctype html>
+<head>
+    <title>Threebox fixed zoom</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.css" rel="stylesheet" />
+    <script src="../dist/threebox.js" type="text/javascript"></script>
+    <link href="./css/threebox.css" rel="stylesheet" />
+    <script src="config.js"></script>
+    <style>
+        body, html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+</head>
+<body>
+	<div id='map' class='map'></div>
+
+	<script type="module">
+		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
+
+		mapboxgl.accessToken = config.accessToken;
+		let mapConfig = {
+			MAD: {
+				origin: [-3.460539968876, 40.4849214450, 0], destination: [-3.378467560041173, 40.551832030917126, 1500], center: [-3.44885, 40.49198, 0], zoom: 14.4, pitch: 50, bearing: -13, scale: 1, timezone: 'Europe/Madrid'
+			},
+			names: {
+				customLayer: "custom-layer"
+			}
+		}
+
+		let map = new mapboxgl.Map({
+			container: 'map',
+			style: 'mapbox://styles/mapbox/satellite-v9',
+			center: mapConfig.MAD.center,
+			zoom: mapConfig.MAD.zoom,
+			pitch: mapConfig.MAD.pitch,
+			bearing: mapConfig.MAD.bearing
+		});
+
+		// we can add Threebox to mapbox to add built-in mouseover/mouseout and click behaviors
+		window.tb = new Threebox(
+			map,
+			map.getCanvas().getContext('webgl'),
+			{
+				realSunlight: true,
+				enableSelectingObjects: true, //change this to false to disable 3D objects selection
+				enableTooltips: true, // change this to false to disable default tooltips on fill-extrusion and 3D models
+			}
+		);
+		tb.altitudeStep = 1;
+		tb.setSunlight(new Date(2021, 0, 18, 12));
+
+
+		import { GUI } from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+
+		let stats, gui;
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+		}
+
+		let plane;
+		let api = {
+			fixedZoom: true,
+			pan: true,
+			maxZoom: 15
+		};
+
+		map.on('style.load', function () {
+			init();
+
+			map.addLayer({
+				id: 'custom_layer',
+				type: 'custom',
+				renderingMode: '3d',
+				onAdd: function (map, mbxContext) {
+
+					let options = {
+						obj: './models/plane/plane.glb',
+						type: 'gltf',
+						scale: mapConfig.MAD.scale,
+						rotation: { x: 90, y: 0, z: 0 },
+						anchor: 'center',
+						bbox: false
+					}
+
+					if (api.fixedZoom) options.fixedZoom = api.maxZoom;
+
+					tb.loadObj(options, function (model) {
+						plane = model
+							.setCoords(mapConfig.MAD.origin);
+						plane.setRotation({ x: 0, y: 0, z: 135 })
+						plane.addTooltip("You can set the fixed scale of this plane", true);
+						plane.addEventListener('ObjectChanged', onObjectChanged, false);
+						plane.castShadow = true;
+						tb.add(plane);
+
+						//fly(flightPlan);
+						//setTimeout(() => { fly(flightPlan) }, 3000);
+						setTimeout(() => {
+							let opt = {
+								coords: mapConfig.MAD.destination, duration: 20000
+							};
+							plane.set(opt)
+						}, 3000);
+
+
+					})
+				},
+
+				render: function (gl, matrix) {
+					tb.update();
+				}
+			});
+
+		});
+
+		function init() {
+			// stats
+			stats = new Stats();
+			map.getContainer().appendChild(stats.dom);
+			animate();
+			// gui
+			gui = new GUI();
+			// this will define if there's a fixed zoom level for the model
+			gui.add(api, 'fixedZoom').name('fixed zoom').onChange(changeScale);
+			gui.add(api, 'pan').name('pan').onChange(changeScale);
+			gui.add(api, 'maxZoom', 0, map.transform.maxZoom).step(0.5).onChange(changeScale);
+		}
+
+		function onObjectChanged(e) {
+			let model = e.detail.object; //here's the object already modified
+			if (api.pan) map.panTo(model.coordinates);
+		}
+
+		function changeScale() {
+			plane.fixedZoom = (api.fixedZoom ? api.maxZoom : null);
+			plane.setObjectScale(map.transform.scale);
+			tb.map.repaint = true;
+		}
+
+	</script>
+</body>
