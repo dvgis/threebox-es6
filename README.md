@@ -39,13 +39,14 @@ npm i threebox-plugin
 |----------|-------
 |<img alt="threebox" src="https://i.postimg.cc/QMh57yGP/Style-Change.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/zf2wTYwB/Performance.gif" width="100%">
 
+|Customizable FOV|Geojson and Points Extrusions
+|---------|-------
+|<img alt="threebox" src="https://i.postimg.cc/C1dRHyvv/Customize-FOV.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/nzMkWhVB/extrusions.gif" width="100%">
+
 |Models built-in shadows|Sunlight illumination for a given datetime and lnglat
 |---------|-------
 |<img alt="threebox" src="https://i.postimg.cc/FF8LpRX0/Mapbox-Shadow.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/6QnjWSVm/Eiffel-Shadow.gif" width="100%">
 
-|Customizable FOV|Geojson and Points Extrusions
-|---------|-------
-|<img alt="threebox" src="https://i.postimg.cc/C1dRHyvv/Customize-FOV.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/nzMkWhVB/extrusions.gif" width="100%">
 
 <br>
 
