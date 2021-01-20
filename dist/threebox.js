@@ -1458,7 +1458,7 @@ AnimationManager.prototype = {
 					if (item.type === 'followPath') {
 
 						let position = options.pathCurve.getPointAt(timeProgress);
-						let objectState = { worldCoordinates: position };
+						objectState = { worldCoordinates: position };
 
 						// if we need to track heading
 						if (options.trackHeading) {
@@ -2228,7 +2228,7 @@ function line(obj){
 	geometry.setPositions( flattenedArray );
 
 	// Material
-	let matLine = new THREE.LineMaterial( {
+	matLine = new THREE.LineMaterial( {
 		color: obj.color,
 		linewidth: obj.width, // in pixels
 		dashed: false,

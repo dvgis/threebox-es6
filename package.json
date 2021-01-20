@@ -16,7 +16,7 @@
     "scripts": {
         "build": "browserify -g ./node_modules/uglifyify exports.js > dist/threebox.min.js",
         "dev": "watchify exports.js --verbose -o dist/threebox.js ",
-        "all": "browserify -g ./node_modules/uglifyify exports.js > dist/threebox.min.js && watchify exports.js --verbose -o dist/threebox.js && ncp ./dist C:\\Users\\jscastro\\source\\repos\\archean-incubator\\mapbox-poc\\AdminLTE-master\\Scripts\\ --stopOnErr",
+        "all": "browserify -g ./node_modules/uglifyify exports.js > dist/threebox.min.js && watchify exports.js --verbose -o dist/threebox.js ",
         "test": "browserify tests/threebox-tests.js > tests/threebox-tests-bundle.js",
         "start": "node server.js"
     },
