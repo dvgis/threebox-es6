@@ -16,7 +16,7 @@ function line(obj){
 	geometry.setPositions( flattenedArray );
 
 	// Material
-	matLine = new THREE.LineMaterial( {
+	let matLine = new THREE.LineMaterial( {
 		color: obj.color,
 		linewidth: obj.width, // in pixels
 		dashed: false,
