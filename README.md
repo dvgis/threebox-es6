@@ -29,23 +29,23 @@ npm i threebox-plugin
 
 |Models built-in & custom animations |Mouse over/out, Selected, Drag&Drop, Drag&Rotate, Wireframe 
 |---------|-----------------------
-|<img alt="threebox" src="./docs/AnimationVideo.gif" width="100%">|<img alt="threebox" src="./docs/Wireframes.gif" width="100%" >
+|<img alt="threebox" src="https://i.postimg.cc/vTNLLLLn/Animation-Video.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/3Jjgnvjz/Wireframes.gif" width="100%" >
 
 |Tooltips using altitude|Optimization of camera perspective and depth
 |----------|-------
-|<img alt="threebox" src="./docs/LabelsOnHeight.gif" width="100%">|<img alt="threebox" src="./docs/Depth.gif" width="100%">
+|<img alt="threebox" src="https://i.postimg.cc/wM7DvR8j/Labels-On-Height.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/zB9nPwcY/Depth.gif" width="100%">
 
 |Runtime style change|Optimized performance through cache
 |----------|-------
-|<img alt="threebox" src="./docs/StyleChange.gif" width="100%">|<img alt="threebox" src="./docs/Performance.gif" width="100%">
+|<img alt="threebox" src="https://i.postimg.cc/QMh57yGP/Style-Change.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/zf2wTYwB/Performance.gif" width="100%">
 
 |Models built-in shadows|Sunlight illumination for a given datetime and lnglat
 |---------|-------
-|<img alt="threebox" src="./docs/MapboxShadow.gif" width="100%">|<img alt="threebox" src="./docs/EiffelShadow.gif" width="100%">
+|<img alt="threebox" src="https://i.postimg.cc/FF8LpRX0/Mapbox-Shadow.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/6QnjWSVm/Eiffel-Shadow.gif" width="100%">
 
 |Customizable FOV|Geojson and Points Extrusions
 |---------|-------
-|<img alt="threebox" src="./docs/CustomizeFOV.gif" width="100%">|<img alt="threebox" src="./docs/extrusions.gif" width="100%">
+|<img alt="threebox" src="https://i.postimg.cc/C1dRHyvv/Customize-FOV.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/nzMkWhVB/extrusions.gif" width="100%">
 
 <br>
 
