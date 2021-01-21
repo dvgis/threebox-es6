@@ -1018,7 +1018,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.1.7',
+	version: '2.1.8',
 
 }
 
@@ -1458,7 +1458,7 @@ AnimationManager.prototype = {
 					if (item.type === 'followPath') {
 
 						let position = options.pathCurve.getPointAt(timeProgress);
-						objectState = { worldCoordinates: position };
+						let objectState = { worldCoordinates: position };
 
 						// if we need to track heading
 						if (options.trackHeading) {
@@ -2228,7 +2228,7 @@ function line(obj){
 	geometry.setPositions( flattenedArray );
 
 	// Material
-	matLine = new THREE.LineMaterial( {
+	let matLine = new THREE.LineMaterial( {
 		color: obj.color,
 		linewidth: obj.width, // in pixels
 		dashed: false,

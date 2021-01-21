@@ -1013,7 +1013,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.1.7',
+	version: '2.1.8',
 
 }
 

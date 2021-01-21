@@ -3,7 +3,7 @@ var http = require('http');
 var url = require('url');
 var fs = require('fs');
 var path = require('path');
-var baseDirectory = "C:\\Users\\jscastro\\Documents\\GitHub\\threebox\\";
+var baseDirectory = "C:\\Users\\jscastro\\source\\repos\\archean-incubator\\mapbox-poc\\threebox-new\\";
 var port = process.env.PORT || 1337;
 var counter = 0;
 
@@ -14,9 +14,38 @@ http.createServer(function (request, response) {
         // need to use path.normalize so people can't access directories underneath baseDirectory
         var fsPath = baseDirectory + path.normalize(requestUrl.pathname);
 
+        var ext = path.extname(fsPath)
+        var validExtensions = {
+            ".html": "text/html",
+            ".js": "application/javascript",
+            ".json": "application/json",
+            ".bin": "application/octet-stream",
+            ".css": "text/css",
+            ".txt": "text/plain",
+            ".bmp": "image/bmp",
+            ".jpg": "image/jpeg",
+            ".gif": "image/gif",
+            ".png": "image/png",
+            ".ico": "image/x-icon",
+            ".dae": "application/vnd.oipf.dae.svg+xml",
+            ".pbf": "application/octet-stream",
+            ".mtl": "model/mtl",
+            ".obj": "model/obj",
+            ".glb": "model/gltf-binary",
+            ".gltf": "model/gltf+json",
+            ".fbx": "application/octet-stream",
+            ".ttf": "application/octet-stream",
+            ".woff": "font/woff",
+            ".woff2": "font/woff2",
+
+        };
+
+        var isValidExt = validExtensions[ext];
+
         var fileStream = fs.createReadStream(fsPath);
         fileStream.pipe(response);
         fileStream.on('open', function () {
+            response.setHeader("Content-Type", validExtensions[ext]);
             response.writeHead(200);
         });
         fileStream.on('error', function (e) {
@@ -30,3 +59,4 @@ http.createServer(function (request, response) {
     }
 
 }).listen(port);
+

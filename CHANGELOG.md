@@ -1,3 +1,16 @@
+## 2.1.8
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+- Updated builds using package browserify 17.0.0.
+- Updated tape 5.1.1
+- #182 Resource interpreted as Stylesheet but transferred with MIME type text/plain 
+
+<br>
+
+- - - 
+
 ## 2.1.7
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
