@@ -1225,7 +1225,7 @@ Broad method to update object's position, rotation, and scale in only one call. 
 This method can also be used to animate an object if `options.duration` has a value.
 Check out the Threebox Types section below for details. 
 
-**options object**
+**options object on animations (`duration > 0`)**
 
 | option | required | default | type   | description                                                                                  |
 |-----------|----------|---------|--------|------------|
@@ -1233,6 +1233,18 @@ Check out the Threebox Types section below for details.
 | `rotation`    | no       | NA      | `rotationTransform` | Rotation(s) to set the object, in units of degrees |
 | `scale`    | no       | NA      | `scaleTransform` | Scale(s) to set the object, where 1 is the default scale |
 | `duration`    | no       | 1000      | number | Duration of the animation, in milliseconds to complete the values specified in the other properties `scale`, `rotation` and `coords`. If 0 or undefined it will apply the values to the object directly with no animation. |
+
+**options object without animations (`duration == 0`)**
+
+| option | required | default | type   | description                                                                                  |
+|-----------|----------|---------|--------|------------|
+| `position`    | no       | NA      | `lnglat` | Position to which to move the object |
+| `rotation`    | no       | NA      | `rotationTransform` | Rotation(s) to set the object, in units of degrees |
+| `scale`    | no       | NA      | `scaleTransform` | Scale(s) to set the object, where 1 is the default scale |
+| `worldCoordinates` | no       | NA | `Vector3` | Duration of the animation, in milliseconds to complete the values specified in the other properties `scale`, `rotation` and `coords`. If 0 or undefined it will apply the values to the object directly with no animation. |
+| `quaternion`    | no       | NA     | [`Vector3`, `radians`] | Rotation(s) to set to the axes received by the `Vector3` and in by the angle in radians |
+| `translate`    | no       | NA      | `lnglat` | Increment to the coords position to translate the object. |
+| `worldTranslate`  | no       | NA   | `Vector3` | Increment to the object world position to translate the object. |
 
 <br>
 

@@ -4,6 +4,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 #### :sparkles: Enhancements
 - #182 Resource interpreted as Stylesheet but transferred with MIME type text/plain 
+- #187 Create an option to translate an object based on world coordinates (obj.position) 
 
 #### :pencil: Documentation
 - Updated [documentation](/docs/Threebox.md) started to link points and improving documentation descriptions in general.

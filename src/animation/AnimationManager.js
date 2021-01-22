@@ -141,8 +141,6 @@ AnimationManager.prototype = {
 				this.stop();
 				options.rotation = utils.radify(options.rotation);
 				this._setObject(options);
-
-
 			}
 
 			return this
@@ -200,7 +198,8 @@ AnimationManager.prototype = {
 			let s = options.scale; // custom scale
 			let w = options.worldCoordinates; //Vector3
 			let q = options.quaternion; // [axis, angle in rads]
-			let t = options.translate; //[jscastro] lnglat + height for 3D objects
+			let t = options.translate; // [jscastro] lnglat + height for 3D objects
+			let wt = options.worldTranslate; // [jscastro] Vector3 translation
 
 			if (p) {
 				this.coordinates = p;
@@ -211,10 +210,19 @@ AnimationManager.prototype = {
 			if (t) {
 				this.coordinates = [this.coordinates[0] + t[0], this.coordinates[1] + t[1], this.coordinates[2] + t[2]];
 				let c = utils.projectToWorld(t);
-				this.translateX(c.x);
-				this.translateY(c.y);
-				this.translateZ(c.z);
+				this.position.copy(c)
+				//this.translateX(c.x);
+				//this.translateY(c.y);
+				//this.translateZ(c.z);
 				options.position = this.coordinates;
+			}
+
+			if (wt) {
+				this.translateX(wt.x);
+				this.translateY(wt.y);
+				this.translateZ(wt.z);
+				let p = utils.unprojectFromWorld(this.position);
+				this.coordinates = options.position = p;
 			}
 
 			if (r) {
