@@ -3,9 +3,11 @@
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
 #### :sparkles: Enhancements
-- Updated builds using package browserify 17.0.0.
-- Updated tape 5.1.1
 - #182 Resource interpreted as Stylesheet but transferred with MIME type text/plain 
+
+#### :pencil: Documentation
+- Updated [documentation](/docs/Threebox.md) started to link points and improving documentation descriptions in general.
+- Updated [README.md](/).
 
 <br>
 

@@ -12,7 +12,9 @@ Threebox works by adding a *Three.js* scene to *Mapbox GL*, creating a new *Mapb
 
 ## Examples
 
-Threebox contains [18 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.
+Threebox contains [18 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.  
+To run them, create a `config.js` file with your Mapbox-gl-js access token, in the same folder and in the format of [the template](https://github.com/jscastro76/threebox/blob/master/examples/config_template.js).
+
 - [01-basic.html](https://github.com/jscastro76/threebox/blob/master/examples/01-basic.html) 
 - [02-line.html](https://github.com/jscastro76/threebox/blob/master/examples/02-line.html) 
 - [03-tube.html](https://github.com/jscastro76/threebox/blob/master/examples/03-tube.html) 
@@ -41,38 +43,82 @@ Threebox contains [18 examples](https://github.com/jscastro76/threebox/blob/mast
 
 ### Using Threebox
 
-The instance of Threebox will be used normally across the full page, so it's recommended to be created at `window` scope to be used as a global variable, but this also will require to explicitly `dispose` the instance, otherwise it can produce memory leaks.
+You can use threebox in three different ways. 
+
+#### NPM install
+Add threebox to your project via **npm package** [![NPM version](http://img.shields.io/npm/v/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin) :  
+`npm install threebox-plugin`  
+
+Then you will need to import Threebox object in your code. Depending your javascript framework this might be different. 
+```js 
+import { Threebox } from 'threebox-plugin/dist/threebox'; 
+```  
+<br/>
+
+#### Use the bundle locally
+Download the bundle from [`dist/threebox.js`](dist/threebox.js) or [`dist/threebox.min.js`](dist/threebox.min.js) and include it in a `<script>` tag on your page.  
+If you want to use styles predefined, add the link to the cascade style sheet, just ensure the `src` and `href` attributes are pointing to relative or absolute url path.  
+```html
+<script src="../dist/threebox.js" type="text/javascript"></script>
+<link href="./css/threebox.css" rel="stylesheet" />
+```
+<br/>
+
+#### Public CDNs
+Threebox can be also used from different public CDNs:  
+
+##### jsdelivr
+```html
+<script src="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.7/dist/threebox.min.js" type="text/javascript"></script>
+<link href="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.7/examples/css/threebox.css" rel="stylesheet" />
+```
+
+##### unpkg
+```html
+<script src="https://unpkg.com/threebox-plugin@2.1.7/dist/threebox.min.js" type="text/javascript"></script>
+<link href="https://unpkg.com/threebox-plugin@2.1.7/examples/css/threebox.css" rel="stylesheet" />
+```
+<br/>
+
+
+- - -
+
+### Threebox instance
+
+The instance of Threebox will be used normally across the full page, so it's recommended to be created at `window` scope to be used as a global variable.  
+Creating a global instance might be producing memory leaks when you navigate to other pages without disposing properly the resources. You can use [`tb.dispose`](#dispose) method to fully dispose the instance of Threebox but also all mapbox and three.js resources together.
 
 #### constructor
 
 ```js
-var tb = new Threebox(map, mapboxGLContext [, options])
+var tb = new Threebox(map, glContext [, options])
 ```
 
-Sets up a threebox scene inside a [*Mapbox GL* custom layer's onAdd function](https://www.mapbox.com/mapbox-gl-js/api/#customlayerinterface), which provides both inputs for this method. Automatically synchronizes the camera movement and events between *Three.js* and *Mapbox GL* JS. 
+Sets up a Threebox scene using an [Mapbox map](https://docs.mapbox.com/mapbox-gl-js/api/map/#map) and a [WebGLRenderingContext](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext), both of them can be obtained from *Mapbox GL map* instance.  
+`options` param is optional and can contain the following values:
 
 | option | required | default | type   | purpose                                                                                  |
 |-----------|----------|---------|--------|----------------------------------------------------------------------------------------------|
 | `defaultLights`    | no       | false      | boolean | Whether to add some default lighting to the scene. If no lighting added, most objects in the scene will render as black |
-| `realSunlight`    | no       | false      | boolean | It sets lights that simulate Sun position for the map center coords (`map.getCenter`) and user local datetime (`new Date()`). This sunlight can be updated through `tb.setSunlight` method. It calls internally to suncalc module. |
+| `realSunlight`    | no       | false      | boolean | It sets lights that simulate Sun position for the map center coords `map.getCenter` and user local datetime `new Date()`. This sunlight can be updated through `tb.setSunlight` method. It calls internally to suncalc module. |
 | `realSunlightHelper`    | no       | false      | boolean | It sets if a light helper will be shown when `realSunlight` is true. |
 | `passiveRendering`     | no       | true   | boolean  | Color of line. Unlike other Threebox objects, this color will render on screen precisely as specified, regardless of scene lighting |
-| `enableSelectingFeatures`     | no       | false   | boolean  | Enables the Mouseover and Selection of fill-extrusion features. This will fire the event `SelectedFeatureChange` |
-| `enableSelectingObjects`     | no       | false   | boolean  | Enables the Mouseover and Selection of 3D objects. This will fire the event `SelectedChange`. This value will set the `options.bbx` value of the objects created.|
-| `enableDraggingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'translate'` or `draggedAction = 'altitude'` |
-| `enableRotatingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event `ObjectDragged` where `draggedAction = 'rotate'`|
+| `enableSelectingFeatures`     | no       | false   | boolean  | Enables the Mouseover and Selection of fill-extrusion features. This will fire the event [`SelectedFeatureChange`](#SelectedFeatureChange) |
+| `enableSelectingObjects`     | no       | false   | boolean  | Enables the Mouseover and Selection of 3D objects. This will fire the event [`SelectedChange`](#SelectedChange). This value will set the `options.bbx` value of the objects created.|
+| `enableDraggingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event [`ObjectDragged`](#ObjectDragged) where `draggedAction = 'translate'` or `draggedAction = 'altitude'` |
+| `enableRotatingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event [`ObjectDragged`](#ObjectDragged)  where `draggedAction = 'rotate'`|
 | `enableToltips`     | no       | false   | boolean  | Enables the default tooltips on fill-extrusion features and 3D Objects|
-| `multiLayer`     | no       | false   | boolean  | Enables the option for multi layer pages where a default layer will be created internally that will manage the `tb.update` calls  |
-| `orthographic`     | no       | false   | boolean  | Enables the option to set a `THREE.OrthographicCamera` instead of a `THREE.PerspectiveCamera` which is the default in Mapbox  |
-| `fov`     | no       | ThreeboxConstants.FOV_DEGREES | number | Enables to set the FOV of the default `THREE.PerspectiveCamera`. This value has no effect if `orthographic: true`  |
+| `multiLayer`     | no       | false   | boolean  | Enables the option for multi layer pages where a default layer will be created internally that will manage the [`tb.update`](#update) calls  |
+| `orthographic`     | no       | false   | boolean  | Enables the option to set a [`THREE.OrthographicCamera`](https://threejs.org/docs/index.html#api/en/cameras/OrthographicCamera) instead of a `THREE.PerspectiveCamera` which is the default in Mapbox  |
+| `fov`     | no       | ThreeboxConstants.FOV_DEGREES | number | Enables to set the FOV of the default [`THREE.PerspectiveCamera`](https://threejs.org/docs/index.html#api/en/cameras/PerspectiveCamera). This value has no effect if `orthographic: true`  |
 
-The setup will require to call recursively to `tb.update();` to render the Threebox scene. This 
-[CustomLayerInterface#render](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface#render)
+To render Threebox scene, first is needed to create a [CustomLayerInterface](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface), and then add the 3D objects to render at [`onAdd` function](https://www.mapbox.com/mapbox-gl-js/api/#customlayerinterface).  
+Second, you need to call recursively to [`tb.update();`](#update) method from 
+[CustomLayerInterface `render` function](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface#render).  
+Threebox then automatically synchronizes the camera movement and events between *Three.js* and *Mapbox GL* JS.   
 
-Rerender the threebox scene. Fired in the custom layer's `render` function.
-                                                             
-
-The `mapboxGLContext` instance can be obtained in different ways. The most usual one is to get the context from the instance of the member [`onAdd(map, gl)`](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface#onadd), but that implies that it's created in every call to the method [`addLayer(layer[, beforeId])`](https://docs.mapbox.com/mapbox-gl-js/api/map/#map#addlayer)
+[WebGLRenderingContext](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext) instance can be obtained in different ways. The most usual one is to get the context from the instance of the member [`onAdd(map, gl)`](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface#onadd).  
+This method is quick and easy, but it implies that it's created only in every call to the method [`addLayer(layer[, beforeId])`](https://docs.mapbox.com/mapbox-gl-js/api/map/#map#addlayer)
 ```js
 map.addLayer({
 	id: 'custom_layer',
@@ -85,16 +131,20 @@ map.addLayer({
 			gl, //get the context from Mapbox
 			{ defaultLights: true }
 		);
-		...
-		...
+		var geometry = new THREE.BoxGeometry(30, 60, 120);
+		let cube = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0x660000 }));
+		cube = tb.Object3D({ obj: cube, units: 'meters' });
+		cube.setCoords([-3.460539968876, 40.4849214450]);
+		tb.add(cube);
 	},
 	render: function (gl, matrix) {
 		tb.update(); //update Threebox scene
 	}
-	
 }
-```
-The second way is to the context from the canvas of the *Mapbox GL* map [`map.getCanvas().getContext('webgl')`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext). In this way the creation of the Threebox can be instantiated separately from the `addLayer` method.
+```  
+
+The second way is to get the context from the canvas of the *Mapbox GL* map [`map.getCanvas().getContext('webgl')`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext).  
+In this way the creation of the Threebox can be instantiated separately from the `addLayer` method that is more useful for multiple layers and objects. In this way the instace will exist even if there are no custom layers created, so you have to take care to properly dispose the resources.
 
 ```js
 window.tb = new Threebox(
@@ -102,6 +152,22 @@ window.tb = new Threebox(
 	map.getCanvas().getContext('webgl'), //get the context from the map canvas
 	{ defaultLights: true }
 );
+map.addLayer({
+	id: 'custom_layer',
+	type: 'custom',
+	renderingMode: '3d',
+	onAdd: function (map, gl) {
+		var geometry = new THREE.BoxGeometry(30, 60, 120);
+		let cube = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0x660000 }));
+		cube = tb.Object3D({ obj: cube, units: 'meters' });
+		cube.setCoords([-3.460539968876, 40.4849214450]);
+		tb.add(cube);
+	},
+	render: function (gl, matrix) {
+		tb.update(); //update Threebox scene
+	}
+}
+
 ```
 <br>
 
@@ -113,13 +179,13 @@ One of the most powerful capabilities of Threebox is the option to load 3D model
 Once the model is loaded and added to Threebox, the object is powered by default with some methods, interactions, events and animations. 
 
 Once the object is loaded and added to Threebox instance, it can be **selectable**, **draggable** and **rotable** (over the z axis) 
-with the mouse if Threebox instance properties `enableSelectingObjects`, `enableDraggingObjects` and 
-`enableRotatingObjects` are set to `true`.
+with the mouse if Threebox instance properties [`enableSelectingObjects`](#enableselectingfeatures), [`enableDraggingObjects`](#enableDraggingObjects) and 
+[`enableRotatingObjects`](#enableRotatingObjects) are set to `true`.
 
-- To **drag** an object you have to select the object and then press **SHIFT** key and move the mouse.
+- To **drag** an object you have to select the object and then press **SHIFT** key and move the mouse to change its Lnglat position, and **CTRL** key to change its altitude.
 - To **rotate** and object you have to select the object and then press **ALT** key and move the mouse. The object will always rotate over its defined center.
 
-Any 3D object (including 3D extrusions created through fill-extrusion mapbox layers) will have a tooltip if the Threebox instance property `tb.enableTooltips` is set to true.
+Any 3D object (including 3D extrusions created through fill-extrusion mapbox layers) will have a tooltip if the Threebox instance property [`tb.enableTooltips`](#enableTooltips) is set to true.
 
 Here below is the simplest sample to load a 3D model:
 
@@ -219,7 +285,8 @@ method to add an object to Threebox scene. It will add it to `tb.world.children`
 ```js
 async tb.clear([layerId, dispose])
 ```
-This method removes any children from `tb.world`. If it receives a `layerId` this only affects to the objects in that layer. If it receives `true` as a param, it will also call `obj.dispose` to dispose all the resources reserved by those objects.
+This method removes any children from `tb.world`. If it receives a `layerId` this only affects to the objects in that layer.  
+If it receives `true` as a param, it will also call internally `obj.dispose` to dispose all the resources reserved by those objects.
 
 <br>
 
@@ -228,7 +295,8 @@ This method removes any children from `tb.world`. If it receives a `layerId` thi
 ```js
 tb.defaultLights()
 ```
-This method creates the default illumination of the Threebox `scene`. It creates a [`THREE.AmbientLight`](https://threejs.org/docs/#api/en/lights/AmbientLight) and two [`THREE.DirectionalLight`](https://threejs.org/docs/#api/en/lights/DirectionalLight).
+This method creates the default illumination of the Threebox `scene`.  
+By default, it creates a [`THREE.AmbientLight`](https://threejs.org/docs/#api/en/lights/AmbientLight) and assigned to [`tb.lights.ambientLight`]() two [`THREE.DirectionalLight`](https://threejs.org/docs/#api/en/lights/DirectionalLight).
 These lights can be overriden manually adding custom lights to the Threebox `scene`.
 
 <br>
@@ -764,7 +832,7 @@ tb.fov : Number (degrees)
 ```
 By default is `ThreeboxConstants.FOV_DEGREES`.  
 This get/set property sets and returns the value of the Field of View (FOV) used in the Camera. 
-This value is only valid when `tb.orthographic` is false which implicitly means the camera being used is a perspective camera.
+This value is only valid when `tb.orthographic` is false which implicitly means the camera being used is a [`THREE.PerspectiveCamera`](https://threejs.org/docs/index.html#api/en/cameras/PerspectiveCamera).
 When `tb.orthographic` is true, this value has no effect because the FOV for orthographic view is always 0.
 
 **IMPORTANT**  
@@ -782,6 +850,20 @@ tb.gridStep : Number(integer)
 This get/set property receives and returns the size in precision decimals of the step to use when an object is dragged horizontally reducing the number of decimals managed by Mapbox in its coords. 
 By default the precision of this step is set to 6 decimals = 11.1 cm, setting this property to 7 the grid will be reduced to 1.1 cm.  
 Mapbox minimum value for the FOV is `0.01`, so if it receives a `0` value, it will be converted to `0.01` by Mapbox `map.transform.fov` property to it's minimum value.
+
+<br>
+
+#### lights
+```js
+tb.lights : Object
+```
+This get\set property receives and returns the full set of lights applied to the scene.
+`tb.lights.ambientLight` is initialized with an instance [`THREE.AmbientLight`](https://threejs.org/docs/#api/en/lights/AmbientLight) by [`tb.defaultLights()`](#defaultLights) method, but can be overriden manually.
+`tb.lights.dirLight` could be initialized with an instance [`THREE.DirectionalLight`](https://threejs.org/docs/#api/en/lights/DirectionalLight) by [`tb.defaultLights()`](#defaultLights) or [`tb.setSunlight`](#setSunlight). It's not recommended to override this light is using [`realSunlight`](#realSunlight) property.
+`tb.lights.dirLightBack` is initialized with an instance [`THREE.DirectionalLight`](https://threejs.org/docs/#api/en/lights/DirectionalLight) by [`tb.defaultLights()`](#defaultLights) method, but can be overriden manually.
+`tb.lights.dirLightHelper` is initialized with an instance [`THREE.DirectionalLightHelper`](https://threejs.org/docs/#api/en/helpers/DirectionalLightHelper) by [`tb.setSunlight`](#setSunlight). I'll be visible only if [`realSunlightHelper`](#constructor) is tru in Threebox constructor.
+`tb.lights.hemiLight` is initialized with an instance [`THREE.HemisphereLight`](https://threejs.org/docs/#api/en/lights/HemisphereLight) by [`tb.setSunlight`](#setSunlight).
+`tb.lights.pointLight` is not initialized by default.
 
 <br>
 
@@ -803,8 +885,8 @@ tb.orthographic : Boolean
 ```
 By default is `false`.  
 This get/set property sets and returns the value of the Camera to be used. 
-When `tb.orthographic` is `true`, the camera being used will be an instance of `THREE.OrthographicCamera`.  
-If `tb.orthographic` is `false`, the camera being used will be an instance of `THREE.PerspectiveCamera`.
+When `tb.orthographic` is `true`, the camera being used will be an instance of [`THREE.OrthographicCamera`](https://threejs.org/docs/index.html#api/en/cameras/OrthographicCamera).  
+If `tb.orthographic` is `false`, the camera being used will be an instance of [`THREE.PerspectiveCamera`](https://threejs.org/docs/index.html#api/en/cameras/PerspectiveCamera).
 
 **IMPORTANT**  
 Pure orthographic view is not supported by Mapbox, as the minimum value for FOV is `0.01`, so if`tb.orthographic` is `true` will generate serious issues with polygons and depth calculations with fill-extrusions. 

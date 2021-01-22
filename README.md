@@ -109,21 +109,42 @@ All the [**Threebox Documentation**](/docs/Threebox.md) has been completely upda
 
 ## Getting started
 
-You can use threebox in two different ways. 
+You can use threebox in three different ways. 
 
 #### NPM install
 Add threebox to your project via **npm package** [![NPM version](http://img.shields.io/npm/v/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin) :
+`npm install threebox-plugin`  
 
-`npm install threebox-plugin`
+Then you will need to import Threebox object in your code. Depending your javascript framework this might be different. 
+```js 
+import { Threebox } from 'threebox-plugin/dist/threebox'; 
+```  
+<br/>
 
-#### Use the bundle
+#### Use the bundle locally
 Download the bundle from [`dist/threebox.js`](dist/threebox.js) or [`dist/threebox.min.js`](dist/threebox.min.js) and include it in a `<script>` tag on your page.  
-If you want to use styles predefined, add the link to the cascade style sheet.  
-If deployed in other folder structure or a CDN, just ensure you use your `src` and `href` attributes are pointing to relative or absolute url path. 
+If you want to use styles predefined, add the link to the cascade style sheet, just ensure the `src` and `href` attributes are pointing to relative or absolute url path.  
 ```html
 <script src="../dist/threebox.js" type="text/javascript"></script>
 <link href="./css/threebox.css" rel="stylesheet" />
 ```
+<br/>
+
+#### Public CDNs
+Threebox can be also used from different public CDNs:  
+
+##### jsdelivr
+```html
+<script src="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.7/dist/threebox.min.js" type="text/javascript"></script>
+<link href="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.7/examples/css/threebox.css" rel="stylesheet" />
+```
+
+##### unpkg
+```html
+<script src="https://unpkg.com/threebox-plugin@2.1.7/dist/threebox.min.js" type="text/javascript"></script>
+<link href="https://unpkg.com/threebox-plugin@2.1.7/examples/css/threebox.css" rel="stylesheet" />
+```
+<br/>
 
 #### Test the samples 
 Several introductory examples are [here](https://github.com/jscastro76/threebox/tree/master/examples).  
