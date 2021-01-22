@@ -7,6 +7,12 @@ assignees: ''
 
 ---
 
+<!-- 
+Hello! Thanks for contributing.
+
+As a general rule, if an issue does not show any minimum effort in explaining the problem, we might close the issue here and instead recommend asking on Stack Overflow.
+-->
+
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
 
