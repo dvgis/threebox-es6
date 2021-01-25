@@ -19353,7 +19353,7 @@ var utils = {
 
 		var geometry = new THREE.Geometry();
 
-		for (var v3 of vertices) {
+		for (let v3 of vertices) {
 			geometry.vertices.push(v3)
 		}
 
@@ -19372,7 +19372,7 @@ var utils = {
 	//flatten an array of Vector3's into a shallow array of values in x-y-z order, for bufferGeometry
 	flattenVectors(vectors) {
 		var flattenedArray = [];
-		for (var vertex of vectors) {
+		for (let vertex of vectors) {
 			flattenedArray.push(vertex.x, vertex.y, vertex.z);
 		}
 		return flattenedArray

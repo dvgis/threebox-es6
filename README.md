@@ -126,7 +126,7 @@ Download the bundle from [`dist/threebox.js`](dist/threebox.js) or [`dist/threeb
 If you want to use styles predefined, add the link to the cascade style sheet, just ensure the `src` and `href` attributes are pointing to relative or absolute url path.  
 ```html
 <script src="../dist/threebox.js" type="text/javascript"></script>
-<link href="./css/threebox.css" rel="stylesheet" />
+<link href="../dist/threebox.css" rel="stylesheet" />
 ```
 <br/>
 
@@ -135,14 +135,14 @@ Threebox can be also used from different public CDNs:
 
 ##### jsdelivr
 ```html
-<script src="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.7/dist/threebox.min.js" type="text/javascript"></script>
+<script src="https://cdn.jsdelivr.net/gh/jscastro76/threebox/dist/threebox.min.js" type="text/javascript"></script>
 <link href="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.7/examples/css/threebox.css" rel="stylesheet" />
 ```
 
 ##### unpkg
 ```html
-<script src="https://unpkg.com/threebox-plugin@2.1.7/dist/threebox.min.js" type="text/javascript"></script>
-<link href="https://unpkg.com/threebox-plugin@2.1.7/examples/css/threebox.css" rel="stylesheet" />
+<script src="https://unpkg.com/threebox-plugin/dist/threebox.min.js" type="text/javascript"></script>
+<link href="https://unpkg.com/threebox-plugin/examples/css/threebox.css" rel="stylesheet" />
 ```
 <br/>
 

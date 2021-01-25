@@ -12,7 +12,7 @@ Threebox works by adding a *Three.js* scene to *Mapbox GL*, creating a new *Mapb
 
 ## Examples
 
-Threebox contains [18 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.  
+Threebox contains [19 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.  
 To run them, create a `config.js` file with your Mapbox-gl-js access token, in the same folder and in the format of [the template](https://github.com/jscastro76/threebox/blob/master/examples/config_template.js).
 
 - [01-basic.html](https://github.com/jscastro76/threebox/blob/master/examples/01-basic.html) 
