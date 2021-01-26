@@ -29,7 +29,7 @@
 		mapboxgl.accessToken = config.accessToken;
 		let mapConfig = {
 			MAD: {
-				origin: [-3.460539968876, 40.4849214450, 0], destination: [-3.378467560041173, 40.551832030917126, 1500], center: [-3.44885, 40.49198, 0], zoom: 14.4, pitch: 50, bearing: -13, scale: 1, timezone: 'Europe/Madrid'
+				origin: [-3.460539968876, 40.4849214450, 0], destination: [-3.378467560041173, 40.551832030917126, 1500], center: [-3.44885, 40.49198, 0], zoom: 13.4, pitch: 50, bearing: -13, scale: 1, timezone: 'Europe/Madrid'
 			},
 			names: {
 				customLayer: "custom-layer"
@@ -104,15 +104,14 @@
 						plane.castShadow = true;
 						tb.add(plane);
 
-						//fly(flightPlan);
-						//setTimeout(() => { fly(flightPlan) }, 3000);
-						setTimeout(() => {
-							let opt = {
-								coords: mapConfig.MAD.destination, duration: 20000
-							};
-							plane.set(opt)
-						}, 3000);
-
+						fly(flightPlan);
+						
+						//setTimeout(() => {
+						//	let opt = {
+						//		coords: mapConfig.MAD.destination, duration: 20000
+						//	};
+						//	plane.set(opt)
+						//}, 3000);
 
 					})
 				},
@@ -146,6 +145,217 @@
 			plane.fixedZoom = (api.fixedZoom ? api.maxZoom : null);
 			plane.setObjectScale(map.transform.scale);
 			tb.map.repaint = true;
+		}
+
+		let line;
+
+		function fly(data) {
+			// extract path geometry from callback geojson, and set duration of travel
+			var options = {
+				path: data.geometry.coordinates,
+				duration: 40000
+			}
+
+			// start the truck animation with above options, and remove the line when animation ends
+			plane.followPath(
+				options,
+				function () {
+					tb.remove(line);
+				}
+			);
+
+			// set up geometry for a line to be added to map, lofting it up a bit for *style*
+			let lineGeometry = options.path;
+
+			// create and add line object
+			line = tb.line({
+				geometry: lineGeometry,
+				width: 5,
+				color: 'steelblue'
+			})
+
+			tb.add(line, mapConfig.names.customLayer);
+
+		}
+
+		let flightPlan = {
+			"geometry": {
+				"coordinates": [
+					[
+						-3.459164318324355,
+						40.483196679459695,
+						0
+					],
+					[
+						-3.46032158100065006,
+						40.48405772625512,
+						0
+					],
+					[
+						-3.4601480276212726,
+						40.48464924045098,
+						0
+					],
+					[
+						-3.4605399688768728,
+						40.48492144503072,
+						0
+					],
+					[
+						-3.4544247306827174,
+						40.489871726679894,
+						0
+					],
+					[
+						-3.4419511970175165,
+						40.49989552385142,
+						100
+					],
+					[
+						-3.4199262740950473,
+						40.51776139362727,
+						800
+					],
+					[
+						-3.4064155093898023,
+						40.52744748436612,
+						1000
+					],
+					[
+						-3.394276165400413,
+						40.53214151673197,
+						1400
+					],
+					[
+						-3.3774962506359145,
+						40.53130304189972,
+						1800
+					],
+					[
+						-3.35977648690141,
+						40.523996322867305,
+						2000
+					],
+					[
+						-3.3492733309630296,
+						40.51239798757899,
+						1000
+					],
+					[
+						-3.345716577158697,
+						40.494919870461985,
+						1000
+					],
+					[
+						-3.351353597163751,
+						40.4797236141558,
+						1000
+					],
+					[
+						-3.3787722011184655,
+						40.45432754114316,
+						1000
+					],
+					[
+						-3.4223595762896935,
+						40.41937230956262,
+						1000
+					],
+					[
+						-3.444433667203299,
+						40.40449665396977,
+						1000
+					],
+					[
+						-3.4678526394398546,
+						40.39535552525871,
+						1000
+					],
+					[
+						-3.4864554257066516,
+						40.39245520592732,
+						1000
+					],
+					[
+						-3.503812672766088,
+						40.39513567933946,
+						1000
+					],
+					[
+						-3.5170856837534643,
+						40.40280870363367,
+						1000
+					],
+					[
+						-3.526080266123671,
+						40.41452098042856,
+						1000
+					],
+					[
+						-3.5294395670147196,
+						40.42627781810833,
+						1000
+					],
+					[
+						-3.5263900139946713,
+						40.43272665526561,
+						1000
+					],
+					[
+						-3.520955322876091,
+						40.43652271714541,
+						900
+					],
+					[
+						-3.512454752467022,
+						40.442395503099675,
+						600
+					],
+					[
+						-3.496113157862709,
+						40.45605326123382,
+						400
+					],
+					[
+						-3.4802314192833705,
+						40.46895283940685,
+						200
+					],
+					[
+						-3.4673761065382394,
+						40.47937019244051,
+						100
+					],
+					[
+						-3.4611694105603874,
+						40.4843367730719,
+						0
+					],
+					[
+						-3.460447314584286,
+						40.48495391198887,
+						0
+					],
+					[
+						-3.460162097548647,
+						40.48469346302471,
+						0
+					],
+					[
+						-3.460400363301318,
+						40.48398852655413,
+						0
+					],
+					[
+						-3.4591431034406526,
+						40.48323937836338,
+						0
+					]
+				],
+				"type": "LineString"
+			},
+			"type": "Feature",
+			"properties": {}
 		}
 
 	</script>

@@ -7,6 +7,9 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 - #187 Create an option to translate an object based on world coordinates (obj.position) 
 - #188 Add threebox.css to the /dist folder. Included  now in `npm run build` command
 
+#### :beetle: Bug fixes
+- #177 [BUG] FollowPath animation with realSunlight produces an error
+
 #### :pencil: Documentation
 - Updated [documentation](/docs/Threebox.md) started to link points and improving documentation descriptions in general.
 - Updated [README.md](/).

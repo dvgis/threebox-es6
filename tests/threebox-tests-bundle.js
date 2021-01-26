@@ -13679,8 +13679,6 @@ function line(obj){
 
 module.exports = exports = line;
 
-
-
 /**
  * custom line shader by WestLangley, sourced from https://github.com/mrdoob/three.js/tree/master/examples/js/lines
  *
@@ -13688,50 +13686,48 @@ module.exports = exports = line;
 
 THREE.LineSegmentsGeometry = function () {
 
-	THREE.InstancedBufferGeometry.call( this );
+	THREE.InstancedBufferGeometry.call(this);
 
 	this.type = 'LineSegmentsGeometry';
 
-	var plane = new THREE.BufferGeometry();
+	var positions = [- 1, 2, 0, 1, 2, 0, - 1, 1, 0, 1, 1, 0, - 1, 0, 0, 1, 0, 0, - 1, - 1, 0, 1, - 1, 0];
+	var uvs = [- 1, 2, 1, 2, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 2, 1, - 2];
+	var index = [0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5];
 
-	var positions = [ - 1, 2, 0, 1, 2, 0, - 1, 1, 0, 1, 1, 0, - 1, 0, 0, 1, 0, 0, - 1, - 1, 0, 1, - 1, 0 ];
-	var uvs = [ 0, 1, 1, 1, 0, .5, 1, .5, 0, .5, 1, .5, 0, 0, 1, 0 ];
-	var index = [ 0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5 ];
-
-	this.setIndex( index );
-	this.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
-	this.setAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
+	this.setIndex(index);
+	this.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+	this.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
 
 };
 
-THREE.LineSegmentsGeometry.prototype = Object.assign( Object.create( THREE.InstancedBufferGeometry.prototype ), {
+THREE.LineSegmentsGeometry.prototype = Object.assign(Object.create(THREE.InstancedBufferGeometry.prototype), {
 
 	constructor: THREE.LineSegmentsGeometry,
 
 	isLineSegmentsGeometry: true,
 
-	applyMatrix: function ( matrix ) {
+	applyMatrix4: function (matrix) {
 
 		var start = this.attributes.instanceStart;
 		var end = this.attributes.instanceEnd;
 
-		if ( start !== undefined ) {
+		if (start !== undefined) {
 
-			matrix.applyToBufferAttribute( start );
+			start.applyMatrix4(matrix);
 
-			matrix.applyToBufferAttribute( end );
+			end.applyMatrix4(matrix);
 
-			start.data.needsUpdate = true;
+			start.needsUpdate = true;
 
 		}
 
-		if ( this.boundingBox !== null ) {
+		if (this.boundingBox !== null) {
 
 			this.computeBoundingBox();
 
 		}
 
-		if ( this.boundingSphere !== null ) {
+		if (this.boundingSphere !== null) {
 
 			this.computeBoundingSphere();
 
@@ -13741,24 +13737,24 @@ THREE.LineSegmentsGeometry.prototype = Object.assign( Object.create( THREE.Insta
 
 	},
 
-	setPositions: function ( array ) {
+	setPositions: function (array) {
 
 		var lineSegments;
 
-		if ( array instanceof Float32Array ) {
+		if (array instanceof Float32Array) {
 
 			lineSegments = array;
 
-		} else if ( Array.isArray( array ) ) {
+		} else if (Array.isArray(array)) {
 
-			lineSegments = new Float32Array( array );
+			lineSegments = new Float32Array(array);
 
 		}
 
-		var instanceBuffer = new THREE.InstancedInterleavedBuffer( lineSegments, 6, 1 ); // xyz, xyz
+		var instanceBuffer = new THREE.InstancedInterleavedBuffer(lineSegments, 6, 1); // xyz, xyz
 
-		this.setAttribute( 'instanceStart', new THREE.InterleavedBufferAttribute( instanceBuffer, 3, 0 ) ); // xyz
-		this.setAttribute( 'instanceEnd', new THREE.InterleavedBufferAttribute( instanceBuffer, 3, 3 ) ); // xyz
+		this.setAttribute('instanceStart', new THREE.InterleavedBufferAttribute(instanceBuffer, 3, 0)); // xyz
+		this.setAttribute('instanceEnd', new THREE.InterleavedBufferAttribute(instanceBuffer, 3, 3)); // xyz
 
 		//
 
@@ -13769,48 +13765,48 @@ THREE.LineSegmentsGeometry.prototype = Object.assign( Object.create( THREE.Insta
 
 	},
 
-	setColors: function ( array ) {
+	setColors: function (array) {
 
 		var colors;
 
-		if ( array instanceof Float32Array ) {
+		if (array instanceof Float32Array) {
 
 			colors = array;
 
-		} else if ( Array.isArray( array ) ) {
+		} else if (Array.isArray(array)) {
 
-			colors = new Float32Array( array );
+			colors = new Float32Array(array);
 
 		}
 
-		var instanceColorBuffer = new THREE.InstancedInterleavedBuffer( colors, 6, 1 ); // rgb, rgb
+		var instanceColorBuffer = new THREE.InstancedInterleavedBuffer(colors, 6, 1); // rgb, rgb
 
-		this.setAttribute( 'instanceColorStart', new THREE.InterleavedBufferAttribute( instanceColorBuffer, 3, 0 ) ); // rgb
-		this.setAttribute( 'instanceColorEnd', new THREE.InterleavedBufferAttribute( instanceColorBuffer, 3, 3 ) ); // rgb
-
-		return this;
-
-	},
-
-	fromWireframeGeometry: function ( geometry ) {
-
-		this.setPositions( geometry.attributes.position.array );
+		this.setAttribute('instanceColorStart', new THREE.InterleavedBufferAttribute(instanceColorBuffer, 3, 0)); // rgb
+		this.setAttribute('instanceColorEnd', new THREE.InterleavedBufferAttribute(instanceColorBuffer, 3, 3)); // rgb
 
 		return this;
 
 	},
 
-	fromEdgesGeometry: function ( geometry ) {
+	fromWireframeGeometry: function (geometry) {
 
-		this.setPositions( geometry.attributes.position.array );
+		this.setPositions(geometry.attributes.position.array);
 
 		return this;
 
 	},
 
-	fromMesh: function ( mesh ) {
+	fromEdgesGeometry: function (geometry) {
 
-		this.fromWireframeGeometry( new THREE.WireframeGeometry( mesh.geometry ) );
+		this.setPositions(geometry.attributes.position.array);
+
+		return this;
+
+	},
+
+	fromMesh: function (mesh) {
+
+		this.fromWireframeGeometry(new THREE.WireframeGeometry(mesh.geometry));
 
 		// set colors, maybe
 
@@ -13818,17 +13814,18 @@ THREE.LineSegmentsGeometry.prototype = Object.assign( Object.create( THREE.Insta
 
 	},
 
-	fromLineSegements: function ( lineSegments ) {
+	fromLineSegments: function (lineSegments) {
 
 		var geometry = lineSegments.geometry;
 
-		if ( geometry.isGeometry ) {
+		if (geometry.isGeometry) {
 
-			this.setPositions( geometry.vertices );
+			console.error('THREE.LineSegmentsGeometry no longer supports THREE.Geometry. Use THREE.BufferGeometry instead.');
+			return;
 
-		} else if ( geometry.isBufferGeometry ) {
+		} else if (geometry.isBufferGeometry) {
 
-			this.setPositions( geometry.position.array ); // assumes non-indexed
+			this.setPositions(geometry.attributes.position.array); // assumes non-indexed
 
 		}
 
@@ -13844,7 +13841,7 @@ THREE.LineSegmentsGeometry.prototype = Object.assign( Object.create( THREE.Insta
 
 		return function computeBoundingBox() {
 
-			if ( this.boundingBox === null ) {
+			if (this.boundingBox === null) {
 
 				this.boundingBox = new THREE.Box3();
 
@@ -13853,13 +13850,13 @@ THREE.LineSegmentsGeometry.prototype = Object.assign( Object.create( THREE.Insta
 			var start = this.attributes.instanceStart;
 			var end = this.attributes.instanceEnd;
 
-			if ( start !== undefined && end !== undefined ) {
+			if (start !== undefined && end !== undefined) {
 
-				this.boundingBox.setFromBufferAttribute( start );
+				this.boundingBox.setFromBufferAttribute(start);
 
-				box.setFromBufferAttribute( end );
+				box.setFromBufferAttribute(end);
 
-				this.boundingBox.union( box );
+				this.boundingBox.union(box);
 
 			}
 
@@ -13873,13 +13870,13 @@ THREE.LineSegmentsGeometry.prototype = Object.assign( Object.create( THREE.Insta
 
 		return function computeBoundingSphere() {
 
-			if ( this.boundingSphere === null ) {
+			if (this.boundingSphere === null) {
 
 				this.boundingSphere = new THREE.Sphere();
 
 			}
 
-			if ( this.boundingBox === null ) {
+			if (this.boundingBox === null) {
 
 				this.computeBoundingBox();
 
@@ -13888,29 +13885,29 @@ THREE.LineSegmentsGeometry.prototype = Object.assign( Object.create( THREE.Insta
 			var start = this.attributes.instanceStart;
 			var end = this.attributes.instanceEnd;
 
-			if ( start !== undefined && end !== undefined ) {
+			if (start !== undefined && end !== undefined) {
 
 				var center = this.boundingSphere.center;
 
-				this.boundingBox.getCenter( center );
+				this.boundingBox.getCenter(center);
 
 				var maxRadiusSq = 0;
 
-				for ( var i = 0, il = start.count; i < il; i ++ ) {
+				for (var i = 0, il = start.count; i < il; i++) {
 
-					vector.fromBufferAttribute( start, i );
-					maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( vector ) );
+					vector.fromBufferAttribute(start, i);
+					maxRadiusSq = Math.max(maxRadiusSq, center.distanceToSquared(vector));
 
-					vector.fromBufferAttribute( end, i );
-					maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( vector ) );
+					vector.fromBufferAttribute(end, i);
+					maxRadiusSq = Math.max(maxRadiusSq, center.distanceToSquared(vector));
 
 				}
 
-				this.boundingSphere.radius = Math.sqrt( maxRadiusSq );
+				this.boundingSphere.radius = Math.sqrt(maxRadiusSq);
 
-				if ( isNaN( this.boundingSphere.radius ) ) {
+				if (isNaN(this.boundingSphere.radius)) {
 
-					console.error( 'THREE.LineSegmentsGeometry.computeBoundingSphere(): Computed radius is NaN. The instanced position data is likely to have NaN values.', this );
+					console.error('THREE.LineSegmentsGeometry.computeBoundingSphere(): Computed radius is NaN. The instanced position data is likely to have NaN values.', this);
 
 				}
 
@@ -13926,21 +13923,15 @@ THREE.LineSegmentsGeometry.prototype = Object.assign( Object.create( THREE.Insta
 
 	},
 
-	clone: function () {
+	applyMatrix: function (matrix) {
 
-		// todo
+		console.warn('THREE.LineSegmentsGeometry: applyMatrix() has been renamed to applyMatrix4().');
 
-	},
-
-	copy: function ( source ) {
-
-		// todo
-
-		return this;
+		return this.applyMatrix4(matrix);
 
 	}
 
-} );
+});
 
 /**
  * @author WestLangley / http://github.com/WestLangley
@@ -13949,79 +13940,80 @@ THREE.LineSegmentsGeometry.prototype = Object.assign( Object.create( THREE.Insta
 
 THREE.LineGeometry = function () {
 
-	THREE.LineSegmentsGeometry.call( this );
+	THREE.LineSegmentsGeometry.call(this);
 
 	this.type = 'LineGeometry';
 
 };
 
-THREE.LineGeometry.prototype = Object.assign( Object.create( THREE.LineSegmentsGeometry.prototype ), {
+THREE.LineGeometry.prototype = Object.assign(Object.create(THREE.LineSegmentsGeometry.prototype), {
 
 	constructor: THREE.LineGeometry,
 
 	isLineGeometry: true,
 
-	setPositions: function ( array ) {
+	setPositions: function (array) {
 
 		// converts [ x1, y1, z1,  x2, y2, z2, ... ] to pairs format
 
 		var length = array.length - 3;
-		var points = new Float32Array( 2 * length );
+		var points = new Float32Array(2 * length);
 
-		for ( var i = 0; i < length; i += 3 ) {
+		for (var i = 0; i < length; i += 3) {
 
-			points[ 2 * i ] = array[ i ];
-			points[ 2 * i + 1 ] = array[ i + 1 ];
-			points[ 2 * i + 2 ] = array[ i + 2 ];
+			points[2 * i] = array[i];
+			points[2 * i + 1] = array[i + 1];
+			points[2 * i + 2] = array[i + 2];
 
-			points[ 2 * i + 3 ] = array[ i + 3 ];
-			points[ 2 * i + 4 ] = array[ i + 4 ];
-			points[ 2 * i + 5 ] = array[ i + 5 ];
+			points[2 * i + 3] = array[i + 3];
+			points[2 * i + 4] = array[i + 4];
+			points[2 * i + 5] = array[i + 5];
 
 		}
 
-		THREE.LineSegmentsGeometry.prototype.setPositions.call( this, points );
+		THREE.LineSegmentsGeometry.prototype.setPositions.call(this, points);
 
 		return this;
 
 	},
 
-	setColors: function ( array ) {
+	setColors: function (array) {
 
 		// converts [ r1, g1, b1,  r2, g2, b2, ... ] to pairs format
 
 		var length = array.length - 3;
-		var colors = new Float32Array( 2 * length );
+		var colors = new Float32Array(2 * length);
 
-		for ( var i = 0; i < length; i += 3 ) {
+		for (var i = 0; i < length; i += 3) {
 
-			colors[ 2 * i ] = array[ i ];
-			colors[ 2 * i + 1 ] = array[ i + 1 ];
-			colors[ 2 * i + 2 ] = array[ i + 2 ];
+			colors[2 * i] = array[i];
+			colors[2 * i + 1] = array[i + 1];
+			colors[2 * i + 2] = array[i + 2];
 
-			colors[ 2 * i + 3 ] = array[ i + 3 ];
-			colors[ 2 * i + 4 ] = array[ i + 4 ];
-			colors[ 2 * i + 5 ] = array[ i + 5 ];
+			colors[2 * i + 3] = array[i + 3];
+			colors[2 * i + 4] = array[i + 4];
+			colors[2 * i + 5] = array[i + 5];
 
 		}
 
-		THREE.LineSegmentsGeometry.prototype.setColors.call( this, colors );
+		THREE.LineSegmentsGeometry.prototype.setColors.call(this, colors);
 
 		return this;
 
 	},
 
-	fromLine: function ( line ) {
+	fromLine: function (line) {
 
 		var geometry = line.geometry;
 
-		if ( geometry.isGeometry ) {
+		if (geometry.isGeometry) {
 
-			this.setPositions( geometry.vertices );
+			console.error('THREE.LineGeometry no longer supports THREE.Geometry. Use THREE.BufferGeometry instead.');
+			return;
 
-		} else if ( geometry.isBufferGeometry ) {
+		} else if (geometry.isBufferGeometry) {
 
-			this.setPositions( geometry.position.array ); // assumes non-indexed
+			this.setPositions(geometry.attributes.position.array); // assumes non-indexed
 
 		}
 
@@ -14031,7 +14023,7 @@ THREE.LineGeometry.prototype = Object.assign( Object.create( THREE.LineSegmentsG
 
 	},
 
-	copy: function ( source ) {
+	copy: function ( /* source */) {
 
 		// todo
 
@@ -14039,40 +14031,32 @@ THREE.LineGeometry.prototype = Object.assign( Object.create( THREE.LineSegmentsG
 
 	}
 
-} );
+});
 
 /**
  * @author WestLangley / http://github.com/WestLangley
  *
  */
 
-THREE.WireframeGeometry2 = function ( geometry ) {
+THREE.WireframeGeometry2 = function (geometry) {
 
-	THREE.LineSegmentsGeometry.call( this );
+	THREE.LineSegmentsGeometry.call(this);
 
 	this.type = 'WireframeGeometry2';
 
-	this.fromWireframeGeometry( new THREE.WireframeGeometry( geometry ) );
+	this.fromWireframeGeometry(new THREE.WireframeGeometry(geometry));
 
 	// set colors, maybe
 
 };
 
-THREE.WireframeGeometry2.prototype = Object.assign( Object.create( THREE.LineSegmentsGeometry.prototype ), {
+THREE.WireframeGeometry2.prototype = Object.assign(Object.create(THREE.LineSegmentsGeometry.prototype), {
 
 	constructor: THREE.WireframeGeometry2,
 
-	isWireframeGeometry2: true,
+	isWireframeGeometry2: true
 
-	copy: function ( source ) {
-
-		// todo
-
-		return this;
-
-	}
-
-} );
+});
 
 /**
  * @author WestLangley / http://github.com/WestLangley
@@ -14088,23 +14072,38 @@ THREE.WireframeGeometry2.prototype = Object.assign( Object.create( THREE.LineSeg
  * }
  */
 
+/**
+ * parameters = {
+ *  color: <hex>,
+ *  linewidth: <float>,
+ *  dashed: <boolean>,
+ *  dashScale: <float>,
+ *  dashSize: <float>,
+ *  dashOffset: <float>,
+ *  gapSize: <float>,
+ *  resolution: <Vector2>, // to be set by renderer
+ * }
+ */
+
 THREE.UniformsLib.line = {
 
 	linewidth: { value: 1 },
-	resolution: { value: new THREE.Vector2( 1, 1 ) },
+	resolution: { value: new THREE.Vector2(1, 1) },
 	dashScale: { value: 1 },
 	dashSize: { value: 1 },
-	gapSize: { value: 1 } // todo FIX - maybe change to totalSize
+	dashOffset: { value: 0 },
+	gapSize: { value: 1 }, // todo FIX - maybe change to totalSize
+	opacity: { value: 1 }
 
 };
 
-THREE.ShaderLib[ 'line' ] = {
+THREE.ShaderLib['line'] = {
 
-	uniforms: THREE.UniformsUtils.merge( [
+	uniforms: THREE.UniformsUtils.merge([
 		THREE.UniformsLib.common,
 		THREE.UniformsLib.fog,
 		THREE.UniformsLib.line
-	] ),
+	]),
 
 	vertexShader:
 		`
@@ -14244,9 +14243,9 @@ THREE.ShaderLib[ 'line' ] = {
 
 			gl_Position = clip;
 
-			#include <logdepthbuf_vertex>
+			vec4 mvPosition = ( position.y < 0.5 ) ? start : end; // this is an approximation
 
-			#include <worldpos_vertex>
+			#include <logdepthbuf_vertex>
 			#include <clipping_planes_vertex>
 			#include <fog_vertex>
 
@@ -14261,6 +14260,7 @@ THREE.ShaderLib[ 'line' ] = {
 		#ifdef USE_DASH
 
 			uniform float dashSize;
+			uniform float dashOffset;
 			uniform float gapSize;
 
 		#endif
@@ -14281,19 +14281,19 @@ THREE.ShaderLib[ 'line' ] = {
 
 			#ifdef USE_DASH
 
-				if ( vUv.y < 0.5 || vUv.y > 0.5 ) discard; // discard endcaps
+				if ( vUv.y < - 1.0 || vUv.y > 1.0 ) discard; // discard endcaps
 
-				if ( mod( vLineDistance, dashSize + gapSize ) > dashSize ) discard; // todo - FIX
+				if ( mod( vLineDistance + dashOffset, dashSize + gapSize ) > dashSize ) discard; // todo - FIX
 
 			#endif
 
-			if ( vUv.y < 0.5 || vUv.y > 0.5 ) {
+			if ( abs( vUv.y ) > 1.0 ) {
 
-				float a = vUv.x - 0.5;
-				float b = vUv.y - 0.5;
+				float a = vUv.x;
+				float b = ( vUv.y > 0.0 ) ? vUv.y - 1.0 : vUv.y + 1.0;
 				float len2 = a * a + b * b;
 
-				if ( len2 > 0.25 ) discard;
+				if ( len2 > 1.0 ) discard;
 
 			}
 
@@ -14302,36 +14302,35 @@ THREE.ShaderLib[ 'line' ] = {
 			#include <logdepthbuf_fragment>
 			#include <color_fragment>
 
-			gl_FragColor = vec4( diffuseColor.rgb, opacity );
+			gl_FragColor = vec4( diffuseColor.rgb, diffuseColor.a );
 
-			#include <premultiplied_alpha_fragment>
 			#include <tonemapping_fragment>
 			#include <encodings_fragment>
 			#include <fog_fragment>
+			#include <premultiplied_alpha_fragment>
 
 		}
 		`
 };
 
-THREE.LineMaterial = function ( parameters ) {
+THREE.LineMaterial = function (parameters) {
 
-	var lineUniforms = THREE.UniformsUtils.clone( THREE.ShaderLib[ 'line' ].uniforms );
-	lineUniforms.opacity.value = parameters.opacity;
-
-	THREE.ShaderMaterial.call( this, {
+	THREE.ShaderMaterial.call(this, {
 
 		type: 'LineMaterial',
 
-		uniforms: lineUniforms,
+		uniforms: THREE.UniformsUtils.clone(THREE.ShaderLib['line'].uniforms),
 
-		vertexShader: THREE.ShaderLib[ 'line' ].vertexShader,
-		fragmentShader: THREE.ShaderLib[ 'line' ].fragmentShader
+		vertexShader: THREE.ShaderLib['line'].vertexShader,
+		fragmentShader: THREE.ShaderLib['line'].fragmentShader,
 
-	} );
+		clipping: true // required for clipping support
+
+	});
 
 	this.dashed = false;
 
-	Object.defineProperties( this, {
+	Object.defineProperties(this, {
 
 		color: {
 
@@ -14343,7 +14342,7 @@ THREE.LineMaterial = function ( parameters ) {
 
 			},
 
-			set: function ( value ) {
+			set: function (value) {
 
 				this.uniforms.diffuse.value = value;
 
@@ -14361,7 +14360,7 @@ THREE.LineMaterial = function ( parameters ) {
 
 			},
 
-			set: function ( value ) {
+			set: function (value) {
 
 				this.uniforms.linewidth.value = value;
 
@@ -14379,7 +14378,7 @@ THREE.LineMaterial = function ( parameters ) {
 
 			},
 
-			set: function ( value ) {
+			set: function (value) {
 
 				this.uniforms.dashScale.value = value;
 
@@ -14397,9 +14396,27 @@ THREE.LineMaterial = function ( parameters ) {
 
 			},
 
-			set: function ( value ) {
+			set: function (value) {
 
 				this.uniforms.dashSize.value = value;
+
+			}
+
+		},
+
+		dashOffset: {
+
+			enumerable: true,
+
+			get: function () {
+
+				return this.uniforms.dashOffset.value;
+
+			},
+
+			set: function (value) {
+
+				this.uniforms.dashOffset.value = value;
 
 			}
 
@@ -14415,9 +14432,27 @@ THREE.LineMaterial = function ( parameters ) {
 
 			},
 
-			set: function ( value ) {
+			set: function (value) {
 
 				this.uniforms.gapSize.value = value;
+
+			}
+
+		},
+
+		opacity: {
+
+			enumerable: true,
+
+			get: function () {
+
+				return this.uniforms.opacity.value;
+
+			},
+
+			set: function (value) {
+
+				this.uniforms.opacity.value = value;
 
 			}
 
@@ -14433,64 +14468,48 @@ THREE.LineMaterial = function ( parameters ) {
 
 			},
 
-			set: function ( value ) {
+			set: function (value) {
 
-				this.uniforms.resolution.value.copy( value );
+				this.uniforms.resolution.value.copy(value);
 
 			}
 
 		}
 
-	} );
+	});
 
-	this.setValues( parameters );
+	this.setValues(parameters);
 
 };
 
-THREE.LineMaterial.prototype = Object.create( THREE.ShaderMaterial.prototype );
+THREE.LineMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
 THREE.LineMaterial.prototype.constructor = THREE.LineMaterial;
 
 THREE.LineMaterial.prototype.isLineMaterial = true;
-
-THREE.LineMaterial.prototype.copy = function ( source ) {
-
-	THREE.ShaderMaterial.prototype.copy.call( this, source );
-
-	this.color.copy( source.color );
-
-	this.linewidth = source.linewidth;
-
-	this.resolution = source.resolution;
-
-	// todo
-
-	return this;
-
-};
 
 /**
  * @author WestLangley / http://github.com/WestLangley
  *
  */
 
-THREE.LineSegments2 = function ( geometry, material ) {
+THREE.LineSegments2 = function (geometry, material) {
 
-	THREE.Mesh.call( this );
+	if (geometry === undefined) geometry = new THREE.LineSegmentsGeometry();
+	if (material === undefined) material = new THREE.LineMaterial({ color: Math.random() * 0xffffff });
+
+	THREE.Mesh.call(this, geometry, material);
 
 	this.type = 'LineSegments2';
 
-	this.geometry = geometry !== undefined ? geometry : new THREE.LineSegmentsGeometry();
-	this.material = material !== undefined ? material : new THREE.LineMaterial( { color: Math.random() * 0xffffff } );
-
 };
 
-THREE.LineSegments2.prototype = Object.assign( Object.create( THREE.Mesh.prototype ), {
+THREE.LineSegments2.prototype = Object.assign(Object.create(THREE.Mesh.prototype), {
 
 	constructor: THREE.LineSegments2,
 
 	isLineSegments2: true,
 
-	computeLineDistances: ( function () { // for backwards-compatability, but could be a method of LineSegmentsGeometry...
+	computeLineDistances: (function () { // for backwards-compatability, but could be a method of LineSegmentsGeometry...
 
 		var start = new THREE.Vector3();
 		var end = new THREE.Vector3();
@@ -14501,94 +14520,237 @@ THREE.LineSegments2.prototype = Object.assign( Object.create( THREE.Mesh.prototy
 
 			var instanceStart = geometry.attributes.instanceStart;
 			var instanceEnd = geometry.attributes.instanceEnd;
-			var lineDistances = new Float32Array( 2 * instanceStart.data.count );
+			var lineDistances = new Float32Array(2 * instanceStart.data.count);
 
-			for ( var i = 0, j = 0, l = instanceStart.data.count; i < l; i ++, j += 2 ) {
+			for (var i = 0, j = 0, l = instanceStart.data.count; i < l; i++, j += 2) {
 
-				start.fromBufferAttribute( instanceStart, i );
-				end.fromBufferAttribute( instanceEnd, i );
+				start.fromBufferAttribute(instanceStart, i);
+				end.fromBufferAttribute(instanceEnd, i);
 
-				lineDistances[ j ] = ( j === 0 ) ? 0 : lineDistances[ j - 1 ];
-				lineDistances[ j + 1 ] = lineDistances[ j ] + start.distanceTo( end );
+				lineDistances[j] = (j === 0) ? 0 : lineDistances[j - 1];
+				lineDistances[j + 1] = lineDistances[j] + start.distanceTo(end);
 
 			}
 
-			var instanceDistanceBuffer = new THREE.InstancedInterleavedBuffer( lineDistances, 2, 1 ); // d0, d1
+			var instanceDistanceBuffer = new THREE.InstancedInterleavedBuffer(lineDistances, 2, 1); // d0, d1
 
-			geometry.setAttribute( 'instanceDistanceStart', new THREE.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 0 ) ); // d0
-			geometry.setAttribute( 'instanceDistanceEnd', new THREE.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 1 ) ); // d1
+			geometry.setAttribute('instanceDistanceStart', new THREE.InterleavedBufferAttribute(instanceDistanceBuffer, 1, 0)); // d0
+			geometry.setAttribute('instanceDistanceEnd', new THREE.InterleavedBufferAttribute(instanceDistanceBuffer, 1, 1)); // d1
 
 			return this;
 
 		};
 
-	}() ),
+	}()),
 
-	copy: function ( source ) {
+	raycast: (function () {
 
-		// todo
+		var start = new THREE.Vector4();
+		var end = new THREE.Vector4();
 
-		return this;
+		var ssOrigin = new THREE.Vector4();
+		var ssOrigin3 = new THREE.Vector3();
+		var mvMatrix = new THREE.Matrix4();
+		var line = new THREE.Line3();
+		var closestPoint = new THREE.Vector3();
 
-	}
+		return function raycast(raycaster, intersects) {
 
-} );
+			if (raycaster.camera === null) {
+
+				console.error('LineSegments2: "Raycaster.camera" needs to be set in order to raycast against LineSegments2.');
+
+			}
+
+			var threshold = (raycaster.params.Line2 !== undefined) ? raycaster.params.Line2.threshold || 0 : 0;
+
+			var ray = raycaster.ray;
+			var camera = raycaster.camera;
+			var projectionMatrix = camera.projectionMatrix;
+
+			var geometry = this.geometry;
+			var material = this.material;
+			var resolution = material.resolution;
+			var lineWidth = material.linewidth + threshold;
+
+			var instanceStart = geometry.attributes.instanceStart;
+			var instanceEnd = geometry.attributes.instanceEnd;
+
+			// camera forward is negative
+			var near = - camera.near;
+
+			// pick a point 1 unit out along the ray to avoid the ray origin
+			// sitting at the camera origin which will cause "w" to be 0 when
+			// applying the projection matrix.
+			ray.at(1, ssOrigin);
+
+			// ndc space [ - 1.0, 1.0 ]
+			ssOrigin.w = 1;
+			ssOrigin.applyMatrix4(camera.matrixWorldInverse);
+			ssOrigin.applyMatrix4(projectionMatrix);
+			ssOrigin.multiplyScalar(1 / ssOrigin.w);
+
+			// screen space
+			ssOrigin.x *= resolution.x / 2;
+			ssOrigin.y *= resolution.y / 2;
+			ssOrigin.z = 0;
+
+			ssOrigin3.copy(ssOrigin);
+
+			var matrixWorld = this.matrixWorld;
+			mvMatrix.multiplyMatrices(camera.matrixWorldInverse, matrixWorld);
+
+			for (var i = 0, l = instanceStart.count; i < l; i++) {
+
+				start.fromBufferAttribute(instanceStart, i);
+				end.fromBufferAttribute(instanceEnd, i);
+
+				start.w = 1;
+				end.w = 1;
+
+				// camera space
+				start.applyMatrix4(mvMatrix);
+				end.applyMatrix4(mvMatrix);
+
+				// skip the segment if it's entirely behind the camera
+				var isBehindCameraNear = start.z > near && end.z > near;
+				if (isBehindCameraNear) {
+
+					continue;
+
+				}
+
+				// trim the segment if it extends behind camera near
+				if (start.z > near) {
+
+					const deltaDist = start.z - end.z;
+					const t = (start.z - near) / deltaDist;
+					start.lerp(end, t);
+
+				} else if (end.z > near) {
+
+					const deltaDist = end.z - start.z;
+					const t = (end.z - near) / deltaDist;
+					end.lerp(start, t);
+
+				}
+
+				// clip space
+				start.applyMatrix4(projectionMatrix);
+				end.applyMatrix4(projectionMatrix);
+
+				// ndc space [ - 1.0, 1.0 ]
+				start.multiplyScalar(1 / start.w);
+				end.multiplyScalar(1 / end.w);
+
+				// screen space
+				start.x *= resolution.x / 2;
+				start.y *= resolution.y / 2;
+
+				end.x *= resolution.x / 2;
+				end.y *= resolution.y / 2;
+
+				// create 2d segment
+				line.start.copy(start);
+				line.start.z = 0;
+
+				line.end.copy(end);
+				line.end.z = 0;
+
+				// get closest point on ray to segment
+				var param = line.closestPointToPointParameter(ssOrigin3, true);
+				line.at(param, closestPoint);
+
+				// check if the intersection point is within clip space
+				var zPos = THREE.MathUtils.lerp(start.z, end.z, param);
+				var isInClipSpace = zPos >= - 1 && zPos <= 1;
+
+				var isInside = ssOrigin3.distanceTo(closestPoint) < lineWidth * 0.5;
+
+				if (isInClipSpace && isInside) {
+
+					line.start.fromBufferAttribute(instanceStart, i);
+					line.end.fromBufferAttribute(instanceEnd, i);
+
+					line.start.applyMatrix4(matrixWorld);
+					line.end.applyMatrix4(matrixWorld);
+
+					var pointOnLine = new THREE.Vector3();
+					var point = new THREE.Vector3();
+
+					ray.distanceSqToSegment(line.start, line.end, point, pointOnLine);
+
+					intersects.push({
+
+						point: point,
+						pointOnLine: pointOnLine,
+						distance: ray.origin.distanceTo(point),
+
+						object: this,
+						face: null,
+						faceIndex: i,
+						uv: null,
+						uv2: null,
+
+					});
+
+				}
+
+			}
+
+		};
+
+	}())
+
+});
 
 /**
  * @author WestLangley / http://github.com/WestLangley
  *
  */
 
-THREE.Line2 = function ( geometry, material ) {
+THREE.Line2 = function (geometry, material) {
 
-	THREE.LineSegments2.call( this );
+	if (geometry === undefined) geometry = new THREE.LineGeometry();
+	if (material === undefined) material = new THREE.LineMaterial({ color: Math.random() * 0xffffff });
+
+	THREE.LineSegments2.call(this, geometry, material);
 
 	this.type = 'Line2';
 
-	this.geometry = geometry !== undefined ? geometry : new THREE.LineGeometry();
-	this.material = material !== undefined ? material : new THREE.LineMaterial( { color: Math.random() * 0xffffff } );
-
 };
 
-THREE.Line2.prototype = Object.assign( Object.create( THREE.LineSegments2.prototype ), {
+THREE.Line2.prototype = Object.assign(Object.create(THREE.LineSegments2.prototype), {
 
 	constructor: THREE.Line2,
 
-	isLine2: true,
+	isLine2: true
 
-	copy: function ( source ) {
-
-		// todo
-
-		return this;
-
-	}
-
-} );
+});
 
 /**
  * @author WestLangley / http://github.com/WestLangley
  *
  */
 
-THREE.Wireframe = function ( geometry, material ) {
+THREE.Wireframe = function (geometry, material) {
 
-	THREE.Mesh.call( this );
+	THREE.Mesh.call(this);
 
 	this.type = 'Wireframe';
 
 	this.geometry = geometry !== undefined ? geometry : new THREE.LineSegmentsGeometry();
-	this.material = material !== undefined ? material : new THREE.LineMaterial( { color: Math.random() * 0xffffff } );
+	this.material = material !== undefined ? material : new THREE.LineMaterial({ color: Math.random() * 0xffffff });
 
 };
 
-THREE.Wireframe.prototype = Object.assign( Object.create( THREE.Mesh.prototype ), {
+THREE.Wireframe.prototype = Object.assign(Object.create(THREE.Mesh.prototype), {
 
 	constructor: THREE.Wireframe,
 
 	isWireframe: true,
 
-	computeLineDistances: ( function () { // for backwards-compatability, but could be a method of LineSegmentsGeometry...
+	computeLineDistances: (function () { // for backwards-compatability, but could be a method of LineSegmentsGeometry...
 
 		var start = new THREE.Vector3();
 		var end = new THREE.Vector3();
@@ -14599,38 +14761,30 @@ THREE.Wireframe.prototype = Object.assign( Object.create( THREE.Mesh.prototype )
 
 			var instanceStart = geometry.attributes.instanceStart;
 			var instanceEnd = geometry.attributes.instanceEnd;
-			var lineDistances = new Float32Array( 2 * instanceStart.data.count );
+			var lineDistances = new Float32Array(2 * instanceStart.data.count);
 
-			for ( var i = 0, j = 0, l = instanceStart.data.count; i < l; i ++, j += 2 ) {
+			for (var i = 0, j = 0, l = instanceStart.data.count; i < l; i++, j += 2) {
 
-				start.fromBufferAttribute( instanceStart, i );
-				end.fromBufferAttribute( instanceEnd, i );
+				start.fromBufferAttribute(instanceStart, i);
+				end.fromBufferAttribute(instanceEnd, i);
 
-				lineDistances[ j ] = ( j === 0 ) ? 0 : lineDistances[ j - 1 ];
-				lineDistances[ j + 1 ] = lineDistances[ j ] + start.distanceTo( end );
+				lineDistances[j] = (j === 0) ? 0 : lineDistances[j - 1];
+				lineDistances[j + 1] = lineDistances[j] + start.distanceTo(end);
 
 			}
 
-			var instanceDistanceBuffer = new THREE.InstancedInterleavedBuffer( lineDistances, 2, 1 ); // d0, d1
+			var instanceDistanceBuffer = new THREE.InstancedInterleavedBuffer(lineDistances, 2, 1); // d0, d1
 
-			geometry.setAttribute( 'instanceDistanceStart', new THREE.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 0 ) ); // d0
-			geometry.setAttribute( 'instanceDistanceEnd', new THREE.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 1 ) ); // d1
+			geometry.setAttribute('instanceDistanceStart', new THREE.InterleavedBufferAttribute(instanceDistanceBuffer, 1, 0)); // d0
+			geometry.setAttribute('instanceDistanceEnd', new THREE.InterleavedBufferAttribute(instanceDistanceBuffer, 1, 1)); // d1
 
 			return this;
 
 		};
 
-	}() ),
+	}())
 
-	copy: function ( source ) {
-
-		// todo
-
-		return this;
-
-	}
-
-} );
+});
 
 },{"../three.js":116,"../utils/utils.js":120,"./objects.js":112}],106:[function(require,module,exports){
 /**
@@ -30774,7 +30928,7 @@ var utils = {
 
 		var geometry = new THREE.Geometry();
 
-		for (var v3 of vertices) {
+		for (let v3 of vertices) {
 			geometry.vertices.push(v3)
 		}
 
@@ -30793,7 +30947,7 @@ var utils = {
 	//flatten an array of Vector3's into a shallow array of values in x-y-z order, for bufferGeometry
 	flattenVectors(vectors) {
 		var flattenedArray = [];
-		for (var vertex of vectors) {
+		for (let vertex of vectors) {
 			flattenedArray.push(vertex.x, vertex.y, vertex.z);
 		}
 		return flattenedArray
