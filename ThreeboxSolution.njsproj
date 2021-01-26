@@ -77,6 +77,7 @@
     <Compile Include="tests\unit\object.test.js" />
     <Compile Include="tests\unit\utilities.test.js" />
     <Compile Include="tests\unit\validate.test.js" />
+    <Content Include=".gitignore" />
     <Content Include=".npmrc" />
     <Content Include="CHANGELOG.md" />
     <Content Include="dist\threebox.css" />
