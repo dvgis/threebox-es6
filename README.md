@@ -84,7 +84,7 @@ Only in this fork, there is a list of new features implemented on top of the ama
 
 
 ## Documentation
-<img alt="threebox" src="docs/SoldierAnimation.jpg">
+<img alt="threebox" src="docs/soldieranimation.jpg">
 
 All the [**Threebox Documentation**](/docs/Threebox.md) has been completely updated, including all the methods, properties and events implemented in Threebox and objects, but still *'work in progress'* adding better documented examples and images to illustrate Threebox capabilities.
 - [**Using Threebox**](/docs/Threebox.md#using-threebox)
