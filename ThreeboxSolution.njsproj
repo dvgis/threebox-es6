@@ -9,7 +9,7 @@
     <LaunchUrl>/examples/05-logistics.html</LaunchUrl>
     <JavaScriptTestFramework>Tape</JavaScriptTestFramework>
     <JavaScriptTestRoot>tests\unit\</JavaScriptTestRoot>
-  </PropertyGroup>
+  </PropertyGroup> 
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
