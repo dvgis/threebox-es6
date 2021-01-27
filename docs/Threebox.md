@@ -12,7 +12,7 @@ Threebox works by adding a *Three.js* scene to *Mapbox GL*, creating a new *Mapb
 
 ## Examples
 
-Threebox contains [19 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.  
+Threebox contains [20 examples](https://github.com/jscastro76/threebox/blob/master/examples/readme.md) to showcase most of its features. Check them out to have a glance of what is possible.  
 To run them, create a `config.js` file with your Mapbox-gl-js access token, in the same folder and in the format of [the template](https://github.com/jscastro76/threebox/blob/master/examples/config_template.js).
 
 - [01-basic.html](https://github.com/jscastro76/threebox/blob/master/examples/01-basic.html) 
@@ -34,6 +34,7 @@ To run them, create a `config.js` file with your Mapbox-gl-js access token, in t
 - [17-azuremaps.html](https://github.com/jscastro76/threebox/blob/master/examples/17-azuremaps.html) 
 - [18-extrusions.html](https://github.com/jscastro76/threebox/blob/master/examples/18-extrusions.html) 
 - [19-fixedzoom.html](https://github.com/jscastro76/threebox/blob/master/examples/19-fixedzoom.html) 
+- [20-game.html](https://github.com/jscastro76/threebox/blob/master/examples/20-game.html)
 
 <br>
 

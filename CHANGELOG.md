@@ -6,9 +6,11 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 - #182 Resource interpreted as Stylesheet but transferred with MIME type text/plain 
 - #187 Create an option to translate an object based on world coordinates (obj.position) 
 - #188 Add threebox.css to the /dist folder. Included  now in `npm run build` command
+- #189 Create a driving game-like example with WASD controls 
 
 #### :beetle: Bug fixes
 - #177 [BUG] FollowPath animation with realSunlight produces an error
+- #190 When using `obj.selected` programatically the bbox is not shown  
 
 #### :pencil: Documentation
 - Updated [documentation](/docs/Threebox.md) started to link points and improving documentation descriptions in general.

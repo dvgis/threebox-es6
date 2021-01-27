@@ -28481,6 +28481,7 @@ Objects.prototype = {
 				get() { return _selected; },
 				set(value) {
 					if (value) {
+						if (obj.userData.bbox && !obj.boundingBox) obj.drawBoundingBox();
 						if (obj.boxGroup) {
 							obj.boundingBox.material = Objects.prototype._defaults.materials.boxSelectedMaterial;
 							obj.boundingBox.parent.visible = true;

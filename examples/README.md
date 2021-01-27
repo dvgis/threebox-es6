@@ -141,3 +141,12 @@ These are the examples included in Threebox.
 - The model is attached to the event `ObjectChanged` to call `map.panTo` method from mapbox.
 
 - - - -
+
+
+#### [20-game.html](https://github.com/jscastro76/threebox/blob/master/examples/20-game.html) 
+<img alt="threebox" src="images/game.jpg" width="50%"><br/>
+- This sample shows how to implement an easy driving game experience with WASD controls.
+- Enables the user to change dynamically to speed, inertia and to activate a fill-extrusion buildings layer;
+- The model is attached to the event `ObjectChanged` to paint in red the buildings the truck.
+
+- - - -

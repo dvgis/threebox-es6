@@ -9,7 +9,7 @@
     <LaunchUrl>/examples/05-logistics.html</LaunchUrl>
     <JavaScriptTestFramework>Tape</JavaScriptTestFramework>
     <JavaScriptTestRoot>tests\unit\</JavaScriptTestRoot>
-  </PropertyGroup> 
+  </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -88,6 +88,7 @@
     <Content Include="examples\18-extrusions.html" />
     <Content Include="examples\16-multilayer.html" />
     <Content Include="examples\17-azuremaps.html" />
+    <Content Include="examples\20-game.html" />
     <Content Include="examples\geojson\extrusion.json" />
     <Content Include="examples\geojson\indoor-3d-map.json" />
     <Content Include="examples\images\3dbuildings.jpg" />
@@ -100,6 +101,7 @@
     <Content Include="examples\images\eiffel.jpg" />
     <Content Include="examples\images\extrusions.jpg" />
     <Content Include="examples\images\fixedzoom.jpg" />
+    <Content Include="examples\images\game.jpg" />
     <Content Include="examples\images\line.jpg" />
     <Content Include="examples\images\logistics.jpg" />
     <Content Include="examples\images\mercator.jpg" />
