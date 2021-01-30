@@ -31,7 +31,7 @@
         "ncp": "^2.0.0",
         "tape": "^5.1.1",
         "uglifyify": "^5.0.2",
-        "watchify": "^3.11.1"
+        "watchify": "^4.0.0"
     },
     "keywords": [
         "three.js",
