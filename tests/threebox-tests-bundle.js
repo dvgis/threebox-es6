@@ -30886,11 +30886,10 @@ var utils = {
 		let latitude = 0;
 		let longitude = 0;
 		let height = 0;
-		let coordinates = [];
-		//deep clone to avoid modifying the original array
-		coordinates.push(...feature.geometry.coordinates[0]);
+		//deep copy to avoid modifying the original array
+		let coordinates = [...feature.geometry.coordinates[0]];
 		if (feature.geometry.type === "Point") {
-			center = coordinates[0];
+			center = [...coordinates[0]];//deep copy
 		}
 		else {
 			//features in mapbox repeat the first coordinates at the end. We remove it.

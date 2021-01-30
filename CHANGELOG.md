@@ -1,3 +1,14 @@
+## 2.1.9
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :beetle: Bug fixes
+- #192 `getFeatureCenter` could change the altitude 
+
+<br>
+
+- - - 
+
 ## 2.1.8
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
