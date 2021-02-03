@@ -84,7 +84,7 @@
 					enableTooltips: true // change this to false to disable default tooltips on fill-extrusion and 3D models
 				}
 			);
-
+			tb.setSunlight(new Date(2020, 6, 18, 18))
 			map.events.add("load", function (e) {
 				
 				intMap.getContainer().appendChild(stats.dom);
@@ -95,10 +95,12 @@
 					type: 'custom',
 					renderingMode: '3d',
 					onAdd: function (map, mbxContext) {
-						let options = { obj: './models/landmarks/spaceneedle.glb', type: 'gltf', scale: 368.82, units: 'meters', rotation: { x: 90, y: 0, z: 0 }, anchor: 'center' }
+						// Creative Commons License attribution: Space Needle model by https://sketchfab.com/microsoft
+						// https://sketchfab.com/3d-models/space-needle-1d1325bc1ad745dd9eb34fc76e8f6e87
+						let options = { obj: './models/landmarks/spaceneedle.glb', type: 'gltf', scale: 3134.71, units: 'meters', rotation: { x: 90, y: 0, z: 0 }, anchor: 'center' }
 
 						tb.loadObj(options, function (model) {
-							model.setCoords([-122.34928, 47.620569]);
+							model.setCoords([-122.349291, 47.620522]);
 							model.castShadow = true;
 							model.addTooltip("This is the Space Needle!!");
 							tb.add(model);

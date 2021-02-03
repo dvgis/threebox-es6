@@ -61,7 +61,7 @@
 		let minZoom = 12;
 		let mapConfig = {
 			map: { center: [-122.4301905, 37.7298202], zoom: 20, pitch: 60, bearing: 38 }, 
-			truck: { origin: [-122.4301905, 37.7298202, 0], type: 'mtl', model: './models/truck', rotation: { x: 90, y: 0, z: 0 }, scale: 3, startRotation: { x: 0, y: 0, z: -38 }, date: new Date(2020, 6, 19, 23) },
+			truck: { origin: [-122.4301905, 37.7298202, 0], type: 'glb', model: './models/vehicles/car', rotation: { x: 90, y: -90, z: 0 }, scale: 5, startRotation: { x: 0, y: 0, z: -38 }, date: new Date(2020, 6, 19, 23) },
 			names: {
 				compositeSource: "composite",
 				compositeSourceLayer: "building",
@@ -107,8 +107,7 @@
 
 					let options = {
 						type: mapConfig.truck.type, //model type
-						obj: mapConfig.truck.model + '.obj', //model .obj url
-						mtl: mapConfig.truck.model + '.mtl', //model .mtl url
+						obj: mapConfig.truck.model + "." + mapConfig.truck.type, 
 						units: 'meters', // in meters
 						scale: mapConfig.truck.scale, //x3 times is real size for this model
 						rotation: mapConfig.truck.rotation, //default rotation
@@ -145,12 +144,13 @@
 		let keys;
 
 		map.on('style.load', function () {
+
+			map.addLayer(createCustomLayer('3d-model'));
+
 			let l = mapConfig.names.compositeLayer;
 			if (api.buildings) {
 				if (!map.getLayer(l)) { map.addLayer(createCompositeLayer(l)); }
 			}
-			map.addLayer(createCustomLayer('3d-model'), 'waterway-label');
-
 			map.getCanvas().focus();
 
 		});

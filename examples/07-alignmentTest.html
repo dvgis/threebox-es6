@@ -38,8 +38,8 @@
 
 			mapboxgl.accessToken = config.accessToken;
 
-			let origin = [-87.61694, 41.86625];
-			let originRex = [-87.616191, 41.866212];
+			let origin = [-87.616938, 41.866222];
+			let originRex = [-87.616194, 41.866194];
 			let origin1 = [-87.61726, 41.865559];
 
 			let map = new mapboxgl.Map({
@@ -76,7 +76,7 @@
 				map,
 				map.getCanvas().getContext('webgl'),
 				{
-					defaultLights: true
+					realSunlight: true
 				}
 			);
 
@@ -90,7 +90,7 @@
 					// GeoJSON Data source used in vector tiles, documented at
 					// https://gist.github.com/ryanbaumann/a7d970386ce59d11c16278b90dde094d
 					'type': 'geojson',
-					'data': './geojson/indoor-3d-map.json'
+					'data': './geojson/indoor-3d-map.geojson'
 				});
 
 				map.addLayer({
@@ -134,30 +134,33 @@
 						tube.setCoords(origin1);
 						tb.add(tube);
 
-						let dino = {
-							type: 'fbx', //'gltf'/'mtl'
-							obj: './models/history/dinosaur.fbx', //model url
-							bin: '', //replace by mtl attribute
+
+						// Creative Commons NonCommercial License attribution: Asian Elephant low poly model by https://sketchfab.com/jeremielouvetz
+						// https://sketchfab.com/3d-models/asian-elephant-2aeeb8958bc64240962b093705abffdf
+						let elephant = {
+							type: 'glb', 
+							obj: './models/history/elephant.glb', //model url
 							units: 'meters', //units in the default values are always in meters
-							scale: 60,
-							rotation: { x: 90, y: 0, z: 0 }, //default rotation
+							scale: 20,
+							rotation: { x: 90, y: 180, z: 0 }, //default rotation
 							anchor: 'center'
 						}
-						tb.loadObj(dino, function (model) {
+						tb.loadObj(elephant, function (model) {
 							model.setCoords([origin[0], origin[1], 0]);
 							tb.add(model);
 						});
 
-						let rex = {
-							type: 'fbx', //'gltf'/'mtl'
-							obj: './models/history/rex.fbx', //model url
-							bin: '', //replace by mtl attribute
+						// Creative Commons NonCommercial License attribution: Dino low poly model by https://sketchfab.com/Blender_Fox1234
+						// https://sketchfab.com/3d-models/triceratops-lowpoly-76beb95d0b5b41a3aae0d07c3eae99fa
+						let dino = {
+							type: 'fbx', 
+							obj: './models/history/triceratops.fbx', //model url
 							units: 'meters', //units in the default values are always in meters
-							scale: 50,
-							rotation: { x: 90, y: 0, z: 0 }, //default rotation
+							scale: 0.15,
+							rotation: { x: 90, y: 90, z: 0 }, //default rotation
 							anchor: 'center'
 						}
-						tb.loadObj(rex, function (model) {
+						tb.loadObj(dino, function (model) {
 							model.setCoords(originRex);
 							tb.add(model);
 						});

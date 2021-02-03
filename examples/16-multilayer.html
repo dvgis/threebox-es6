@@ -148,13 +148,14 @@
 
 		};
 
-		function addModel(layerId, origin, i) {
+        function addModel(layerId, origin, i) {
+            // Attribution, no License specified: Model by https://github.com/nasa/
+			// https://nasa3d.arc.nasa.gov/detail/jpl-vtad-dsn34
 			let options = {
-				type: 'gltf', //'gltf'/'mtl'
-				obj: './models/radar/34M_17.gltf', //model url
-				bin: '', //replace by mtl attribute
+				type: 'gltf', 
+				obj: './models/radar/34M_17.glb', //model url
 				units: 'meters', //units in the default values are always in meters
-				scale: 1 / i,
+				scale: 333.22 / i,
 				rotation: { x: 90, y: 180, z: 0 }, //default rotation
 				anchor: 'center'
 			}

@@ -49,3 +49,45 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABI
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+---------------------------------------------------------------------------------------------
+3D models attributions
+
+- Eiffel Tower
+  - Creative Commons License attribution:  Eiffel Tower model by https://www.cgtrader.com/lefabshop
+  from https://www.cgtrader.com/items/108594/download-page
+
+- Elephant
+  - Creative Commons NonCommercial License attribution: Asian Elephant low poly model by https://sketchfab.com/jeremielouvetz
+  from https://sketchfab.com/3d-models/asian-elephant-2aeeb8958bc64240962b093705abffdf
+
+- Liberty Statue
+  - Creative Commons License attribution: Liberty statue model by https://sketchfab.com/hellolucy2 
+  from https://sketchfab.com/3d-models/ellis-island-3cd765a23c5c4c7087acd00624d30590
+
+- Plane 
+  - Creative Commons License attribution: Plane model by https://sketchfab.com/ideehochzwei
+  from  https://sketchfab.com/3d-models/plane-aa001f5a88f64b16b98356c042f2d5f3
+
+- Radar
+  - Attribution, no License specified: Model by https://github.com/nasa/ 
+  from https://nasa3d.arc.nasa.gov/detail/jpl-vtad-dsn34
+
+- Soldier
+  - Attribution: Soldier animated model by T. Choonyung at https://www.mixamo.com
+  from https://www.mixamo.com/#/?page=1&query=vanguard&type=Character
+
+- Space Needle
+  - Creative Commons License attribution: Space Needle model by https://sketchfab.com/microsoft
+  from https://sketchfab.com/3d-models/space-needle-1d1325bc1ad745dd9eb34fc76e8f6e87
+
+- Triceratops
+  - Creative Commons NonCommercial License attribution: Dino low poly model by https://sketchfab.com/Blender_Fox1234
+  from https://sketchfab.com/3d-models/triceratops-lowpoly-76beb95d0b5b41a3aae0d07c3eae99fa
+
+- Truck & Car
+  - Royalty Free License: Vehicles by https://www.cgtrader.com/antonmoek
+  from https://www.cgtrader.com/free-3d-models/car/concept/cartoon-low-poly-city-cars-pack
+
+- Windmill
+  - Creative Commons License attribution: Windmill animated model by https://sketchfab.com/data3anshow
+  from https://sketchfab.com/3d-models/windmill-animated-6ce5667e8d5c47068ea13196036efd52

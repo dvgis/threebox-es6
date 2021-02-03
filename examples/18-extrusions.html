@@ -104,7 +104,7 @@
 					tb.add(star);
 
 					//[jscastro] we read a geoJson that is filled with 3 real features from the composite source
-					d3.json('./geojson/extrusion.json').then(function (fc) {
+					d3.json('./geojson/extrusion.geojson').then(function (fc) {
 						console.log(fc);
 						//then we create the extrusions based on the geoJson features
 						addBuildings(fc.features);

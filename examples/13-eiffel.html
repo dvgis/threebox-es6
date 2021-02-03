@@ -86,9 +86,9 @@
 		let mapConfig = {
 			//			ALL: { center: [-100.021884, 39.609738, 0], zoom: 3.25, pitch: 12, bearing: 0, timezone: 'US/Central' },
 			NYC: {
-				origin: [-74.044514, 40.689259, 47], center: [-74.044803, 40.690183, 0], zoom: 17.7, pitch: 60, bearing: -10, scale: { x: 44, y: 44, z: 44 }, timezone: 'America/New_York' },
+				origin: [-74.0445322, 40.689254, 45], center: [-74.044803, 40.690183, 0], zoom: 17.7, pitch: 60, bearing: -10, scale: { x: 153, y: 157.294, z: 155 }, timezone: 'America/New_York' },
 			PAR: {
-				origin: [2.294514, 48.857475, 0], center: [2.294625, 48.861085, 0], zoom: 15.95, pitch: 60, bearing: 0, scale: { x: 0.01039565, y: 0.01039565, z: 0.00997 }, timezone: 'Europe/Paris' },
+				origin: [2.294514, 48.857475, 0], center: [2.294625, 48.861085, 0], zoom: 15.95, pitch: 60, bearing: 0, scale: { x: 5621.06, y: 6480.4, z: 5621.06 }, timezone: 'Europe/Paris' },
 			names: {
 				customLayer: "custom-layer",
 				fillExtrusion: "composite-b",
@@ -102,7 +102,7 @@
 			day: 'satellite-v9',
 			night: 'dark-v10'
 		}
-		let selectedStyle = styles.day;
+		let selectedStyle = styles.night;
 
 		var map = new mapboxgl.Map({
 			style: 'mapbox://styles/mapbox/' + selectedStyle, //'mapbox://styles/mapbox/satellite-v9',
@@ -111,7 +111,7 @@
 			pitch: point.pitch,
 			bearing: point.bearing,
 			container: 'map',
-			antialias: true //,	hash: true
+			antialias: true ,	hash: true
 		});
 
 		map.addControl(new mapboxgl.NavigationControl());
@@ -172,7 +172,7 @@
 				// https://gist.github.com/ryanbaumann/a7d970386ce59d11c16278b90dde094d
 				'type': 'geojson',
 				'generateId': true, // This ensures that all features have unique IDs and allow selecting them
-				'data': './geojson/statue-of-liberty.json'
+				'data': './geojson/statue-of-liberty.geojson'
 			});
 
 			map.addLayer(createExtrusionLayer());
@@ -182,11 +182,11 @@
 				type: 'custom',
 				renderingMode: '3d',
 				onAdd: function (map, mbxContext) {
-
+					// Creative Commons License attribution: Liberty statue model by https://sketchfab.com/hellolucy2
+					// from https://sketchfab.com/3d-models/ellis-island-3cd765a23c5c4c7087acd00624d30590
 					var options = {
-						obj: './models/LibertyStatue.obj',
-						mtl: './models/LibertyStatue.mtl',
-						type: 'mtl',
+						obj: './models/landmarks/LibertyStatue.glb',
+						type: 'gltf',
 						scale: mapConfig.NYC.scale,
 						units: 'meters',
 						rotation: { x: 90, y: 0, z: 0 }, //default rotation
@@ -201,12 +201,14 @@
 						tb.add(model);
 					})
 
+					// Creative Commons License attribution:  Eiffel Tower model by https://www.cgtrader.com/lefabshop
+					// https://www.cgtrader.com/items/108594/download-page
 					options = {
-						obj: './models/eiffel.glb',
+						obj: './models/landmarks/eiffel.glb',
 						type: 'gltf',
 						scale: mapConfig.PAR.scale,
 						units: 'meters',
-						//adjustment: { x: -0.5, y: -0.5, z: 0 } // model center is displaced
+						rotation: { x: 90, y: 0, z: 0 }, //default rotation
 					}
 
 					tb.loadObj(options, function (model) {

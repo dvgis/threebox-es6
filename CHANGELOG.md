@@ -2,6 +2,12 @@
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
+#### :sparkles: Enhancements
+- #193 Build with tinyify 
+- #194 Make the build way lighter (3D models to lowpoly, images, gifs)
+- #195 rename .json to .geosjon 
+- #196 Add in code and license.txt all the licenses and attributions for the 3D models 
+
 #### :beetle: Bug fixes
 - #192 `getFeatureCenter` could change the altitude 
 

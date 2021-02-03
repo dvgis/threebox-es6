@@ -49,9 +49,8 @@
 		mapboxgl.accessToken = config.accessToken;
 
 		let mapConfig = {
-			NYC: { origin: [-74.044514, 40.689259, 47], center: [-74.044803, 40.690183, 0], zoom: 17.7, pitch: 60, bearing: -10, scale: 44, timezone: 'America/New_York' },
-			PAR: { origin: [2.294514, 48.857475, 0], center: [2.294625, 48.861085, 0], zoom: 15.95, pitch: 60, bearing: 0, scale: 0.01029, timezone: 'Europe/Paris' },
-			names: {
+			PAR: { origin: [2.294514, 48.857475, 0], center: [2.294625, 48.861085, 0], zoom: 15.95, pitch: 60, bearing: 0, scale: { x: 5621.06, y: 6480.4, z: 5621.06 }, timezone: 'Europe/Paris' },
+				names: {
 				customLayer: "custom-layer"
 			}
 		}
@@ -105,13 +104,14 @@
 				type: 'custom',
 				renderingMode: '3d',
 				onAdd: function (map, mbxContext) {
-
+					// Creative Commons License attribution:  Eiffel Tower model by https://www.cgtrader.com/lefabshop
+					// https://www.cgtrader.com/items/108594/download-page
 					let options = {
-						obj: './models/eiffel.glb',
+						obj: './models/landmarks/eiffel.glb',
 						type: 'gltf',
 						scale: mapConfig.PAR.scale,
 						units: 'meters',
-						//adjustment: { x: -0.5, y: -0.5, z: 0 } // model center is displaced
+						rotation: { x: 90, y: 0, z: 0 }, //default rotation
 					}
 
 					tb.loadObj(options, function (model) {
