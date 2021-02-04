@@ -1,3 +1,18 @@
+## 2.2.0
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+- #197 Remove local path from server.js and use current directory variable
+
+#### :pencil: Documentation
+- Updated [documentation](/docs/Threebox.md) CDNs samples documentation.
+- Updated [README.md](/). CDNs samples documentation.
+
+<br>
+
+- - - 
+
 ## 2.1.9
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 

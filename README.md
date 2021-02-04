@@ -134,16 +134,26 @@ If you want to use styles predefined, add the link to the cascade style sheet, j
 Threebox can be also used from different public CDNs:  
 
 ##### jsdelivr
+This CDN has the particularity that always requires the version of the package to download individual files.
 ```html
-<script src="https://cdn.jsdelivr.net/gh/jscastro76/threebox/dist/threebox.min.js" type="text/javascript"></script>
-<link href="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.7/examples/css/threebox.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.9/dist/threebox.min.js" type="text/javascript"></script>
+<link href="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.9/dist/threebox.css" rel="stylesheet" />
 ```
 
 ##### unpkg
+Despite this CDN admits version, if omitted, it will download always the last one published.
+
 ```html
 <script src="https://unpkg.com/threebox-plugin/dist/threebox.min.js" type="text/javascript"></script>
-<link href="https://unpkg.com/threebox-plugin/examples/css/threebox.css" rel="stylesheet" />
+<link href="https://unpkg.com/threebox-plugin/dist/threebox.css" rel="stylesheet" />
 ```
+
+For an specific version (i.e. v2.1.9) use the followin:
+```html
+<script src="https://unpkg.com/threebox-plugin@2.1.9/dist/threebox.min.js" type="text/javascript"></script>
+<link href="https://unpkg.com/threebox-plugin@2.1.9/dist/threebox.css" rel="stylesheet" />
+```
+
 <br/>
 
 #### Test the samples 
