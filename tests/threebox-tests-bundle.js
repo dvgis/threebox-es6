@@ -12430,8 +12430,8 @@ Threebox.prototype = {
 	},
 
 	setDefaultView: function (options, defOptions) {
-		options.bbox = options.bbox && defOptions.enableSelectingObjects;
-		options.tooltip = options.tooltip && defOptions.enableTooltips;
+		options.bbox = (options.bbox || options.bbox == null) && defOptions.enableSelectingObjects;
+		options.tooltip = (options.tooltip || options.tooltip == null) && defOptions.enableTooltips;
 		options.mapScale = this.map.transform.scale;
 	},
 
