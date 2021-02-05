@@ -3,11 +3,13 @@
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
 #### :sparkles: Enhancements
-- #197 Remove local path from server.js and use current directory variable
+- #197 Remove local path from server.js and use current directory variable 
 
-#### :pencil: Documentation
-- Updated [documentation](/docs/Threebox.md) CDNs samples documentation.
-- Updated [README.md](/). CDNs samples documentation.
+#### :beetle: Bug fixes
+- #198 Bounding box is now shown if bbox is null but enableSelectingObjects is true 
+- #199 `[.WebGL-00000210783663D0] GL_INVALID_VALUE: Invalid width.` 
+- #200 Bug in 11-animation.html example 
+- #201 Since #124 the objects wireframed and animated lost the animation 
 
 <br>
 

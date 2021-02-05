@@ -28451,18 +28451,19 @@ Objects.prototype = {
 							} else {
 								materials = c.material;
 							}
+							let m = materials[0];
 							if (value) {
-								c.userData.materials = materials;
-								c.material = Objects.prototype._defaults.materials.wireframeMaterial;
-								c.material.opacity = (value ? 0.5 : 1);
-								c.material.wireframe = value;
-								c.material.transparent = value;
-
+								c.userData.materials = m;
+								c.material = m.clone();
+								c.material.wireframe = c.material.transparent = value;
+								c.material.opacity = 0.3;
 							} else {
-								let mc = c.userData.materials;
-								c.material = (mc.length > 1 ? mc : mc[0]);
+								c.material.dispose();
+								c.material = c.userData.materials;
+								c.userData.materials.dispose();
 								c.userData.materials = null;
 							}
+
 							if (value) { c.layers.disable(0); c.layers.enable(1); } else { c.layers.disable(1); c.layers.enable(0); }
 						}
 						if (c.type == "LineSegments") {
@@ -28890,7 +28891,6 @@ Objects.prototype = {
 		},
 
 		materials: {
-			wireframeMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xffffff) }),
 			boxNormalMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xff0000) }),
 			boxOverMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0xffff00) }),
 			boxSelectedMaterial: new THREE.LineBasicMaterial({ color: new THREE.Color(0x00ff00) })

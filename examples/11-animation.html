@@ -266,6 +266,8 @@
 				)
 		}
 
+		let selectedObject;
+
 		//actions to execute onSelectedChange
 		function onSelectedChange(e) {
 			let selected = e.detail.selected;
@@ -350,10 +352,7 @@
 					selectedObject.stop();
 				} else {
 					// play animation 3, for 10 seconds
-					selectedObject.playAnimation(options = { animation: 1, duration: 10000 });
-
-					//if animationDefault was defined in creation just do this
-					//selectedObject.playDefault(options = { duration: 10000 });
+					selectedObject.playAnimation( { animation: 1, duration: 10000 });
 
 				}
 			}
