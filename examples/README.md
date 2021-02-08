@@ -150,3 +150,8 @@ These are the examples included in Threebox.
 - The model is attached to the event `ObjectChanged` to paint in red the buildings the truck.
 
 - - - -
+
+#### [Vue.js sample](https://codesandbox.io/s/vue-threebox-sample-8k7mz)
+<img alt="threebox" src="images/vuejs.jpg" width="50%"><br/>
+- Courtesy [@ahoedholt](https://github.com/ahoedholt), this sample shows an implementation of threebox in Vue.js. 
+- It adds two speheres and a pulse circular geometry

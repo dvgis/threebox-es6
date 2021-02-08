@@ -54,7 +54,7 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Updated to Three.js v117.
 - Updated to Mapbox-gl-js v1.11.1.
 - Updated to Azure Maps v2.0.31.
-- [20 examples](https://github.com/jscastro76/threebox/tree/master/examples) with all the new features.
+- [+20 examples](https://github.com/jscastro76/threebox/tree/master/examples) with all the new features.
 - Support for multiple 3D format objects (FBX, GLTF/GLB, Collada, OBJ/MTL).
 - Support for 3D extruded shapes from [GeoJson](https://geojson.org/) features or points array.
 - Support for CSS2D labels and rich HTML controls through a new LabelManager.

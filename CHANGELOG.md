@@ -8,11 +8,16 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 #### :beetle: Bug fixes
 - #198 Bounding box is now shown if bbox is null but enableSelectingObjects is true 
 - #199 `[.WebGL-00000210783663D0] GL_INVALID_VALUE: Invalid width.` 
-- #200 Bug in 11-animation.html example 
+- #200 Bug in 11-animation.html example `selectedObject is not defined` 
 - #201 Since #124 the objects wireframed and animated lost the animation 
 
 <br>
 
+#### :pencil: Documentation
+- Updated [documentation](/docs/Threebox.md) (`vue.js` sample)
+- Updated [README.md](/).
+- Updated [Examples](/examples) documentation (`vue.js` sample). 
+ 
 - - - 
 
 ## 2.1.9

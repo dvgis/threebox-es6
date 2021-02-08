@@ -111,6 +111,7 @@
     <Content Include="examples\images\raycaster.jpg" />
     <Content Include="examples\images\stylechange.jpg" />
     <Content Include="examples\images\tube.jpg" />
+    <Content Include="examples\images\vuejs.jpg" />
     <Content Include="examples\models\history\elephant.glb" />
     <Content Include="examples\models\history\triceratops.fbx" />
     <Content Include="examples\models\landmarks\eiffel.glb" />
