@@ -810,6 +810,11 @@ Threebox.prototype = {
 		}
 	},
 
+	removeByName: function (name) {
+		let obj = this.world.getObjectByName(name);
+		if (obj) this.remove(obj);
+	},
+
 	remove: function (obj) {
 		if (this.map.selectedObject && obj.uuid == this.map.selectedObject.uuid) this.map.unselectObject();
 		if (this.map.draggedObject && obj.uuid == this.map.draggedObject.uuid) this.map.draggedObject = null;
@@ -1018,7 +1023,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.2.0',
+	version: '2.2.1',
 
 }
 
@@ -17055,6 +17060,39 @@ Objects.prototype = {
 				}
 			})
 
+			let _color = null;
+			//[jscastro] added property for wireframes state
+			Object.defineProperty(obj, 'color', {
+				get() { return _color; },
+				set(value) {
+					if (!obj.model || _color === value) return;
+					obj.model.traverse(function (c) {
+						if (c.type == "Mesh" || c.type == "SkinnedMesh") {
+							let materials = [];
+							if (!Array.isArray(c.material)) {
+								materials.push(c.material);
+							} else {
+								materials = c.material;
+							}
+							let m = materials[0];
+							if (value) {
+								c.userData.materials = m;
+								c.material = new THREE.MeshStandardMaterial();
+								c.material.color.setHex(value);
+							} else {
+								c.material.dispose();
+								c.material = c.userData.materials;
+								c.userData.materials.dispose();
+								c.userData.materials = null;
+							}
+
+						}
+					});
+					_color = value;
+				}
+			})
+
+
 			let _selected = false;
 			//[jscastro] added property for selected state
 			Object.defineProperty(obj, 'selected', {
@@ -17493,8 +17531,7 @@ Objects.prototype = {
 			text: '',
 			cssClass: 'toolTip text-xs',
 			mapboxStyle: false,
-			topMargin: 0,
-			feature: null
+			topMargin: 0
 		},
 
 		sphere: {

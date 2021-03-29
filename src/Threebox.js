@@ -805,6 +805,11 @@ Threebox.prototype = {
 		}
 	},
 
+	removeByName: function (name) {
+		let obj = this.world.getObjectByName(name);
+		if (obj) this.remove(obj);
+	},
+
 	remove: function (obj) {
 		if (this.map.selectedObject && obj.uuid == this.map.selectedObject.uuid) this.map.unselectObject();
 		if (this.map.draggedObject && obj.uuid == this.map.draggedObject.uuid) this.map.draggedObject = null;
@@ -1013,7 +1018,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.2.0',
+	version: '2.2.1',
 
 }
 

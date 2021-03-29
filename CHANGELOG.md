@@ -1,3 +1,17 @@
+## 2.2.1
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+- #212 Allow to remove an object by name
+- #211 Create an object property that changes all the materials by a color
+ 
+#### :pencil: Documentation
+- Updated [documentation](/docs/Threebox.md) (`obj.color`, `tb.removeByName`)
+ 
+- - - 
+
+
 ## 2.2.0
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
@@ -10,8 +24,6 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 - #199 `[.WebGL-00000210783663D0] GL_INVALID_VALUE: Invalid width.` 
 - #200 Bug in 11-animation.html example `selectedObject is not defined` 
 - #201 Since #124 the objects wireframed and animated lost the animation 
-
-<br>
 
 #### :pencil: Documentation
 - Updated [documentation](/docs/Threebox.md) (`vue.js` sample)

@@ -645,6 +645,14 @@ Method to remove an object from Threebox scene and the `tb.world.children` array
 
 <br>
 
+#### removeByName 
+```js
+tb.removeByName(name)
+```
+Method to remove an object from Threebox scene and the `tb.world.children` array, Searches through an object and its children, starting with the object itself, and removes the first with a matching name..
+
+<br>
+
 #### removeLayer 
 ```js
 tb.removeLayer(layerId)
@@ -652,6 +660,7 @@ tb.removeLayer(layerId)
 Method to remove a layer from Mapbox, including all 3D objects from Threebox scene and the `tb.world.children` array. 
 
 <br>
+
 
 #### setLayerHeigthProperty 
 ```js
@@ -1387,6 +1396,16 @@ obj.castShadow : boolean
 ```
 This get/set property receives and returns the value of the option of objects to cast a shadow.
 It creates a plane with a `THREE.PlaneBufferGeometry` and a `THREE.ShadowMaterial()` centered on the object to project the shadow with the size of the longest dimension (x, y, z) size of the object and make it 10 times bigger to be able to hold the full shadow.
+
+<br>
+
+#### color
+
+```js
+obj.color : integer hex 
+```
+This get/set property receives and returns the value of the color from a hexadecimal value.
+This method calls [`color.setHex`](https://threejs.org/docs/?q=color#api/en/math/Color.setHex) 
 
 <br>
 
