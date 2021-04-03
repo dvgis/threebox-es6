@@ -12541,7 +12541,7 @@ AnimationManager.prototype = {
 				if (_isPlaying != value) {
 					_isPlaying = value;
 					// Dispatch new event IsPlayingChanged
-					obj.dispatchEvent(new CustomEvent('IsPlayingChanged', { detail: obj, bubbles: true, cancelable: true }));
+					obj.dispatchEvent({ type: 'IsPlayingChanged', detail: obj});
 				}
 			}
 		})
@@ -12723,8 +12723,11 @@ AnimationManager.prototype = {
 			this.updateMatrixWorld();
 			tb.map.repaint = true;
 
+			//const threeTarget = new THREE.EventDispatcher();
+			//threeTarget.dispatchEvent({ type: 'event', detail: { object: this, action: { position: options.position, rotation: options.rotation, scale: options.scale } } });
 			// fire the ObjectChanged event to notify UI object change
-			this.dispatchEvent(new CustomEvent('ObjectChanged', { detail: { object: this, action: { position: options.position, rotation: options.rotation, scale: options.scale } }, bubbles: true, cancelable: true }));
+			let e = { type: 'ObjectChanged', detail: { object: this, action: { position: options.position, rotation: options.rotation, scale: options.scale } } };
+			this.dispatchEvent(e);
 
 		};
 
