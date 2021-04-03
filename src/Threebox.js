@@ -255,8 +255,8 @@ Threebox.prototype = {
 						}
 
 						// fire the Wireframed event to notify UI status change
-						this.selectedObject.dispatchEvent(new CustomEvent('Wireframed', { detail: this.selectedObject, bubbles: true, cancelable: true }));
-						this.selectedObject.dispatchEvent(new CustomEvent('IsPlayingChanged', { detail: this.selectedObject, bubbles: true, cancelable: true }));
+						this.selectedObject.dispatchEvent({ type: 'Wireframed', detail: this.selectedObject });
+						this.selectedObject.dispatchEvent({ type: 'IsPlayingChanged', detail: this.selectedObject });
 
 						this.repaint = true;
 						e.preventDefault();
@@ -449,7 +449,7 @@ Threebox.prototype = {
 				this.dragPan.enable();
 
 				if (this.draggedObject) {
-					this.draggedObject.dispatchEvent(new CustomEvent('ObjectDragged', { detail: { draggedObject: this.draggedObject, draggedAction: draggedAction }, bubbles: true, cancelable: true }));
+					this.draggedObject.dispatchEvent({ type: 'ObjectDragged', detail: { draggedObject: this.draggedObject, draggedAction: draggedAction } });
 					this.draggedObject.removeHelp();
 					this.draggedObject = null;
 					draggedAction = null;
@@ -780,8 +780,9 @@ Threebox.prototype = {
 		this.updateLightHelper();
 
 		// Render the scene and repaint the map
-		this.renderer.state.reset();
-		if (this.options.realSunlight) this.renderer.state.setBlending(THREE.NormalBlending);
+		//this.renderer.state.reset();
+		this.renderer.resetState();
+		//if (this.options.realSunlight) this.renderer.state.setBlending(THREE.NormalBlending);
 		this.renderer.render(this.scene, this.camera);
 
 		// [jscastro] Render any label

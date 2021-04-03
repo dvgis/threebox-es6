@@ -35,6 +35,7 @@ function material (options) {
 		else output = generateDefaultMaterial();
 
 		output.opacity = options.opacity;
+		if (options.side) output.side = options.side
 
 	}
 

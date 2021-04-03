@@ -76,7 +76,7 @@
 				map,
 				map.getCanvas().getContext('webgl'),
 				{
-					defaultLights: true
+					realSunlight: true
 				}
 			);
 
@@ -123,12 +123,13 @@
 
 						let tubeOptions = {
 							geometry: lineGeometry1,
-							radius: .01,
+							radius: 0.3,
 							sides: 12,
-							units: "scene",
+							units: "meters",
 							anchor: 'center',
 							material: 'MeshPhysicalMaterial',
-							color: '#00ffff'
+							color: '#00ffff',
+							side: THREE.DoubleSide
 						}
 						let tube = tb.tube(tubeOptions);
 						tube.setCoords(origin1);
@@ -164,7 +165,6 @@
 							model.setCoords(originRex);
 							tb.add(model);
 						});
-
 
 					},
 					render: function (gl, matrix) {

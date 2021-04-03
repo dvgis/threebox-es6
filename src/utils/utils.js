@@ -231,15 +231,17 @@ var utils = {
 	// to improve precision, normalize a series of vector3's to their collective center, and move the resultant mesh to that center
 	normalizeVertices(vertices) {
 
-		var geometry = new THREE.Geometry();
+		let geometry = new THREE.BufferGeometry();
+		let positions = [];
 
-		for (let v3 of vertices) {
-			geometry.vertices.push(v3)
+		for (var j = 0; j < vertices.length; j++) {
+			let p = vertices[j];
+			positions.push(p.x, p.y, p.z);
+			positions.push(p.x, p.y, p.z);
 		}
-
+		geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
 		geometry.computeBoundingSphere();
 		var center = geometry.boundingSphere.center;
-		var radius = geometry.boundingSphere.radius;
 
 		var scaled = vertices.map(function (v3) {
 			var normalized = v3.sub(center);

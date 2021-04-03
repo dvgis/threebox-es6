@@ -5,12 +5,23 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 #### :sparkles: Enhancements
 - #212 Allow to remove an object by name
 - #211 Create an object property that changes all the materials by a color
- 
+- #169 Update to Three.js v127 
+  - #214 Full refactor of tb.tube 
+  - #215 Refactor tb.line 
+  - #216 Refactor tb.update 
+  - #217 utils.material should allow THREE.DoubleSide 
+  - #218 Remove CustomEvent from events 
+  - #219 Remove .getInverse() 
+  - #220 Update Loaders 
+  - #221 Add fflate module 
+
+#### :beetle: Bug fixes
+- #222 fflate depends on a physical file 
+
 #### :pencil: Documentation
 - Updated [documentation](/docs/Threebox.md) (`obj.color`, `tb.removeByName`)
  
 - - - 
-
 
 ## 2.2.0
 

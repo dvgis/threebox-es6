@@ -544,7 +544,7 @@ Objects.prototype = {
 					});
 					_wireframe = value;
 					// Dispatch new event WireFramed
-					obj.dispatchEvent(new CustomEvent('Wireframed', { detail: obj, bubbles: true, cancelable: true }));
+					obj.dispatchEvent({ type: 'Wireframed', detail: obj });
 				}
 			})
 
@@ -608,7 +608,7 @@ Objects.prototype = {
 					if (_selected != value) {
 						_selected = value;
 						// Dispatch new event SelectedChange
-						obj.dispatchEvent(new CustomEvent('SelectedChange', { detail: obj, bubbles: true, cancelable: true }));
+						obj.dispatchEvent({ type: 'SelectedChange', detail: obj });
 					}
 				}
 			})
@@ -646,7 +646,7 @@ Objects.prototype = {
 						}
 						if (obj.label && !obj.label.alwaysVisible) { obj.label.visible = true; }
 						// Dispatch new event ObjectOver
-						obj.dispatchEvent(new CustomEvent('ObjectMouseOver', { detail: obj, bubbles: true, cancelable: true }));
+						obj.dispatchEvent({ type: 'ObjectMouseOver', detail: obj });
 
 					}
 					else {
@@ -658,7 +658,7 @@ Objects.prototype = {
 							if (obj.label && !obj.label.alwaysVisible) { obj.label.visible = false; }
 						}
 						// Dispatch new event ObjectOver
-						obj.dispatchEvent(new CustomEvent('ObjectMouseOut', { detail: obj, bubbles: true, cancelable: true }));
+						obj.dispatchEvent({ type: 'ObjectMouseOut', detail: obj });
 					}
 					if (obj.tooltip) obj.tooltip.visible = value || obj.selected;
 					_over = value;
@@ -684,7 +684,7 @@ Objects.prototype = {
 						let rm = new THREE.Matrix4();
 						let rmi = new THREE.Matrix4();
 						obj.matrix.extractRotation(rm);
-						rm.getInverse(rmi);
+						rmi.copy(rm).invert();
 						dup.setRotationFromMatrix(rmi);
 						//now the object inside will give us a NAABB Non-Axes Aligned Bounding Box 
 						bounds = new THREE.Box3().setFromObject(model);

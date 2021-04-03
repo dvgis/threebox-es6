@@ -51,7 +51,7 @@ npm i threebox-plugin
 <br>
 
 Only in this fork, there is a list of new features implemented on top of the amazing work from [@peterqliu](https://github.com/peterqliu/threebox/):
-- Updated to Three.js v117.
+- Updated to Three.js v127.
 - Updated to Mapbox-gl-js v1.11.1.
 - Updated to Azure Maps v2.0.31.
 - [+20 examples](https://github.com/jscastro76/threebox/tree/master/examples) with all the new features.

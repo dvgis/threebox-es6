@@ -60,7 +60,6 @@
     <Compile Include="src\objects\objects.js" />
     <Compile Include="src\objects\sphere.js" />
     <Compile Include="src\objects\tube.js" />
-    <Compile Include="src\objects\Zlib.Inflate.js" />
     <Compile Include="src\three.js" />
     <Compile Include="src\Threebox.js" />
     <Compile Include="src\utils\constants.js" />
@@ -163,6 +162,7 @@
     <Content Include="src\objects\extrusion.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="src\objects\fflate.min.js" />
     <Content Include="src\objects\loaders\DRACOLoader.js">
       <SubType>Code</SubType>
     </Content>
@@ -181,6 +181,7 @@
       <TestFramework>Tape</TestFramework>
     </Content>
     <Content Include="tests\threebox-tests.html" />
+    <Content Include="worker_threads" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="docs\" />
