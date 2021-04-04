@@ -5,7 +5,7 @@
 [![NPM license](http://img.shields.io/npm/l/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin)
 ![npm](https://img.shields.io/npm/dt/threebox-plugin?style=social)
 
-A **[*Three.js*](https://threejs.org/) (v127)** plugin for **[*Mapbox GL JS*](https://docs.mapbox.com/mapbox-gl-js/examples/)** and **[*Azure Maps*](https://azure.microsoft.com/en-us/services/azure-maps/)** using the [`CustomLayerInterface`](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface) feature. Provides convenient methods to manage objects in lnglat coordinates, and to synchronize the map and scene cameras.
+A **[*Three.js*](https://threejs.org/) r127)** plugin for **[*Mapbox GL JS*](https://docs.mapbox.com/mapbox-gl-js/examples/)** and **[*Azure Maps*](https://azure.microsoft.com/en-us/services/azure-maps/)** using the [`CustomLayerInterface`](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface) feature. Provides convenient methods to manage objects in lnglat coordinates, and to synchronize the map and scene cameras.
 <img alt="threebox" src="docs/gallery.jpg">
 
 <br>
@@ -51,7 +51,7 @@ npm i threebox-plugin
 <br>
 
 Only in this fork, there is a list of new features implemented on top of the amazing work from [@peterqliu](https://github.com/peterqliu/threebox/):
-- Updated to **Three.js v127**.
+- Updated to **Three.js r127**.
 - Updated to Mapbox-gl-js v1.11.1.
 - Updated to Azure Maps v2.0.31.
 - [+20 examples](https://github.com/jscastro76/threebox/tree/master/examples) with all the new features.
@@ -99,7 +99,7 @@ All the [**Threebox Documentation**](/docs/Threebox.md) has been completely upda
 
 ## Compatibility/Dependencies
 
-- Three.r117 (already bundled into the Threebox build). If desired, other versions can be swapped in and rebuilt [here](https://github.com/jscastro76/threebox/blob/master/src/three.js), though compatibility is not guaranteed. **(WARNING: v118.3 breaks compatibility in some cases)**
+- **Three.js r127** (already bundled into the Threebox build). If desired, other versions can be swapped in and rebuilt [here](https://github.com/jscastro76/threebox/blob/master/src/three.js), though compatibility is not guaranteed.
 - Mapbox-gl-js v1.11.1.
 - Azure Maps v2.0.31.
 
