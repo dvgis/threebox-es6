@@ -4,6 +4,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 #### :sparkles: Enhancements
 - #224 Ignore worker_threads
+  - #223 Can't resolve worker threads    
  
 - - - 
 

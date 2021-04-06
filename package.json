@@ -14,10 +14,10 @@
     },
     "homepage": "https://github.com/jscastro76/threebox#readme",
     "scripts": {
-        "build": "browserify --i worker_threads -p tinyify exports.js > dist/threebox.min.js && ncp ./examples/css/threebox.css ./dist/threebox.css --stopOnErr",
-        "dev": "watchify --i worker_threads exports.js --verbose -o dist/threebox.js ",
-        "all": "browserify --i worker_threads -p tinyify exports.js > dist/threebox.min.js && watchify --i worker_threads exports.js --verbose -o dist/threebox.js ",
-        "test": "browserify --i worker_threads tests/threebox-tests.js > tests/threebox-tests-bundle.js",
+        "build": "browserify -p tinyify exports.js > dist/threebox.min.js && ncp ./examples/css/threebox.css ./dist/threebox.css --stopOnErr",
+        "dev": "watchify exports.js --verbose -o dist/threebox.js ",
+        "all": "browserify -p tinyify exports.js > dist/threebox.min.js && watchify exports.js --verbose -o dist/threebox.js ",
+        "test": "browserify tests/threebox-tests.js > tests/threebox-tests-bundle.js",
         "start": "node server.js"
     },
     "directories": {
