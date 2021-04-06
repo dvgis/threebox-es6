@@ -181,7 +181,6 @@
       <TestFramework>Tape</TestFramework>
     </Content>
     <Content Include="tests\threebox-tests.html" />
-    <Content Include="worker_threads" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="docs\" />

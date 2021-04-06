@@ -1,3 +1,12 @@
+## 2.2.2
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+- #224 Ignore worker_threads
+ 
+- - - 
+
 ## 2.2.1
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
