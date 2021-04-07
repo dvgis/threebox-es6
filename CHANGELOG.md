@@ -5,7 +5,13 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 #### :sparkles: Enhancements
 - #224 Ignore worker_threads
   - #223 Can't resolve worker threads    
- 
+- #146 Update to Mapbox 2.2 
+  - #225 Mapbox 2.2: Update Depth calculation keeping compatibility with previous versions 
+  - #226 Mapbox 2.2: Update all the examples (14-buildingshadow & 17-azuremaps not updated)
+
+#### :pencil: Documentation
+- Updated [documentation](/examples/readme.md) (Added a note on the examples updated to Mapbox 2.2.0)
+
 - - - 
 
 ## 2.2.1
