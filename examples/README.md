@@ -5,6 +5,7 @@ These are the examples included in Threebox.
 #### [01-basic.html](https://github.com/jscastro76/threebox/blob/master/examples/01-basic.html) 
 <img alt="threebox" src="images/basic.jpg" width="50%"><br/>
 - This sample shows the simplest Threebox use with only a sphere with no interactions.<br/>
+- Updated to Mapbox 2.2.0
 - - - -
 
 #### [02-line.html](https://github.com/jscastro76/threebox/blob/master/examples/02-line.html) 
@@ -45,6 +46,7 @@ These are the examples included in Threebox.
 #### [07-alignmentTest.html](https://github.com/jscastro76/threebox/blob/master/examples/07-alignmentTest.html) 
 <img alt="threebox" src="images/alignmentTest.jpg" width="50%"><br/>
 - This sample shows camera perspective and depth alignment between fill-extrusion layer and some Object3D created through Threebox.<br />
+- Enabled built-in atmospheric sky layer added through `sky: true` param.
 - Updated to Mapbox 2.2.0
 - - - -  
 
@@ -88,9 +90,11 @@ These are the examples included in Threebox.
 - Enabled built-in Tooltips on for through `enableTooltips` 
 - Enabled built-in sunlight position for the scene through `realSunlight`
 - Enabled built-in shadows for 3D Objects through `castShadow`.
+- Enabled built-in atmospheric sky layer added through `sky: true` param.
 - Set the time map lights based on `setSunlight` for today.
 - Changes automatically the style from sunset to sunrise through `tb.getSunTimes`.
 - Updated to Mapbox 2.2.0
+
 - - - -
 
 #### [13-eiffel.html](https://github.com/jscastro76/threebox/blob/master/examples/13-eiffel.html) 
@@ -100,6 +104,7 @@ These are the examples included in Threebox.
 - Enabled built-in Tooltips on for through `enableTooltips` 
 - Enabled built-in sunlight position for the scene through `realSunlight`
 - Enabled built-in shadows for 3D Objects through `castShadow`.
+- Enabled built-in atmospheric sky layer added through `sky: true` param.
 - Set the time map lights based on `setSunlight` for today.
 - Changes automatically the style from sunset to sunrise through `tb.getSunTimes`.
 - Updated to Mapbox 2.2.0

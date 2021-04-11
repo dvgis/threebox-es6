@@ -49,7 +49,9 @@ You can use threebox in three different ways.
 
 #### NPM install
 Add threebox to your project via **npm package** [![NPM version](http://img.shields.io/npm/v/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin) :  
-`npm install threebox-plugin`  
+```js
+npm install threebox-plugin
+```  
 
 Then you will need to import Threebox object in your code. Depending your javascript framework this might be different. 
 ```js 
@@ -72,9 +74,10 @@ Threebox can be also used from different public CDNs:
 ##### jsdelivr
 This CDN has the particularity that always requires the version of the package to download individual files.
 ```html
-<script src="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.9/dist/threebox.min.js" type="text/javascript"></script>
-<link href="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.9/dist/threebox.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.2.1/dist/threebox.min.js" type="text/javascript"></script>
+<link href="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.1/dist/threebox.css" rel="stylesheet" />
 ```
+<br/>
 
 ##### unpkg
 Despite this CDN admits version, if omitted, it will download always the last one published.
@@ -84,14 +87,13 @@ Despite this CDN admits version, if omitted, it will download always the last on
 <link href="https://unpkg.com/threebox-plugin/dist/threebox.css" rel="stylesheet" />
 ```
 
-For an specific version (i.e. v2.1.9) use the followin:
+For an specific version (i.e. v2.2.1) use the followin:
 ```html
-<script src="https://unpkg.com/threebox-plugin@2.1.9/dist/threebox.min.js" type="text/javascript"></script>
-<link href="https://unpkg.com/threebox-plugin@2.1.9/dist/threebox.css" rel="stylesheet" />
+<script src="https://unpkg.com/threebox-plugin@2.2.1/dist/threebox.min.js" type="text/javascript"></script>
+<link href="https://unpkg.com/threebox-plugin@2.2.1/dist/threebox.css" rel="stylesheet" />
 ```
 
 <br/>
-
 
 - - -
 
@@ -123,6 +125,7 @@ Sets up a Threebox scene using an [Mapbox map](https://docs.mapbox.com/mapbox-gl
 | `multiLayer`     | no       | false   | boolean  | Enables the option for multi layer pages where a default layer will be created internally that will manage the [`tb.update`](#update) calls  |
 | `orthographic`     | no       | false   | boolean  | Enables the option to set a [`THREE.OrthographicCamera`](https://threejs.org/docs/index.html#api/en/cameras/OrthographicCamera) instead of a `THREE.PerspectiveCamera` which is the default in Mapbox  |
 | `fov`     | no       | ThreeboxConstants.FOV_DEGREES | number | Enables to set the FOV of the default [`THREE.PerspectiveCamera`](https://threejs.org/docs/index.html#api/en/cameras/PerspectiveCamera). This value has no effect if `orthographic: true`  |
+| `sky`    | no       | false      | boolean | It sets a built-in atmospheric layer initially set with the time and the map center position. This layer is automatically updated if `realSunlight` is also true, but it can be updated separately through `tb.updateSunSky(tb.getSunSky())` method call. |
 
 To render Threebox scene, first is needed to create a [CustomLayerInterface](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface), and then add the 3D objects to render at [`onAdd` function](https://www.mapbox.com/mapbox-gl-js/api/#customlayerinterface).  
 Second, you need to call recursively to [`tb.update();`](#update) method from 
@@ -302,6 +305,14 @@ If it receives `true` as a param, it will also call internally `obj.dispose` to 
 
 <br>
 
+#### createSkyLayer 
+```js
+tb.createSkyLayer()
+```
+This internal method creates a new sky atmospheric layer, it's interally used by the property `tb.sky`.
+
+<br>
+
 
 #### defaultLights 
 ```js
@@ -364,6 +375,16 @@ tb.getSunPosition(date, coords)
 This method gets Sun light position (azimuth, altitude) based on `suncalc.js.` module which calculates the sun position for a given date, time, lng, lat combination. 
 
 <br>
+
+#### getSunSky 
+```js
+tb.getSunSky(date, sunPos)
+```
+This method gets Sun sky layer position `[azimuth, altitude]` based on `suncalc.js.` module which calculates the sun position for a given date, time, lng, lat combination. 
+If `date` is provided, it will use that, otherwise it will use `new Date()`. If `sunPos` is provided, it will use that, otherwise it will calculate it based on map.getCenter() calling `tb.getSunPosition` method.
+
+<br>
+
 
 #### getSunTimes 
 ```js
@@ -734,6 +755,24 @@ as it's responsible of invoking the [`THREE.WebGLRenderer.render(scene, camera)`
 
 <br>
 
+#### updateLightHelper 
+```js
+tb.updateLightHelper()
+```
+This method updates the poition of `tb.lights.dirLightHelper`, it's needed if we want to see the helper properly render when the light moves.
+
+<br>
+
+
+#### updateSunSky 
+```js
+tb.updateSunSky(sunPos)
+```
+If `tb.sky` is `true`, this method updates the sky atmospheric layer with the received sun position.
+
+<br>
+
+
 #### unprojectFromWorld 
 ```js
 tb.unprojectFromWorld(Vector3): lnglat
@@ -921,6 +960,18 @@ Don't set this property to `true` is you are creating fill-extrusion layers. If 
 tb.rotationStep : Number
 ```
 This get/set property receives and returns the size in degrees of the step to use when an object is dragged and rotated. By default this is set to 5.
+
+<br>
+
+#### sky
+
+```js
+tb.sky: Boolean
+```
+By default is `false`. This property is set by the init param `sky: true` in threebox constructor. 
+This get/set property sets and returns the option to have a built-in atmospheric layer initially set with the time and the map center position.   
+This layer is automatically updated if `realSunlight` is also true, but it can be updated separately through `tb.updateSunSky(tb.getSunSky())` method call. 
+If this property is set to `false` after the atmospheric sky layer is created, it will remove the layer. 
 
 <br>
 

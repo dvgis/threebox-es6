@@ -30,12 +30,13 @@
 		var origin = [-95.97299, 36.15031,0];
 
 		var map = new mapboxgl.Map({
-		  container: 'map',
-		  style: 'mapbox://styles/mapbox/light-v9',
-		  center: origin,
-		  zoom: 14,
-		  pitch: 60,
-		  heading: 41
+			container: 'map',
+			style: 'mapbox://styles/mapbox/light-v9',
+			center: origin,
+			zoom: 14,
+			pitch: 60,
+			heading: 41,
+			antialias: true
 		});
 
 		//generate a spiral line geometry (not essential for understanding this demo)

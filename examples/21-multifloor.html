@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+	<title>Threebox alignment Test</title>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.css" rel="stylesheet">
+	<script src="https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.js"></script>
+	<script src="../dist/threebox.js" type="text/javascript"></script>
+	<link href="../dist/threebox.css" rel="stylesheet" />
+	<script src="config.js"></script>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+		}
+
+		#map {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			width: 100%;
+		}
+	</style>
+</head>
+<body>
+	<div id="map"></div>
+	<script type="module">
+		///// THIS EXTRUSION SAMPLE SHOWS HOW TO CREATE EXTRUSIONS IN TWO WAYS
+		///// THE FIRST WAY IS TO CREATE AN ARRAY OF VECTOR2 AND USE tb.extrusion
+		///// THE SECOND WAY IS TO READ geoJson FEATURES FROM A FILE
+		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
+
+		mapboxgl.accessToken = config.accessToken;
+		let origin = [-87.61694, 41.86625];
+		let stats;
+
+		var map = new mapboxgl.Map({
+			container: 'map',
+			style: 'mapbox://styles/mapbox/streets-v11',
+			center: origin,
+			zoom: 15.99,
+			pitch: 40,
+			bearing: 20,
+			antialias: true,
+			hash: true
+		});
+
+		window.tb = new Threebox(
+			map,
+			map.getCanvas().getContext('webgl'),
+			{
+				defaultLights: true,
+				enableSelectingObjects: true,
+				enableDraggingObjects: true,
+				enableTooltips: true,
+				multiLayer: true, // this will create a default custom layer that will manage a single tb.update
+			}
+		);
+
+		map.on('load', function () {
+			// stats
+			stats = new Stats();
+			map.getContainer().appendChild(stats.dom);
+			animate();
+
+			map.addLayer(createExtrusionLayer("room-extrusion", "floor-plan"));
+
+			for (let i = 0; i < 5; i++) {
+				map.addLayer(createCustomLayer("customLayer" + i, origin, i));
+			};
+			map.addLayer(createCustomLayer("customLayer" + 5, [-87.617299, 41.865728], 0));
+
+
+		});
+
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+		}
+
+		function createExtrusionLayer(layerId, sourceId, i) {
+			map.addSource(sourceId, {
+				// GeoJSON Data source used in vector tiles, documented at
+				// https://gist.github.com/ryanbaumann/a7d970386ce59d11c16278b90dde094d
+				'type': 'geojson',
+				'data':
+					'./geojson/indoor-3d-map.json'
+			});
+			let extrusionLayer = {
+				'id': layerId,
+				'type': 'fill-extrusion',
+				'source': sourceId,
+				'paint': {
+					// See the Mapbox Style Specification for details on data expressions.
+					// https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions
+
+					// Get the fill-extrusion-color from the source 'color' property.
+					'fill-extrusion-color': ['get', 'color'],
+
+					// Get fill-extrusion-height from the source 'height' property.
+					'fill-extrusion-height': ['get', 'height'],
+
+					// Get fill-extrusion-base from the source 'base_height' property.
+					'fill-extrusion-base': ['get', 'base_height'],
+
+					// Make extrusions slightly opaque for see through indoor walls.
+					'fill-extrusion-opacity': 1
+				}
+			};
+			return extrusionLayer;
+		}
+
+		function createCustomLayer(layerId, origin, i) {
+			//create the layer
+			let customLayer3D = {
+				id: layerId,
+				type: 'custom',
+				renderingMode: '3d',
+				onAdd: function (map, gl) {
+					addModel(layerId, origin, i);
+				},
+				render: function (gl, matrix) {
+					// is not needed anymore if multiLayer : true
+				}
+			};
+			return customLayer3D;
+
+		};
+
+		function addModel(layerId, origin, i) {
+			let options = {
+				type: 'gltf', //'gltf'/'mtl'
+				obj: 'https://ipsmap2.oss-cn-hangzhou.aliyuncs.com/model/3d/lunyi.gltf', //model url
+				bin: '', //replace by mtl attribute
+				units: 'meters', //units in the default values are always in meters
+				scale: 0.16,
+				rotation: { x: 90, y: 180, z: 0 }, //default rotation
+				anchor: 'center'
+			}
+			tb.loadObj(options, function (model) {
+				model.setCoords([origin[0] + (i * 0.00012), origin[1]], 0);
+				let l = map.getLayer(layerId);
+				tb.add(model, layerId);
+			});
+		}
+	</script>
+
+</body>
+</html>

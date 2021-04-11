@@ -2,15 +2,31 @@
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
+**WARNING**: This version updates to Mapbox **2.2.0**. Despite v1.11.1 still supported, if used, some features from mapbox v.2.0.1 won't be obviously available such as sky layers.  
+**Known issue**: `BuildingShadow` wont work as the definition of the layers has changed.
+
 #### :sparkles: Enhancements
-- #224 Ignore worker_threads
-  - #223 Can't resolve worker threads    
+
+Add a better light for night on 14-buildingshadow.html example #118
 - #146 Update to Mapbox 2.2 
   - #225 Mapbox 2.2: Update Depth calculation keeping compatibility with previous versions 
   - #226 Mapbox 2.2: Update all the examples (14-buildingshadow & 17-azuremaps not updated)
+  - #232 Mapbox 2.2: Add sky layer as an option in threebox 
+  - Updated example [07-alignmentTest.html](https://github.com/jscastro76/threebox/blob/master/examples/07-alignmentTest.html) 
+  - Updated example [12-add3dmodel.html](https://github.com/jscastro76/threebox/blob/master/examples/12-add3dmodel.html) 
+  - Updated example [13-eiffel.html](https://github.com/jscastro76/threebox/blob/master/examples/13-eiffel.html) 
+- #224 Ignore worker_threads
+- #229 tb.dispose() in dev mode not working. It was removed from three.js but not included in migration guide.
+- #234 Update all the examples to include antialias: true in the webglcontext 
+
+#### :beetle: Bug fixes
+- #223 Can't resolve worker threads    
+- #230 Module not found: Can't resolve 'worker_threads' (duplicated #223)
 
 #### :pencil: Documentation
 - Updated [documentation](/examples/readme.md) (Added a note on the examples updated to Mapbox 2.2.0)
+- Updated [Threebox documentation](/docs/Threebox.md) (public cdns data, `sky` attribute and property, `tb.createSkyLayer`, `tb.getSunSky`, `tb.updateSunSky`, `tb.updateLightHelper`, )
+- Updated [Examples](/examples) documentation (new sky layers in 7, 12, 13). 
 
 - - - 
 
@@ -18,10 +34,12 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
+**WARNING**: This version updates to Three.js **r127** which is now bundled within Threebox. 
+
 #### :sparkles: Enhancements
 - #212 Allow to remove an object by name
 - #211 Create an object property that changes all the materials by a color
-- #169 Update to Three.js v127 
+- #169 Update to Three.js r127 
   - #214 Full refactor of tb.tube 
   - #215 Refactor tb.line 
   - #216 Refactor tb.update 

@@ -99,8 +99,8 @@ All the [**Threebox Documentation**](/docs/Threebox.md) has been completely upda
 
 ## Compatibility/Dependencies
 
-- **Three.js r127**. (already bundled into the Threebox build). If desired, other versions can be swapped in and rebuilt [here](https://github.com/jscastro76/threebox/blob/master/src/three.js), though compatibility is not guaranteed. **(WARNING: v118.3 breaks compatibility in some cases)**
-- **Mapbox-gl-js v1.11.1. or v.2.0.1**
+- **Three.js r127**. (already bundled into the Threebox build). If desired, other versions can be swapped in and rebuilt [here](https://github.com/jscastro76/threebox/blob/master/src/three.js), though compatibility is not guaranteed.
+- **Mapbox-gl-js v1.11.1. or v.2.0.1**. **Warning**: Despite v1.11.1 still supported, if used, some features from mapbox v.2.0.1 won't be obviously available such as sky layers. 
 - **Azure Maps v2.0.31.**
 
 <br>
@@ -113,7 +113,9 @@ You can use threebox in three different ways.
 
 #### NPM install
 Add threebox to your project via **npm package** [![NPM version](http://img.shields.io/npm/v/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin) :
-`npm install threebox-plugin`  
+```js
+npm install threebox-plugin
+```   
 
 Then you will need to import Threebox object in your code. Depending your javascript framework this might be different. 
 ```js 
@@ -136,9 +138,11 @@ Threebox can be also used from different public CDNs:
 ##### jsdelivr
 This CDN has the particularity that always requires the version of the package to download individual files.
 ```html
-<script src="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.9/dist/threebox.min.js" type="text/javascript"></script>
-<link href="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.1.9/dist/threebox.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.2.2/dist/threebox.min.js" type="text/javascript"></script>
+<link href="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.2.2/dist/threebox.css" rel="stylesheet" />
 ```
+
+<br/>
 
 ##### unpkg
 Despite this CDN admits version, if omitted, it will download always the last one published.
@@ -148,10 +152,10 @@ Despite this CDN admits version, if omitted, it will download always the last on
 <link href="https://unpkg.com/threebox-plugin/dist/threebox.css" rel="stylesheet" />
 ```
 
-For an specific version (i.e. v2.1.9) use the followin:
+For an specific version (i.e. v2.2.1) use the followin:
 ```html
-<script src="https://unpkg.com/threebox-plugin@2.1.9/dist/threebox.min.js" type="text/javascript"></script>
-<link href="https://unpkg.com/threebox-plugin@2.1.9/dist/threebox.css" rel="stylesheet" />
+<script src="https://unpkg.com/threebox-plugin@2.2.1/dist/threebox.min.js" type="text/javascript"></script>
+<link href="https://unpkg.com/threebox-plugin@2.2.1/dist/threebox.css" rel="stylesheet" />
 ```
 
 <br/>

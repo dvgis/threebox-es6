@@ -365,6 +365,8 @@ Threebox.prototype = {
 		this.lights = this.initLights;
 		if (this.options.defaultLights) this.defaultLights();
 		if (this.options.realSunlight) this.realSunlight(this.options.realSunlightHelper);
+		this.skyLayerName = 'sky-layer';
+		this.sky = this.options.sky;
 		this.enableSelectingFeatures = this.options.enableSelectingFeatures || false;
 		this.enableSelectingObjects = this.options.enableSelectingObjects || false;
 		this.enableDraggingObjects = this.options.enableDraggingObjects || false;
@@ -376,6 +378,10 @@ Threebox.prototype = {
 			this.tb.zoomLayers = [];
 			//[jscastro] if multiLayer, create a by default layer in the map, so tb.update won't be needed in client side to avoid duplicating calls to render
 			if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: 'custom', renderingMode: '3d', map: this, onAdd: function (map, gl) { }, render: function (gl, matrix) { this.map.tb.update(); } })
+
+			if (this.tb.sky) {
+				this.tb.createSkyLayer();
+			}
 		});
 
 		//[jscastro] new event map on load
@@ -795,6 +801,22 @@ Threebox.prototype = {
 
 	},
 
+	//[jscastro] added property to manage an athmospheric sky layer
+	get sky() { return this.options.sky; },
+	set sky(value) {
+
+		if (value != this.sky) {
+			if (value) {
+				this.createSkyLayer();
+			}
+			else {
+				this.removeLayer(this.skyLayerName);
+			}
+			this.options.sky = value;
+		}	
+
+	},
+
 	//[jscastro] added property to manage FOV for perspective camera
 	get fov() { return this.options.fov;},
 	set fov(value) {
@@ -830,6 +852,36 @@ Threebox.prototype = {
 		this.map.repaint = true; // repaint the map
 		this.options.orthographic = value;
 
+	},
+
+	//[jscastro] method to create an athmospheric sky layer
+	createSkyLayer: function () {
+		let layer = this.map.getLayer(this.skyLayerName);
+		if (!layer) {
+			this.map.addLayer({
+				'id': this.skyLayerName,
+				'type': 'sky',
+				'paint': {
+					'sky-opacity': [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						0,
+						0,
+						5,
+						0.3,
+						8,
+						1
+					],
+					// set up the sky layer for atmospheric scattering
+					'sky-type': 'atmosphere',
+					// explicitly set the position of the sun rather than allowing the sun to be attached to the main light source
+					'sky-atmosphere-sun': this.getSunSky(this.lightDateTime),
+					// set the intensity of the sun as a light source (0-100 with higher values corresponding to brighter skies)
+					'sky-atmosphere-sun-intensity': 10
+				}
+			});
+		}
 	},
 
 	// Objects
@@ -1125,7 +1177,7 @@ Threebox.prototype = {
 
 	//[jscastro] get the sun position (azimuth, altitude) from a given datetime, lng, lat
 	getSunPosition: function (date, coords) {
-		return SunCalc.getPosition(date, coords[1], coords[0]);  
+		return SunCalc.getPosition(date || Date.now(), coords[1], coords[0]);  
 	},
 
 	//[jscastro] get the sun times for sunrise, sunset, etc.. from a given datetime, lng, lat and alt
@@ -1189,12 +1241,31 @@ Threebox.prototype = {
 		if (this.map.loaded()) {
 			this.map.setLight({
 				anchor: 'map',
-				position: [1.5, 180 + this.sunPosition.azimuth * 180 / Math.PI, 90 - this.sunPosition.altitude * 180 / Math.PI],
-				'position-transition': { duration: 0 },
-				//color: '#fdb'
-				color: `hsl(40, ${50 * Math.cos(this.sunPosition.altitude)}%, ${96 * Math.sin(this.sunPosition.altitude)}%)`
+				position: [3, 180 + this.sunPosition.azimuth * 180 / Math.PI, 90 - this.sunPosition.altitude * 180 / Math.PI],
+				intensity: Math.cos(this.sunPosition.altitude), //0.4,
+				color: `hsl(40, ${50 * Math.cos(this.sunPosition.altitude)}%, ${Math.max(20, 20 + (96 * Math.sin(this.sunPosition.altitude)))}%)`
+
 			}, { duration: 0 });
-			//console.log(pos.altitude);
+			if (this.sky) { this.updateSunSky(this.getSunSky(date, this.sunPosition));}
+		}
+	},
+
+	getSunSky: function (date, sunPos) {
+		if (!sunPos) {
+			var center = this.map.getCenter();
+			sunPos = this.getSunPosition(
+				date || Date.now(), [center.lng, center.lat]
+			);
+		}
+		var sunAzimuth = 180 + (sunPos.azimuth * 180) / Math.PI;
+		var sunAltitude = 90 - (sunPos.altitude * 180) / Math.PI;
+		return [sunAzimuth, sunAltitude];
+	},
+
+	updateSunSky: function (sunPos) {
+		if (this.sky) {
+			// update the `sky-atmosphere-sun` paint property with the position of the sun based on the selected time
+			this.map.setPaintProperty(tb.skyLayerName, 'sky-atmosphere-sun', sunPos);
 		}
 	},
 
@@ -1219,7 +1290,6 @@ Threebox.prototype = {
 					this.map.remove();
 					this.map = {};
 					this.scene.remove(this.world);
-					this.scene.dispose();
 					this.world.children = [];
 					this.world = null;
 					this.objectsCache.clear();
@@ -1306,7 +1376,8 @@ var defaultOptions = {
 	enableTooltips: false,
 	multiLayer: false,
 	orthographic: false,
-	fov: ThreeboxConstants.FOV_DEGREES
+	fov: ThreeboxConstants.FOV_DEGREES,
+	sky: false
 }
 module.exports = exports = Threebox;
 
