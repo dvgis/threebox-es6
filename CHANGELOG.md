@@ -3,7 +3,7 @@
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
 #### :beetle: Bug fixes
-- #227 `ObjectMouseOver` doesn't work after triggering `SelectedChange` 
+- #237 `ObjectMouseOver` doesn't work after triggering `SelectedChange` 
 
 - - - 
 
