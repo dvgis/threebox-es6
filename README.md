@@ -43,10 +43,9 @@ npm i threebox-plugin
 |---------|-------
 |<img alt="threebox" src="https://i.postimg.cc/43Lh7vvR/Customizable-FOV.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/50KqJdKv/extrusions.gif" width="100%">
 
-|Models built-in shadows|Sunlight illumination for a given datetime and lnglat
+|Sunlight illumination for a given datetime and lnglat|Models built-in shadows and sky layer synced with Sunlight
 |---------|-------
-|<img alt="threebox" src="https://i.postimg.cc/FF8LpRX0/Mapbox-Shadow.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/6QnjWSVm/Eiffel-Shadow.gif" width="100%">
-
+|<img alt="threebox" src="https://i.postimg.cc/6QnjWSVm/Eiffel-Shadow.gif" width="100%">|<img alt="threebox" src="https://i.postimg.cc/63Y7SP6t/SunSki.gif" width="100%">
 
 <br>
 
@@ -66,6 +65,7 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Support for Object3D embedded animations, and custom animations on AnimationManager (i.e. embedded animation + translate + rotate).
 - Support for multi-layer and multi-floor design of spaces.
 - Support for built-in shadows and real Sun light positioning for a given datetime and lnglat coords.
+- Support for built-in Sky layer synced with real Sun light.
 - Support for Non-AABB Non Axes Aligned Bounding Box and real model size, including floor projection. 
 - Support for Object3D auto-centering and 9 default anchor positions customizable through adjustments.
 - Support for `setLayerZoomRange` and `setLayoutProperty` on Custom Layers (not available in Mapbox).

@@ -374,9 +374,12 @@ Threebox.prototype = {
 						this.outFeature(this.overedFeature);
 						this.getCanvasContainer().style.cursor = 'pointer';
 						if (!this.selectedObject || nearestObject.uuid != this.selectedObject.uuid) {
-							if (this.overedObject && this.overedObject.uuid != nearestObject.uuid ) {
+							if (this.overedObject && this.overedObject.uuid != nearestObject.uuid) {
 								this.outObject();
 							}
+							nearestObject.over = true;
+							this.overedObject = nearestObject;
+						} else if (this.selectedObject && nearestObject.uuid == this.selectedObject.uuid) {
 							nearestObject.over = true;
 							this.overedObject = nearestObject;
 						}
@@ -1089,7 +1092,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.2.2',
+	version: '2.2.3',
 
 }
 
