@@ -161,12 +161,26 @@ These are the examples included in Threebox.
 
 - - - -
 
-
 #### [20-game.html](https://github.com/jscastro76/threebox/blob/master/examples/20-game.html) 
 <img alt="threebox" src="images/game.jpg" width="50%"><br/>
 - This sample shows how to implement an easy driving game experience with WASD controls.
 - Enables the user to change dynamically to speed, inertia and to activate a fill-extrusion buildings layer;
 - The model is attached to the event `ObjectChanged` to paint in red the buildings the truck.
+- Updated to Mapbox 2.2.0
+
+- - - -
+
+#### [21-terrain.html](https://github.com/jscastro76/threebox/blob/master/examples/21-terrain.html) 
+<img alt="threebox" src="images/terrain.jpg" width="50%"><br/>
+- This sample shows how to use terrain layers and how the height of 3D models adapt automatically to terrain layer.
+- Glacier d'Argentière courtesy of [@jbbarre](https://github.com/jbbarre).
+- Enabled built-in sunlight position for the scene through `realSunlight`.
+- Enabled built-in raycasting and selection for 3D objects through `enableSelectingObjects`, all objects can be selected and unselected.
+- Enabled built-in Tooltips on for through `enableTooltips` 
+- Enabled built-in atmospheric sky layer added through `sky: true` param, synced with sunlight.
+- Enabled built-in terrain layer added through `terrain: true` param, synced with sunlight.
+- Set the time map lights based on `setSunlight` for today.
+- Changes automatically the opacity of the ground layer synced with .
 - Updated to Mapbox 2.2.0
 
 - - - -

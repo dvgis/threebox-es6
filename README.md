@@ -65,7 +65,7 @@ Only in this fork, there is a list of new features implemented on top of the ama
 - Support for Object3D embedded animations, and custom animations on AnimationManager (i.e. embedded animation + translate + rotate).
 - Support for multi-layer and multi-floor design of spaces.
 - Support for built-in shadows and real Sun light positioning for a given datetime and lnglat coords.
-- Support for built-in Sky layer synced with real Sun light.
+- Support for built-in Mapbox v2 Sky and Terrain layer synced with real Sun light.
 - Support for Non-AABB Non Axes Aligned Bounding Box and real model size, including floor projection. 
 - Support for Object3D auto-centering and 9 default anchor positions customizable through adjustments.
 - Support for `setLayerZoomRange` and `setLayoutProperty` on Custom Layers (not available in Mapbox).

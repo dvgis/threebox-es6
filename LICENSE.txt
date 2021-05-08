@@ -91,3 +91,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - Windmill
   - Creative Commons License attribution: Windmill animated model by https://sketchfab.com/data3anshow
   from https://sketchfab.com/3d-models/windmill-animated-6ce5667e8d5c47068ea13196036efd52
+
+- Glacier d'Argentiere
+  - Attribution, no License specified: Glacier model by https://github.com/jbbarre
+  from https://github.com/jbbarre/glacierargentiere/blob/main/data/glacier_wgs.gltf 

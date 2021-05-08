@@ -2,8 +2,21 @@
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
+#### :sparkles: Enhancements
+- #243 Create a new example on terrain layer 
+  - New example on terrain layer with a 3D model aligned vertically [21-terrain.html](https://github.com/jscastro76/threebox/blob/master/examples/21-terrain.html) 
+- #244 Darken the raster layer with realSunlight 
+
 #### :beetle: Bug fixes
+- #233 map.setLight is not updated when tb.setStyle until the map moves 
 - #237 `ObjectMouseOver` doesn't work after triggering `SelectedChange` 
+- #241 KNOWN ISSUE: Terrain layer calculates wrongly the object height 
+- #242 KNOWN ISSUE: Create a warning for sky layers when used with Mapbox < 2.0 
+
+#### :pencil: Documentation
+- Updated [documentation](/examples/readme.md) 
+- Updated [Threebox documentation](/docs/Threebox.md) (`terrain` attribute and property, `tb.createTerrainLayer`, `tb.updateSunGround`)
+- Updated [Examples](/examples) documentation (new terrain layer in 21). 
 
 - - - 
 

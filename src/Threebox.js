@@ -49,6 +49,8 @@ Threebox.prototype = {
 
 		this.objects = new Objects();
 
+		this.mapboxVersion = parseFloat(this.map.version); 
+
 		// Set up a THREE.js scene
 		this.renderer = new THREE.WebGLRenderer({
 			alpha: true,
@@ -96,7 +98,9 @@ Threebox.prototype = {
 		if (this.options.defaultLights) this.defaultLights();
 		if (this.options.realSunlight) this.realSunlight(this.options.realSunlightHelper);
 		this.skyLayerName = 'sky-layer';
-		this.sky = this.options.sky;
+		this.terrainSourceName = 'mapbox-dem';
+		this.terrainExaggeration = 1.0;
+		this.terrainLayerName = '';
 		this.enableSelectingFeatures = this.options.enableSelectingFeatures || false;
 		this.enableSelectingObjects = this.options.enableSelectingObjects || false;
 		this.enableDraggingObjects = this.options.enableDraggingObjects || false;
@@ -109,9 +113,16 @@ Threebox.prototype = {
 			//[jscastro] if multiLayer, create a by default layer in the map, so tb.update won't be needed in client side to avoid duplicating calls to render
 			if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: 'custom', renderingMode: '3d', map: this, onAdd: function (map, gl) { }, render: function (gl, matrix) { this.map.tb.update(); } })
 
-			if (this.tb.sky) {
-				this.tb.createSkyLayer();
+			if (this.tb.options.sky) {
+				this.tb.sky = true;
 			}
+			if (this.tb.options.terrain) {
+				this.tb.terrain = true;
+			}
+			let rasterLayers = ['satellite', 'mapbox-mapbox-satellite', 'satelliteLayer'];
+			rasterLayers.forEach((l) => {
+				if (this.getLayer(l)) this.tb.terrainLayerName = l;
+			})
 		});
 
 		//[jscastro] new event map on load
@@ -526,6 +537,7 @@ Threebox.prototype = {
 			this.on('mouseout', this.onMouseOut)
 			this.on('mousedown', this.onMouseDown);
 			this.on('zoom', this.onZoom);
+			this.on('zoomend', this.onZoom);
 
 			document.addEventListener('keydown', onKeyDown.bind(this), true);
 			document.addEventListener('keyup', onKeyUp.bind(this));
@@ -537,17 +549,31 @@ Threebox.prototype = {
 	//[jscastro] added property to manage an athmospheric sky layer
 	get sky() { return this.options.sky; },
 	set sky(value) {
+		if (value) {
+			this.createSkyLayer();
+		}
+		else {
+			this.removeLayer(this.skyLayerName);
+		}
+		this.options.sky = value;
+	},
 
-		if (value != this.sky) {
-			if (value) {
-				this.createSkyLayer();
-			}
-			else {
-				this.removeLayer(this.skyLayerName);
-			}
-			this.options.sky = value;
-		}	
+	//[jscastro] added property to manage an athmospheric sky layer
+	get terrain() { return this.options.terrain; },
+	set terrain(value) {
+		this.terrainLayerName = '';
+		if (value) {
+			this.createTerrainLayer();
+		}
+		else {
+			if (this.mapboxVersion < 2.0) { console.warn("Terrain layer are only supported by Mapbox-gl-js > v2.0"); return };
 
+			if (this.map.getTerrain()) {
+				this.map.setTerrain(null); //
+				this.map.removeSource(this.terrainSourceName);
+			}
+		}
+		this.options.terrain = value;
 	},
 
 	//[jscastro] added property to manage FOV for perspective camera
@@ -589,6 +615,8 @@ Threebox.prototype = {
 
 	//[jscastro] method to create an athmospheric sky layer
 	createSkyLayer: function () {
+		if (this.mapboxVersion < 2.0) { console.warn("Sky layer are only supported by Mapbox-gl-js > v2.0"); this.options.sky = false; return };
+
 		let layer = this.map.getLayer(this.skyLayerName);
 		if (!layer) {
 			this.map.addLayer({
@@ -614,6 +642,33 @@ Threebox.prototype = {
 					'sky-atmosphere-sun-intensity': 10
 				}
 			});
+
+			this.map.once('idle', () => {
+				this.setSunlight();
+				this.repaint();
+			});
+		}
+	},
+
+	//[jscastro] method to create a terrain layer
+	createTerrainLayer: function () {
+		if (this.mapboxVersion < 2.0) { console.warn("Terrain layer are only supported by Mapbox-gl-js > v2.0"); this.options.terrain = false; return };
+		let layer = this.map.getTerrain();
+		if (!layer) {
+			// add the DEM source as a terrain layer with exaggerated height
+			this.map.addSource(this.terrainSourceName, {
+				'type': 'raster-dem',
+				'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+				'tileSize': 512,
+				'maxzoom': 14
+			});
+			this.map.setTerrain({ 'source': this.terrainSourceName, 'exaggeration': this.terrainExaggeration });
+			this.map.once('idle', () => {
+				//alert("idle");
+				this.cameraSync.updateCamera();
+				this.repaint();
+			});
+
 		}
 	},
 
@@ -835,9 +890,7 @@ Threebox.prototype = {
 		this.updateLightHelper();
 
 		// Render the scene and repaint the map
-		//this.renderer.state.reset();
-		this.renderer.resetState();
-		//if (this.options.realSunlight) this.renderer.state.setBlending(THREE.NormalBlending);
+		this.renderer.resetState(); //update threejs r126
 		this.renderer.render(this.scene, this.camera);
 
 		// [jscastro] Render any label
@@ -966,12 +1019,13 @@ Threebox.prototype = {
 
 		this.lights.dirLight.position.set(azSin, azCos, alt);
 		this.lights.dirLight.position.multiplyScalar(radius);
-		this.lights.dirLight.intensity = Math.max(alt, -0.15);
-		//this.lights.hemiLight.intensity = alt * 0.6;
+		this.lights.dirLight.intensity = Math.max(alt, 0);
+		this.lights.hemiLight.intensity = Math.max(alt * 1, 0.1);
 		//console.log("Intensity:" + this.lights.dirLight.intensity);
 		this.lights.dirLight.updateMatrixWorld();
 		this.updateLightHelper();
 		if (this.map.loaded()) {
+			this.updateSunGround(this.sunPosition);
 			this.map.setLight({
 				anchor: 'map',
 				position: [3, 180 + this.sunPosition.azimuth * 180 / Math.PI, 90 - this.sunPosition.altitude * 180 / Math.PI],
@@ -998,7 +1052,14 @@ Threebox.prototype = {
 	updateSunSky: function (sunPos) {
 		if (this.sky) {
 			// update the `sky-atmosphere-sun` paint property with the position of the sun based on the selected time
-			this.map.setPaintProperty(tb.skyLayerName, 'sky-atmosphere-sun', sunPos);
+			this.map.setPaintProperty(this.skyLayerName, 'sky-atmosphere-sun', sunPos);
+		}
+	},
+
+	updateSunGround: function (sunPos) {
+		if (this.terrainLayerName != '') {
+			// update the raster layer paint property with the position of the sun based on the selected time
+			this.map.setPaintProperty(this.terrainLayerName, 'raster-opacity', Math.max(sunPos.altitude, 0.25));
 		}
 	},
 
@@ -1080,6 +1141,11 @@ Threebox.prototype = {
 		this.scene.add(this.lights.hemiLight);
 		this.setSunlight();
 
+		this.map.once('idle', () => {
+			this.setSunlight();
+			this.repaint();
+		});
+
 	},
 
 	setDefaultView: function (options, defOptions) {
@@ -1110,7 +1176,8 @@ var defaultOptions = {
 	multiLayer: false,
 	orthographic: false,
 	fov: ThreeboxConstants.FOV_DEGREES,
-	sky: false
+	sky: false,
+	terrain: false
 }
 module.exports = exports = Threebox;
 

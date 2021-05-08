@@ -1,0 +1,191 @@
+<!doctype html>
+<head>
+	<title>Terrain Sample with Glacier 3D</title>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.css" rel="stylesheet">
+	<script src="https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.js"></script>
+	<script src="../dist/threebox.js" type="text/javascript"></script>
+	<link href="../dist/threebox.css" rel="stylesheet" />
+	<script src="config.js"></script>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+		}
+
+		html, body, #map {
+			height: 100%;
+		}
+		#time {
+			position: absolute;
+			left: 0;
+			right: 0;
+			bottom: 80px;
+			margin-left: auto;
+			margin-right: auto;
+			min-width: 90%;
+			z-index: 1;
+		}
+
+		#hour {
+			background: rgba(0, 0, 0, 0.5);
+			color: #fff;
+			position: absolute;
+			left: 0px;
+			right: 0px;
+			bottom: 40px;
+			margin-left: auto;
+			margin-right: auto;
+			max-width: 30%;
+			padding: 5px 10px;
+			font-size: 18px;
+			line-height: 18px;
+			border-radius: 3px;
+			text-align: center;
+			z-index: 1;
+		}
+	</style>
+</head>
+<body>
+	<div id='map' class='map' />
+	<div id="hour" class="mapboxgl-map"></div>
+	<input id='time' type='range' min="0" max="86400" />
+
+	<script type="module">
+
+		/// Glacier model from https://github.com/jbbarre
+
+		//This demo shows a satellite mapbox style the following features:
+		//- Built-in sunlight through 'realSunlight' that sets the scene and map lights based on 'setSunlight'
+		//- Built-in sky layer through 'sky' that sets the sun layer synced with sunlight
+		//- Built-in terrain layer through 'terrain' that sets the terrain layer synced with sunlight
+		//- Built-in raycasting and selection through 'enableSelectingObjects' 
+		//- Built-in Tooltips on for through 'enableTooltips' 
+
+		if (!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
+
+		mapboxgl.accessToken = config.accessToken;
+		//starting location for map
+		let popup;
+		let minZoom = 12;
+		let seconds = 0;
+		let date = new Date();
+		let mapConfig = {
+			PAR: {
+				origin: [6.927566, 45.984111, 1280], center: [6.965006, 45.968859], zoom: 12.2, pitch: 70, bearing: -250, scale: 1, rotation: { x: 90, y: 177, z: 0 }, timezone: 'Europe/Paris', obj: './models/landmarks/glacier.gltf',
+			},
+			names: {
+				customLayer: "custom-layer",
+				fillExtrusion: "composite-b",
+				fillExtrusionLayer: "building-b"
+			}
+		}
+
+		var modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(
+			mapConfig.PAR.origin,
+			1280
+		);
+		let scale = modelAsMercatorCoordinate.meterInMercatorCoordinateUnits();
+		console.log(scale);
+		let point = mapConfig.PAR;
+
+		var map = new mapboxgl.Map({
+			style: 'mapbox://styles/mapbox/satellite-streets-v9', //'mapbox://styles/mapbox/outdoors-v11', //'mapbox://styles/mapbox/dark-v10',//'mapbox://styles/mapbox/light-v10',//'mapbox://styles/mapbox/satellite-streets-v9',
+			center: point.center,
+			zoom: point.zoom,
+			pitch: point.pitch,
+			bearing: point.bearing,
+			container: 'map',
+			antialias: true, hash: true
+		});
+
+		map.addControl(new mapboxgl.NavigationControl());
+
+		window.tb = new Threebox(
+			map,
+			map.getCanvas().getContext('webgl'),
+			{
+				realSunlight: true,
+				sky: true,
+				terrain: true,
+				enableSelectingObjects: true, 
+				enableTooltips: true,
+			}
+		);
+
+		var time = date.getHours() * 60 * 60 + date.getMinutes() * 60 + date.getSeconds();
+		var timeInput = document.getElementById('time');
+		timeInput.value = time;
+		timeInput.oninput = () => {
+			time = +timeInput.value;
+			date.setHours(Math.floor(time / 60 / 60));
+			date.setMinutes(Math.floor(time / 60) % 60);
+			date.setSeconds(time % 60);
+			console.log(date);
+			map.triggerRepaint();
+		};
+
+		let stats;
+		import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+		function animate() {
+			requestAnimationFrame(animate);
+			stats.update();
+		}
+
+		map.on('style.load', function () {
+
+			// stats
+			stats = new Stats();
+			map.getContainer().appendChild(stats.dom);
+			animate();
+
+			// add the DEM source as a terrain layer with exaggerated height
+			//map.addSource('mapbox-dem', {
+			//	'type': 'raster-dem',
+			//	'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+			//	'tileSize': 512,
+			//	'maxzoom': 14
+			//});
+			//map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.0 });
+			//map.setPaintProperty('satellite', 'raster-opacity', 0.1);
+
+			map.addLayer({
+				id: mapConfig.names.customLayer,
+				type: 'custom',
+				renderingMode: '3d',
+				onAdd: function (map, mbxContext) {
+
+					var options = {
+						obj: mapConfig.PAR.obj,
+						type: 'gltf',
+						scale: 1,
+						units: 'meters',
+						rotation: mapConfig.PAR.rotation,
+						anchor: 'auto'
+					}
+
+					tb.loadObj(options, function (model) {
+						model.setCoords(mapConfig.PAR.origin);
+						model.addTooltip("Glacier d'Argentière", true);
+						model.color = 0xffffff;
+						//model.selected = true;
+						tb.add(model);
+					})
+
+				},
+
+				render: function (gl, matrix) {
+					tb.setSunlight(date, point.center);
+					hour.innerHTML = "Local date/time: " + dateToTimezone(date, point.timezone).toLocaleString();
+					tb.update();
+				}
+			});
+
+		});
+
+		function dateToTimezone(date = new Date(), timezone) {
+			var tzTime = date.toLocaleString("en-US", { timeZone: timezone });
+			return new Date(tzTime);
+
+		}
+	</script>
+</body>

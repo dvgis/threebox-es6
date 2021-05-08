@@ -88,6 +88,7 @@
     <Content Include="examples\16-multilayer.html" />
     <Content Include="examples\17-azuremaps.html" />
     <Content Include="examples\20-game.html" />
+    <Content Include="examples\21-terrain.html" />
     <Content Include="examples\geojson\extrusion.geojson" />
     <Content Include="examples\geojson\indoor-3d-map.geojson" />
     <Content Include="examples\images\3dbuildings.jpg" />
@@ -109,11 +110,13 @@
     <Content Include="examples\images\performance.jpg" />
     <Content Include="examples\images\raycaster.jpg" />
     <Content Include="examples\images\stylechange.jpg" />
+    <Content Include="examples\images\terrain.jpg" />
     <Content Include="examples\images\tube.jpg" />
     <Content Include="examples\images\vuejs.jpg" />
     <Content Include="examples\models\history\elephant.glb" />
     <Content Include="examples\models\history\triceratops.fbx" />
     <Content Include="examples\models\landmarks\eiffel.glb" />
+    <Content Include="examples\models\landmarks\glacier.gltf" />
     <Content Include="examples\models\landmarks\libertystatue.glb" />
     <Content Include="examples\models\landmarks\spaceneedle.glb" />
     <Content Include="examples\models\plane\plane.glb" />

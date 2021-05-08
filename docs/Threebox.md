@@ -126,6 +126,7 @@ Sets up a Threebox scene using an [Mapbox map](https://docs.mapbox.com/mapbox-gl
 | `orthographic`     | no       | false   | boolean  | Enables the option to set a [`THREE.OrthographicCamera`](https://threejs.org/docs/index.html#api/en/cameras/OrthographicCamera) instead of a `THREE.PerspectiveCamera` which is the default in Mapbox  |
 | `fov`     | no       | ThreeboxConstants.FOV_DEGREES | number | Enables to set the FOV of the default [`THREE.PerspectiveCamera`](https://threejs.org/docs/index.html#api/en/cameras/PerspectiveCamera). This value has no effect if `orthographic: true`  |
 | `sky`    | no       | false      | boolean | It sets a built-in atmospheric layer initially set with the time and the map center position. This layer is automatically updated if `realSunlight` is also true, but it can be updated separately through `tb.updateSunSky(tb.getSunSky())` method call. |
+| `terrain`    | no       | false      | boolean | It sets a built-in terrain layer initially set with the time and the map center position. This layer is automatically updated if `realSunlight` is also true, but it can be updated separately through `tb.updateSunSky(tb.getSunSky())` method call. |
 
 To render Threebox scene, first is needed to create a [CustomLayerInterface](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface), and then add the 3D objects to render at [`onAdd` function](https://www.mapbox.com/mapbox-gl-js/api/#customlayerinterface).  
 Second, you need to call recursively to [`tb.update();`](#update) method from 
@@ -310,6 +311,14 @@ If it receives `true` as a param, it will also call internally `obj.dispose` to 
 tb.createSkyLayer()
 ```
 This internal method creates a new sky atmospheric layer, it's interally used by the property `tb.sky`.
+
+<br>
+
+#### createTerrainLayer 
+```js
+tb.createTerrainLayer()
+```
+This internal method creates a new terrain layer, it's interally used by the property `tb.terrain`.
 
 <br>
 
@@ -763,6 +772,13 @@ This method updates the poition of `tb.lights.dirLightHelper`, it's needed if we
 
 <br>
 
+#### updateSunGround 
+```js
+tb.updateSunGround(sunPos)
+```
+If `tb.realSunlight` is `true`, this method updates the light over the satellite style (if applied) according to the sun altitude.
+
+<br>
 
 #### updateSunSky 
 ```js
@@ -771,7 +787,6 @@ tb.updateSunSky(sunPos)
 If `tb.sky` is `true`, this method updates the sky atmospheric layer with the received sun position.
 
 <br>
-
 
 #### unprojectFromWorld 
 ```js
@@ -975,6 +990,17 @@ If this property is set to `false` after the atmospheric sky layer is created, i
 
 <br>
 
+#### terrain
+
+```js
+tb.terrain: Boolean
+```
+By default is `false`. This property is set by the init param `terrain: true` in threebox constructor. 
+This get/set property sets and returns the option to have a built-in terrain layer. 
+This layer is automatically updated if `realSunlight` is also true, adjusting it's light but it can be updated separately through `tb.updateSunGround(tb.getSunPosition())` method call. 
+If this property is set to `false` after the terrain layer is created, it will remove the layer. 
+
+<br>
 
 ## Objects
 

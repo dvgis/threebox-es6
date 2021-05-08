@@ -58,7 +58,7 @@
 		mapboxgl.accessToken = config.accessToken;
 
 		let styles = {
-			day: 'light-v10', 
+			day: 'satellite-streets-v9', 
 			night: 'dark-v10'
 		}
 		let selectedStyle = styles.day;
@@ -131,7 +131,6 @@
 					let dupDate = new Date(date.getTime()); // dup the date to avoid modify the original instance
 					let dateTZ = new Date(dupDate.toLocaleString("en-US", { timeZone: 'Australia/Sydney' }));
 					hour.innerHTML = "Sunlight on date/time: " + dateTZ.toLocaleString();
-					changeStyleWithDaylight(date, origin);
 					tb.update();
 				}
 			};
@@ -152,23 +151,8 @@
 			map.getContainer().appendChild(stats.dom);
 			animate();
 
-			map.addLayer(createCustomLayer('3d-model', modelOrigin), 'waterway-label');
+			map.addLayer(createCustomLayer('3d-model', modelOrigin));
 		});
-
-		function changeStyleWithDaylight(date, origin) {
-			let sunTimes = tb.getSunTimes(date, origin);
-			if (date >= sunTimes.sunriseEnd && date <= sunTimes.sunsetStart) {
-				if (selectedStyle != styles.day) {
-					tb.setStyle("mapbox://styles/mapbox/" + styles.day);
-					selectedStyle = styles.day;
-				}
-			} else {
-				if (selectedStyle != styles.night) {
-					tb.setStyle("mapbox://styles/mapbox/" + styles.night);
-					selectedStyle = styles.night;
-				}
-			}
-		}
 
 	</script>
 </body>

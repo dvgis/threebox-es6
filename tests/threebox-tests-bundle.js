@@ -11876,6 +11876,8 @@ Threebox.prototype = {
 
 		this.objects = new Objects();
 
+		this.mapboxVersion = parseFloat(this.map.version); 
+
 		// Set up a THREE.js scene
 		this.renderer = new THREE.WebGLRenderer({
 			alpha: true,
@@ -11923,7 +11925,9 @@ Threebox.prototype = {
 		if (this.options.defaultLights) this.defaultLights();
 		if (this.options.realSunlight) this.realSunlight(this.options.realSunlightHelper);
 		this.skyLayerName = 'sky-layer';
-		this.sky = this.options.sky;
+		this.terrainSourceName = 'mapbox-dem';
+		this.terrainExaggeration = 1.0;
+		this.terrainLayerName = '';
 		this.enableSelectingFeatures = this.options.enableSelectingFeatures || false;
 		this.enableSelectingObjects = this.options.enableSelectingObjects || false;
 		this.enableDraggingObjects = this.options.enableDraggingObjects || false;
@@ -11936,9 +11940,16 @@ Threebox.prototype = {
 			//[jscastro] if multiLayer, create a by default layer in the map, so tb.update won't be needed in client side to avoid duplicating calls to render
 			if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: 'custom', renderingMode: '3d', map: this, onAdd: function (map, gl) { }, render: function (gl, matrix) { this.map.tb.update(); } })
 
-			if (this.tb.sky) {
-				this.tb.createSkyLayer();
+			if (this.tb.options.sky) {
+				this.tb.sky = true;
 			}
+			if (this.tb.options.terrain) {
+				this.tb.terrain = true;
+			}
+			let rasterLayers = ['satellite', 'mapbox-mapbox-satellite', 'satelliteLayer'];
+			rasterLayers.forEach((l) => {
+				if (this.getLayer(l)) this.tb.terrainLayerName = l;
+			})
 		});
 
 		//[jscastro] new event map on load
@@ -12353,6 +12364,7 @@ Threebox.prototype = {
 			this.on('mouseout', this.onMouseOut)
 			this.on('mousedown', this.onMouseDown);
 			this.on('zoom', this.onZoom);
+			this.on('zoomend', this.onZoom);
 
 			document.addEventListener('keydown', onKeyDown.bind(this), true);
 			document.addEventListener('keyup', onKeyUp.bind(this));
@@ -12364,17 +12376,31 @@ Threebox.prototype = {
 	//[jscastro] added property to manage an athmospheric sky layer
 	get sky() { return this.options.sky; },
 	set sky(value) {
+		if (value) {
+			this.createSkyLayer();
+		}
+		else {
+			this.removeLayer(this.skyLayerName);
+		}
+		this.options.sky = value;
+	},
 
-		if (value != this.sky) {
-			if (value) {
-				this.createSkyLayer();
-			}
-			else {
-				this.removeLayer(this.skyLayerName);
-			}
-			this.options.sky = value;
-		}	
+	//[jscastro] added property to manage an athmospheric sky layer
+	get terrain() { return this.options.terrain; },
+	set terrain(value) {
+		this.terrainLayerName = '';
+		if (value) {
+			this.createTerrainLayer();
+		}
+		else {
+			if (this.mapboxVersion < 2.0) { console.warn("Terrain layer are only supported by Mapbox-gl-js > v2.0"); return };
 
+			if (this.map.getTerrain()) {
+				this.map.setTerrain(null); //
+				this.map.removeSource(this.terrainSourceName);
+			}
+		}
+		this.options.terrain = value;
 	},
 
 	//[jscastro] added property to manage FOV for perspective camera
@@ -12416,6 +12442,8 @@ Threebox.prototype = {
 
 	//[jscastro] method to create an athmospheric sky layer
 	createSkyLayer: function () {
+		if (this.mapboxVersion < 2.0) { console.warn("Sky layer are only supported by Mapbox-gl-js > v2.0"); this.options.sky = false; return };
+
 		let layer = this.map.getLayer(this.skyLayerName);
 		if (!layer) {
 			this.map.addLayer({
@@ -12441,6 +12469,33 @@ Threebox.prototype = {
 					'sky-atmosphere-sun-intensity': 10
 				}
 			});
+
+			this.map.once('idle', () => {
+				this.setSunlight();
+				this.repaint();
+			});
+		}
+	},
+
+	//[jscastro] method to create a terrain layer
+	createTerrainLayer: function () {
+		if (this.mapboxVersion < 2.0) { console.warn("Terrain layer are only supported by Mapbox-gl-js > v2.0"); this.options.terrain = false; return };
+		let layer = this.map.getTerrain();
+		if (!layer) {
+			// add the DEM source as a terrain layer with exaggerated height
+			this.map.addSource(this.terrainSourceName, {
+				'type': 'raster-dem',
+				'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+				'tileSize': 512,
+				'maxzoom': 14
+			});
+			this.map.setTerrain({ 'source': this.terrainSourceName, 'exaggeration': this.terrainExaggeration });
+			this.map.once('idle', () => {
+				//alert("idle");
+				this.cameraSync.updateCamera();
+				this.repaint();
+			});
+
 		}
 	},
 
@@ -12662,9 +12717,7 @@ Threebox.prototype = {
 		this.updateLightHelper();
 
 		// Render the scene and repaint the map
-		//this.renderer.state.reset();
-		this.renderer.resetState();
-		//if (this.options.realSunlight) this.renderer.state.setBlending(THREE.NormalBlending);
+		this.renderer.resetState(); //update threejs r126
 		this.renderer.render(this.scene, this.camera);
 
 		// [jscastro] Render any label
@@ -12793,12 +12846,13 @@ Threebox.prototype = {
 
 		this.lights.dirLight.position.set(azSin, azCos, alt);
 		this.lights.dirLight.position.multiplyScalar(radius);
-		this.lights.dirLight.intensity = Math.max(alt, -0.15);
-		//this.lights.hemiLight.intensity = alt * 0.6;
+		this.lights.dirLight.intensity = Math.max(alt, 0);
+		this.lights.hemiLight.intensity = Math.max(alt * 1, 0.1);
 		//console.log("Intensity:" + this.lights.dirLight.intensity);
 		this.lights.dirLight.updateMatrixWorld();
 		this.updateLightHelper();
 		if (this.map.loaded()) {
+			this.updateSunGround(this.sunPosition);
 			this.map.setLight({
 				anchor: 'map',
 				position: [3, 180 + this.sunPosition.azimuth * 180 / Math.PI, 90 - this.sunPosition.altitude * 180 / Math.PI],
@@ -12825,7 +12879,14 @@ Threebox.prototype = {
 	updateSunSky: function (sunPos) {
 		if (this.sky) {
 			// update the `sky-atmosphere-sun` paint property with the position of the sun based on the selected time
-			this.map.setPaintProperty(tb.skyLayerName, 'sky-atmosphere-sun', sunPos);
+			this.map.setPaintProperty(this.skyLayerName, 'sky-atmosphere-sun', sunPos);
+		}
+	},
+
+	updateSunGround: function (sunPos) {
+		if (this.terrainLayerName != '') {
+			// update the raster layer paint property with the position of the sun based on the selected time
+			this.map.setPaintProperty(this.terrainLayerName, 'raster-opacity', Math.max(sunPos.altitude, 0.25));
 		}
 	},
 
@@ -12907,6 +12968,11 @@ Threebox.prototype = {
 		this.scene.add(this.lights.hemiLight);
 		this.setSunlight();
 
+		this.map.once('idle', () => {
+			this.setSunlight();
+			this.repaint();
+		});
+
 	},
 
 	setDefaultView: function (options, defOptions) {
@@ -12937,7 +13003,8 @@ var defaultOptions = {
 	multiLayer: false,
 	orthographic: false,
 	fov: ThreeboxConstants.FOV_DEGREES,
-	sky: false
+	sky: false,
+	terrain: false
 }
 module.exports = exports = Threebox;
 
@@ -13468,24 +13535,13 @@ function CameraSync(map, camera, world) {
 
 CameraSync.prototype = {
     setupCamera: function () {
-        //console.log("setupCamera");
-        this.state.fov = this.map.transform._fov;
         const t = this.map.transform;
         this.camera.aspect = t.width / t.height; //bug fixed, if aspect is not reset raycast will fail on map resize
-        this.camera.updateProjectionMatrix();
-        this.halfFov = this.state.fov / 2;
-        const offset = { x: t.width / 2, y: t.height / 2 };//t.centerOffset;
-        const cameraToCenterDistance = 0.5 / Math.tan(this.halfFov) * t.height;
+        this.halfFov = t._fov / 2;
+        this.cameraToCenterDistance = 0.5 / Math.tan(this.halfFov) * t.height;
         const maxPitch = t._maxPitch * Math.PI / 180;
         this.acuteAngle = Math.PI / 2 - maxPitch;
-
-        this.state.cameraToCenterDistance = cameraToCenterDistance;
-        this.state.offset = offset;
-        this.state.cameraTranslateZ = new THREE.Matrix4().makeTranslation(0, 0, this.state.cameraToCenterDistance);
-        this.state.maxFurthestDistance = this.state.cameraToCenterDistance * 0.95 * (Math.cos(this.acuteAngle) * Math.sin(this.halfFov) / Math.sin(Math.max(0.01, Math.min(Math.PI - 0.01, this.acuteAngle - this.halfFov))) + 1);
-
         this.updateCamera();
-
     },
 
     updateCamera: function (ev) {
@@ -13495,23 +13551,25 @@ CameraSync.prototype = {
         }
 
         const t = this.map.transform;
+        this.camera.aspect = t.width / t.height; //bug fixed, if aspect is not reset raycast will fail on map resize
+        const offset = t.centerOffset || new THREE.Vector3(); //{ x: t.width / 2, y: t.height / 2 };
         let farZ = 0;
         let furthestDistance = 0;
-        this.state.fov = t._fov;
-        this.halfFov = this.state.fov / 2;
+        this.halfFov = t._fov / 2;
         const groundAngle = Math.PI / 2 + t._pitch;
-        const pitchAngle = Math.cos((Math.PI / 2) - t._pitch); //pitch seems to influence heavily the depth calculation and cannot be more than 60 = PI/3
+        const pitchAngle = Math.cos((Math.PI / 2) - t._pitch); //pitch seems to influence heavily the depth calculation and cannot be more than 60 = PI/3 < v1 and 85 > v2
         this.cameraToCenterDistance = 0.5 / Math.tan(this.halfFov) * t.height;
+        let pixelsPerMeter = 1;
+        const worldSize = this.worldSize();
 
-        if (window.mapboxgl && parseFloat(window.mapboxgl.version) >= 2.0) {
+        if (this.map.tb.mapboxVersion >= 2.0) {
             // mapbox version >= 2.0
-            const worldSize = this.worldSize(t);
-            const pixelsPerMeter = this.mercatorZfromAltitude(1, t.center.lat) * worldSize;
-            const fovAboveCenter = this.fovAboveCenter(t);
+            pixelsPerMeter = this.mercatorZfromAltitude(1, t.center.lat) * worldSize;
+            const fovAboveCenter = t._fov * (0.5 + t.centerOffset.y / t.height);
 
             // Adjust distance to MSL by the minimum possible elevation visible on screen,
             // this way the far plane is pushed further in the case of negative elevation.
-            const minElevationInPixels = 0; // TODO test with elevation exageration  this.elevation ? this.elevation.getMinElevationBelowMSL() * pixelsPerMeter : 0;
+            const minElevationInPixels = t.elevation ? t.elevation.getMinElevationBelowMSL() * pixelsPerMeter : 0;
             const cameraToSeaLevelDistance = ((t._camera.position[2] * worldSize) - minElevationInPixels) / Math.cos(t._pitch);
             const topHalfSurfaceDistance = Math.sin(fovAboveCenter) * cameraToSeaLevelDistance / Math.sin(utils.clamp(Math.PI - groundAngle - fovAboveCenter, 0.01, Math.PI - 0.01));
 
@@ -13524,16 +13582,15 @@ CameraSync.prototype = {
         } else {
             // mapbox version < 2.0 or azure maps
             // Furthest distance optimized by @jscastro76
-            const topHalfSurfaceDistance = Math.sin(this.halfFov) * this.state.cameraToCenterDistance / Math.sin(Math.PI - groundAngle - this.halfFov);
+            const topHalfSurfaceDistance = Math.sin(this.halfFov) * this.cameraToCenterDistance / Math.sin(Math.PI - groundAngle - this.halfFov);
 
             // Calculate z distance of the farthest fragment that should be rendered. 
-            furthestDistance = pitchAngle * topHalfSurfaceDistance + this.state.cameraToCenterDistance;
+            furthestDistance = pitchAngle * topHalfSurfaceDistance + this.cameraToCenterDistance;
 
             // Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
             farZ = furthestDistance * 1.01;
-
         }
-        this.state.cameraTranslateZ = new THREE.Matrix4().makeTranslation(0, 0, this.cameraToCenterDistance);
+        this.cameraTranslateZ = new THREE.Matrix4().makeTranslation(0, 0, this.cameraToCenterDistance);
 
         // someday @ansis set further near plane to fix precision for deckgl,so we should fix it to use mapbox-gl v1.3+ correctly
         // https://github.com/mapbox/mapbox-gl-js/commit/5cf6e5f523611bea61dae155db19a7cb19eb825c#diff-5dddfe9d7b5b4413ee54284bc1f7966d
@@ -13545,13 +13602,19 @@ CameraSync.prototype = {
         if (this.camera instanceof THREE.OrthographicCamera) {
             this.camera.projectionMatrix = utils.makeOrthographicMatrix(w / - 2, w / 2, h / 2, h / - 2, nearZ, farZ);
         } else {
-            this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, w / h, nearZ, farZ);
+            this.camera.projectionMatrix = utils.makePerspectiveMatrix(t._fov, w / h, nearZ, farZ);
         }
+        this.camera.projectionMatrix.elements[8] = -offset.x * 2 / t.width;
+        this.camera.projectionMatrix.elements[9] = offset.y * 2 / t.height;
+
         // Unlike the Mapbox GL JS camera, separate camera translation and rotation out into its world matrix
         // If this is applied directly to the projection matrix, it will work OK but break raycasting
         let cameraWorldMatrix = this.calcCameraMatrix(t._pitch, t.angle);
+        // When terrain layers are included, height of 3D layers must be modified from t_camera.z * worldSize
+        if (t.elevation) cameraWorldMatrix.elements[14] = t._camera.position[2] * worldSize;
+        //this.camera.matrixWorld.elements is equivalent to t._camera._transform
         this.camera.matrixWorld.copy(cameraWorldMatrix);
-
+        
         let zoomPow = t.scale * this.state.worldSizeRatio;
         // Handle scaling and translation of objects in the map in the world's matrix transform, not the camera
         let scale = new THREE.Matrix4;
@@ -13572,20 +13635,26 @@ CameraSync.prototype = {
             .premultiply(translateMap)
 
         // utils.prettyPrintMatrix(this.camera.projectionMatrix.elements);
-        this.map.fire('CameraSynced', { detail: { nearZ: nearZ, farZ: farZ, pitch: t._pitch, angle: t.angle, furthestDistance: furthestDistance, maxFurthestDistance: this.state.maxFurthestDistance, cameraToCenterDistance: this.cameraToCenterDistance, t: this.map.transform, tbProjMatrix: this.camera.projectionMatrix.elements, tbWorldMatrix: this.world.matrix.elements, cameraSyn: CameraSync } });
+        this.map.fire('CameraSynced', { detail: { nearZ: nearZ, farZ: farZ, pitch: t._pitch, angle: t.angle, furthestDistance: furthestDistance, cameraToCenterDistance: this.cameraToCenterDistance, t: this.map.transform, tbProjMatrix: this.camera.projectionMatrix.elements, tbWorldMatrix: this.world.matrix.elements, cameraSyn: CameraSync } });
 
     },
 
-    worldSize(transform) {
-        return transform.tileSize * transform.scale;
+    worldSize() {
+        let t = this.map.transform;
+        return t.tileSize * t.scale;
     },
 
-    fovAboveCenter(transform) {
-        return transform._fov * (0.5 + transform.centerOffset.y / transform.height);
+    worldSizeFromZoom() {
+        let t = this.map.transform;
+        return Math.pow(2.0, t.zoom) * t.tileSize;
     },
 
     mercatorZfromAltitude(altitude, lat) {
         return altitude / this.circumferenceAtLatitude(lat);
+    },
+
+    mercatorZfromZoom() {
+        return this.cameraToCenterDistance / this.worldSizeFromZoom();
     },
 
     circumferenceAtLatitude(latitude) {
@@ -13596,12 +13665,127 @@ CameraSync.prototype = {
         const t = this.map.transform;
         const _pitch = (pitch === undefined) ? t._pitch : pitch;
         const _angle = (angle === undefined) ? t.angle : angle;
-        const _trz = (trz === undefined) ? this.state.cameraTranslateZ : trz;
+        const _trz = (trz === undefined) ? this.cameraTranslateZ : trz;
 
         return new THREE.Matrix4()
             .premultiply(_trz)
             .premultiply(new THREE.Matrix4().makeRotationX(_pitch))
             .premultiply(new THREE.Matrix4().makeRotationZ(_angle));
+    },
+
+    updateCameraState() {
+        let t = this.map.transform;
+        if (!t.height) return;
+
+        // Set camera orientation and move it to a proper distance from the map
+        //t._camera.setPitchBearing(t._pitch, t.angle);
+
+        const dir = t._camera.forward();
+        const distance = t.cameraToCenterDistance;
+        const center = t.point;
+
+        // Use camera zoom (if terrain is enabled) to maintain constant altitude to sea level
+        const zoom = t._cameraZoom ? t._cameraZoom : t._zoom;
+        const altitude = this.mercatorZfromZoom(t);
+        const height = altitude - this.mercatorZfromAltitude(t._centerAltitude, t.center.lat);
+
+        // simplified version of: this._worldSizeFromZoom(this._zoomFromMercatorZ(height))
+        const updatedWorldSize = t.cameraToCenterDistance / height;
+        return [
+            center.x / this.worldSize() - (dir[0] * distance) / updatedWorldSize,
+            center.y / this.worldSize() - (dir[1] * distance) / updatedWorldSize,
+            this.mercatorZfromAltitude(t._centerAltitude, t._center.lat) + (-dir[2] * distance) / updatedWorldSize
+        ];
+
+    },
+
+    getWorldToCamera(worldSize, pixelsPerMeter) {
+        // transformation chain from world space to camera space:
+        // 1. Height value (z) of renderables is in meters. Scale z coordinate by pixelsPerMeter
+        // 2. Transform from pixel coordinates to camera space with cameraMatrix^-1
+        // 3. flip Y if required
+
+        // worldToCamera: flip * cam^-1 * zScale
+        // cameraToWorld: (flip * cam^-1 * zScale)^-1 => (zScale^-1 * cam * flip^-1)
+        let t = this.map.transform;
+        const matrix = new THREE.Matrix4();
+        const matrixT = new THREE.Matrix4();
+
+        // Compute inverse of camera matrix and post-multiply negated translation
+        const o = t._camera._orientation;
+        const p = t._camera.position;
+        const invPosition = new THREE.Vector3(p[0], p[1], p[2]);
+
+        const quat = new THREE.Quaternion();
+        quat.set(o[0], o[1], o[2], o[3]);
+        const invOrientation = quat.conjugate();
+        invPosition.multiplyScalar(-worldSize);
+
+        matrixT.makeTranslation(invPosition.x, invPosition.y, invPosition.z);
+        matrix
+            .makeRotationFromQuaternion(invOrientation)
+            .premultiply(matrixT);
+        //this would make the matrix exact to getWorldToCamera but breaks
+        //this.translate(matrix.elements, matrix.elements, invPosition);
+
+        // Pre-multiply y (2nd row)
+        matrix.elements[1] *= -1.0;
+        matrix.elements[5] *= -1.0;
+        matrix.elements[9] *= -1.0;
+        matrix.elements[13] *= -1.0;
+
+        // Post-multiply z (3rd column)
+        matrix.elements[8] *= pixelsPerMeter;
+        matrix.elements[9] *= pixelsPerMeter;
+        matrix.elements[10] *= pixelsPerMeter;
+        matrix.elements[11] *= pixelsPerMeter;
+        //console.log(matrix.elements);
+        return matrix;
+    },
+
+    translate(out, a, v) {
+        let x = v[0] || v.x,
+            y = v[1] || v.y,
+            z = v[2] || v.z;
+        let a00, a01, a02, a03;
+        let a10, a11, a12, a13;
+        let a20, a21, a22, a23;
+        if (a === out) {
+            out[12] = a[0] * x + a[4] * y + a[8] * z + a[12];
+            out[13] = a[1] * x + a[5] * y + a[9] * z + a[13];
+            out[14] = a[2] * x + a[6] * y + a[10] * z + a[14];
+            out[15] = a[3] * x + a[7] * y + a[11] * z + a[15];
+        } else {
+            a00 = a[0];
+            a01 = a[1];
+            a02 = a[2];
+            a03 = a[3];
+            a10 = a[4];
+            a11 = a[5];
+            a12 = a[6];
+            a13 = a[7];
+            a20 = a[8];
+            a21 = a[9];
+            a22 = a[10];
+            a23 = a[11];
+            out[0] = a00;
+            out[1] = a01;
+            out[2] = a02;
+            out[3] = a03;
+            out[4] = a10;
+            out[5] = a11;
+            out[6] = a12;
+            out[7] = a13;
+            out[8] = a20;
+            out[9] = a21;
+            out[10] = a22;
+            out[11] = a23;
+            out[12] = a00 * x + a10 * y + a20 * z + a[12];
+            out[13] = a01 * x + a11 * y + a21 * z + a[13];
+            out[14] = a02 * x + a12 * y + a22 * z + a[14];
+            out[15] = a03 * x + a13 * y + a23 * z + a[15];
+        }
+        return out;
     }
 }
 
