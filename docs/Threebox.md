@@ -449,6 +449,7 @@ Internally, uses [`THREE.OBJLoader`](https://github.com/mrdoob/three.js/blob/dev
 | `tooltip`     | no       | false   | bool  | This param allows to have or not a tooltip, by default is set with the value of `tb.enableTooltips` |
 | `bbox`     | no       | false   | bool  | This param allows to have or not a bounding box, by default is set with the value of `tb.enableSelectingObjects`  |
 | `raycasted`     | no       | true   | bool  | This param allows to hide an object from raycast individually |
+| `clone`     | no       | true   | bool  | This param allows to load an object without cloning it by default, but it will reduce performance because the new object will consume extra memory as no textures will be cloned. Some objects could require full new instances when animations and textures don't work well with cloning, then `clone: false` will solve the problem. By default `clone` param is true. |
 | `defaultAnimation`     | no       | 0   | number  | This allows to assign by param a default animation. Igneored if the object does not contain animations  |
 | `callback`     | yes       | NA   | function  | A function to run after the object loads. The first argument will be the successfully loaded object, and this is normally used to finish the configuration of the model and add it to Threebox scene through `tb.add()` method. 
 

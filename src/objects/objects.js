@@ -1057,7 +1057,8 @@ Objects.prototype = {
 			anchor: 'bottom-left',
 			bbox: true,
 			tooltip: true,
-			raycasted: true
+			raycasted: true,
+			clone: true
 		},
 
 		Object3D: {

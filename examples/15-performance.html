@@ -117,7 +117,8 @@
 
 		// gui
 		var Method = {
-			CLONED: 'CLONED'
+			CLONED: 'CLONED',
+			NOCLONED: 'NO CLONED'
 		};
 
 		var api = {
@@ -154,7 +155,8 @@
 					scale: model.scale,
 					units: 'meters',
 					rotation: { x: 90, y: 90, z: 0 },
-					anchor: 'center'
+					anchor: 'center',
+					cloned: (api.method == Method.CLONED ? true : false)
 				}
 				if (!processing) makeNaive(options, diff);
 
@@ -235,13 +237,14 @@
 			meshes.forEach(function (g) {
 				geometryByteLength += getGeometryByteLength(g);
 			});
+			let multiplier = (api.method == Method.CLONED ? 1 : api.count);
 			guiStatsEl.innerHTML = [
 
-				'<i>GPU draw calls</i>: ' + api.count,
-				'<i>GPU memory</i>: ' + formatBytes(api.count * 16 + geometryByteLength, 2),
-				'<i>WebGL geometries</i>: ' + tb.memory().geometries * api.count,
-				'<i>WebGL textures</i>: ' + tb.memory().textures * api.count,
-				'<i>WebGL programs</i>: ' + tb.programs() * api.count
+				'<i>GPU draw calls</i>: ' + multiplier,
+				'<i>GPU memory</i>: ' + formatBytes(multiplier * 16 + geometryByteLength, 2),
+				'<i>WebGL geometries</i>: ' + tb.memory().geometries * multiplier,
+				'<i>WebGL textures</i>: ' + tb.memory().textures * multiplier,
+				'<i>WebGL programs</i>: ' + tb.programs() * multiplier
 
 			].join('<br/>');
 		}

@@ -1,3 +1,15 @@
+## 2.2.4
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+- #243 Create a new example on terrain layer 
+
+#### :pencil: Documentation
+- Updated [Threebox documentation](/docs/Threebox.md) (`tb.loadObj` params `clone`)
+
+- - - 
+
 ## 2.2.3
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
@@ -29,7 +41,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 #### :sparkles: Enhancements
 
-Add a better light for night on 14-buildingshadow.html example #118
+- #118 Add a better light for night on 14-buildingshadow.html example 
 - #146 Update to Mapbox 2.2 
   - #225 Mapbox 2.2: Update Depth calculation keeping compatibility with previous versions 
   - #226 Mapbox 2.2: Update all the examples (14-buildingshadow & 17-azuremaps not updated)

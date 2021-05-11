@@ -701,31 +701,41 @@ Threebox.prototype = {
 
 	loadObj: async function loadObj(options, cb) {
 		this.setDefaultView(options, this.options);
-		//[jscastro] new added cache for 3D Objects
-		let cache = this.objectsCache.get(options.obj);
-		if (cache) {
-			cache.promise
-				.then(obj => {
-					cb(obj.duplicate(options));
-				})
-				.catch(err => {
-					this.objectsCache.delete(options.obj);
-					console.error("Could not load model file: " + options.obj);
+		if (options.clone === false) {
+			return new Promise(
+				async (resolve) => {
+					loader(options, cb, async (obj) => {
+						resolve(obj);
+					});
 				});
-		} else {
-			this.objectsCache.set(options.obj, {
-				promise: new Promise(
-					async (resolve, reject) => {
-						loader(options, cb, async (obj) => {
-							if (obj.duplicate) {
-								resolve(obj.duplicate());
-							} else {
-								reject(obj);
-							}
-						});
+		}
+		else {
+			//[jscastro] new added cache for 3D Objects
+			let cache = this.objectsCache.get(options.obj);
+			if (cache) {
+				cache.promise
+					.then(obj => {
+						cb(obj.duplicate(options));
 					})
-			});
+					.catch(err => {
+						this.objectsCache.delete(options.obj);
+						console.error("Could not load model file: " + options.obj);
+					});
+			} else {
+				this.objectsCache.set(options.obj, {
+					promise: new Promise(
+						async (resolve, reject) => {
+							loader(options, cb, async (obj) => {
+								if (obj.duplicate) {
+									resolve(obj.duplicate());
+								} else {
+									reject(obj);
+								}
+							});
+						})
+				});
 
+			}
 		}
 	},
 
@@ -1158,7 +1168,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.2.3',
+	version: '2.2.4',
 
 }
 
