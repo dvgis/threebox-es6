@@ -3,7 +3,7 @@
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
 #### :sparkles: Enhancements
-- #243 Create a new example on terrain layer 
+- #245 Add an option to load a model without cloning 
 
 #### :pencil: Documentation
 - Updated [Threebox documentation](/docs/Threebox.md) (`tb.loadObj` params `clone`)
