@@ -35,6 +35,7 @@ To run them, create a `config.js` file with your Mapbox-gl-js access token, in t
 - [18-extrusions.html](https://github.com/jscastro76/threebox/blob/master/examples/18-extrusions.html) 
 - [19-fixedzoom.html](https://github.com/jscastro76/threebox/blob/master/examples/19-fixedzoom.html) 
 - [20-game.html](https://github.com/jscastro76/threebox/blob/master/examples/20-game.html)
+- [21-terrain.html](https://github.com/jscastro76/threebox/blob/master/examples/21-terrain.html) 
 - [Vue.js sample](https://codesandbox.io/s/vue-threebox-sample-8k7mz)
 
 <br>
@@ -727,6 +728,13 @@ This method replicates the behaviour of [`map.setLayoutProperty`](https://docs.m
 
 <br>
 
+#### setObjectsScale 
+```js
+tb.setObjectsScale()
+```
+This method scales all the objects from `tb.world.children` that are `fixedZoom`. 
+
+<br>
 
 #### setStyle 
 ```js
@@ -1496,6 +1504,15 @@ This get property returns a `CSS2DObject`[`THREE.CSS2DObject`](https://threejs.o
 
 <br>
 
+#### hidden
+
+```js
+obj.hidden : boolean
+```
+This get/set property receives and returns the value of the hidden status of an object. This property overrides the value of `obj.visibility`.
+
+<br>
+
 #### fixedZoom
 
 ```js
@@ -1571,7 +1588,7 @@ obj.visibility : boolean
 ```
 This get/set property receives and returns a boolean value to override the property `visible` of a  [`THREE.Object3D`](https://threejs.org/docs/#api/en/core/Object3D.visible), 
 adding also the same visibility value for `obj.label` and `obj.tooltip`
-
+This property is overriden by `obj.hidden`, so if `obj.hidden` is false, `obj.visibility` is ignored.
 By Threebox design `.boundingBoxShadow` is hidden for [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) even when it's visible for the camera.
 
 

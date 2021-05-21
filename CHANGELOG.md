@@ -4,6 +4,10 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 #### :sparkles: Enhancements
 - #245 Add an option to load a model without cloning 
+- #250 We need an explicit hidden property that overrides visibility 
+
+#### :beetle: Bug fixes
+- #249 When style is changed, objects with fixedZoom don't rescale until map is moved. 
 
 #### :pencil: Documentation
 - Updated [Threebox documentation](/docs/Threebox.md) (`tb.loadObj` params `clone`)

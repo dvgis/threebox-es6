@@ -327,6 +327,18 @@ Objects.prototype = {
 				get() { return obj.getObjectByName(helpName); }
 			});
 
+			let _hidden = false;
+			//[jscastro] added property for explicitely hidden object to avoid zoom layer behavior
+			Object.defineProperty(obj, 'hidden', {
+				get() { return _hidden; },
+				set(value) {
+					if (_hidden != value) {
+						_hidden = value;
+						obj.visibility = !hidden;
+					}
+				}
+			});
+
 			//[jscastro] added property to redefine visible, including the label and tooltip
 			Object.defineProperty(obj, 'visibility', {
 				get() { return obj.visible; },
@@ -343,6 +355,8 @@ Objects.prototype = {
 					}
 					else return;
 					if (obj.visible != _value) {
+						if (obj.hidden && _value) return;
+
 						obj.visible = _value;
 
 						if (obj.model) {

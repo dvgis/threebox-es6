@@ -11940,6 +11940,10 @@ Threebox.prototype = {
 			//[jscastro] if multiLayer, create a by default layer in the map, so tb.update won't be needed in client side to avoid duplicating calls to render
 			if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: 'custom', renderingMode: '3d', map: this, onAdd: function (map, gl) { }, render: function (gl, matrix) { this.map.tb.update(); } })
 
+			this.once('idle', () => {
+				this.tb.setObjectsScale();
+			});
+
 			if (this.tb.options.sky) {
 				this.tb.sky = true;
 			}
@@ -12316,7 +12320,7 @@ Threebox.prototype = {
 
 			this.onZoom = function (e) {
 				this.tb.zoomLayers.forEach((l) => { this.tb.toggleLayer(l); });
-				this.tb.world.children.filter(o => (o.fixedZoom != null)).forEach((o) => { o.setObjectScale(this.transform.scale); });
+				this.tb.setObjectsScale();
 			}
 
 			let ctrlDown = false;
@@ -12643,12 +12647,7 @@ Threebox.prototype = {
 		this.map.setLayoutProperty(layerId, name, value);
 		if (value !== null && value !== undefined) {
 			if (name === 'visibility') {
-				this.world.children.forEach(function (obj) {
-					if (obj.layer === layerId) {
-						obj.visibility = value;
-					}
-				});
-				return;
+				this.world.children.filter(o => (o.layer === layerId)).forEach((o) => { o.visibility = value });
 			}
 		}
 	},
@@ -12684,6 +12683,11 @@ Threebox.prototype = {
 				}
 			});
 		}
+	},
+
+	//[jscastro] method to set globally all the objects that are fixedScale
+	setObjectsScale: function () {
+		this.world.children.filter(o => (o.fixedZoom != null)).forEach((o) => { o.setObjectScale(this.map.transform.scale); });
 	},
 
 	//[jscastro] mapbox setStyle removes all the layers, including custom layers, so tb.world must be cleaned up too
@@ -29480,6 +29484,18 @@ Objects.prototype = {
 				get() { return obj.getObjectByName(helpName); }
 			});
 
+			let _hidden = false;
+			//[jscastro] added property for explicitely hidden object to avoid zoom layer behavior
+			Object.defineProperty(obj, 'hidden', {
+				get() { return _hidden; },
+				set(value) {
+					if (_hidden != value) {
+						_hidden = value;
+						obj.visibility = !hidden;
+					}
+				}
+			});
+
 			//[jscastro] added property to redefine visible, including the label and tooltip
 			Object.defineProperty(obj, 'visibility', {
 				get() { return obj.visible; },
@@ -29496,6 +29512,8 @@ Objects.prototype = {
 					}
 					else return;
 					if (obj.visible != _value) {
+						if (obj.hidden && _value) return;
+
 						obj.visible = _value;
 
 						if (obj.model) {
