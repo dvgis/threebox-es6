@@ -831,6 +831,16 @@ This get/set property receives and returns the size in meters of the step to use
 
 <br>
 
+
+#### defaultCursor
+
+```js
+tb.defaultCursor : string
+```
+This get/set property receives and returns the value of the default cursor for the map canvas container `this.getCanvasContainer().style.cursor`, initally set to `'default'`.
+
+<br>
+
 #### enableDraggingObjects
 
 ```js

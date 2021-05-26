@@ -363,6 +363,7 @@ Threebox.prototype = {
 		this.rotationStep = 5;// degrees step size for rotation
 		this.gridStep = 6;// decimals to adjust the lnglat grid step, 6 = 11.1cm
 		this.altitudeStep = 0.1; // 1px = 0.1m = 10cm
+		this.defaultCursor = 'default';
 
 		this.lights = this.initLights;
 		if (this.options.defaultLights) this.defaultLights();
@@ -401,6 +402,7 @@ Threebox.prototype = {
 
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
+			this.getCanvasContainer().style.cursor = this.tb.defaultCursor;
 
 			//[jscastro] new fields to manage events on map
 			this.selectedObject; //selected object through click
@@ -411,7 +413,7 @@ Threebox.prototype = {
 			this.overedFeature; //overed state for extrusion layer features
 
 			let canvas = this.getCanvasContainer();
-			this.getCanvasContainer().style.cursor = 'default';
+			this.getCanvasContainer().style.cursor = this.tb.defaultCursor;
 			// Variable to hold the starting xy coordinates
 			// when 'mousedown' occured.
 			let start;
@@ -593,7 +595,7 @@ Threebox.prototype = {
 				// Capture the ongoing xy coordinates
 				let current = mousePos(e);
 
-				this.getCanvasContainer().style.cursor = 'default';
+				this.getCanvasContainer().style.cursor = this.tb.defaultCursor;
 				//check if being rotated
 				if (e.originalEvent.altKey && this.draggedObject) {
 
@@ -734,7 +736,7 @@ Threebox.prototype = {
 			this.onMouseUp = function (e) {
 
 				// Set a UI indicator for dragging.
-				this.getCanvasContainer().style.cursor = 'default';
+				this.getCanvasContainer().style.cursor = this.tb.defaultCursor;
 
 				// Remove these events now that finish has been called.
 				//map.off('mousemove', onMouseMove);
@@ -754,7 +756,7 @@ Threebox.prototype = {
 				if (this.overedFeature) {
 					let features = this.queryRenderedFeatures(e.point);
 					if (features.length > 0 && this.overedFeature.id != features[0].id) {
-						this.getCanvasContainer().style.cursor = 'default';
+						this.getCanvasContainer().style.cursor = this.tb.defaultCursor;
 						//only unover when new feature is another
 						this.outFeature(features[0]);
 					}
