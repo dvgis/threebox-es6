@@ -334,7 +334,7 @@ Objects.prototype = {
 				set(value) {
 					if (_hidden != value) {
 						_hidden = value;
-						obj.visibility = !hidden;
+						obj.visibility = !_hidden;
 					}
 				}
 			});
