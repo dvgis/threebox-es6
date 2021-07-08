@@ -15538,7 +15538,7 @@ function loadObj(options, cb, promise) {
 	}
 
 	materialLoader.load(options.mtl, loadObject, () => (null), error => {
-		console.warn("No material file found for SymbolLayer3D model " + m);
+		console.warn("No material file found " + error.stack);
 	});
 
 	function loadObject(materials) {
@@ -29493,7 +29493,7 @@ Objects.prototype = {
 				set(value) {
 					if (_hidden != value) {
 						_hidden = value;
-						obj.visibility = !hidden;
+						obj.visibility = !_hidden;
 					}
 				}
 			});
