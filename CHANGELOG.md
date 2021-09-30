@@ -4,6 +4,7 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
 
 #### :sparkles: Enhancements
 - #287 Updating to Three.js r132 
+- #289 Remove CustomLines folder and content 
 
 #### :beetle: Bug fixes
 - #286 Missing THREE in sphere.js  
