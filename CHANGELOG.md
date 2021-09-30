@@ -1,3 +1,15 @@
+## 2.2.5
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :sparkles: Enhancements
+- #287 Updating to Three.js r132 
+
+#### :beetle: Bug fixes
+- #286 Missing THREE in sphere.js  
+
+- - - 
+
 ## 2.2.4
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 

@@ -166,9 +166,6 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="src\objects\fflate.min.js" />
-    <Content Include="src\objects\loaders\DRACOLoader.js">
-      <SubType>Code</SubType>
-    </Content>
     <Content Include="src\objects\tooltip.js" />
     <Content Include="src\objects\label.js">
       <SubType>Code</SubType>

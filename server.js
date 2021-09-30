@@ -4,7 +4,7 @@ var url = require('url');
 var fs = require('fs');
 var path = require('path');
 var baseDirectory = __dirname; 
-var port = process.env.PORT || 1337;
+var port = 8080 || process.env.PORT || 1337;
 var counter = 0;
 
 http.createServer(function (request, response) {

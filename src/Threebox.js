@@ -132,7 +132,6 @@ Threebox.prototype = {
 
 		//[jscastro] new event map on load
 		this.map.on('load', function () {
-			this.getCanvasContainer().style.cursor = this.tb.defaultCursor;
 
 			//[jscastro] new fields to manage events on map
 			this.selectedObject; //selected object through click
@@ -1174,7 +1173,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.2.4',
+	version: '2.2.5',
 
 }
 
