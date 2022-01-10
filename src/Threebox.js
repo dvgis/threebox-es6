@@ -1173,7 +1173,7 @@ Threebox.prototype = {
 
 	programs: function () { return this.renderer.info.programs.length },
 
-	version: '2.2.5',
+	version: '2.2.6',
 
 }
 
