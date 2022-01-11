@@ -7,6 +7,8 @@ Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements
   - THREE.MeshPhongMaterial({ color: 0x660000, side: THREE.DoubleSide }) added as default material to extrusions
 
 #### :beetle: Bug fixes
+- #255 tb.updateSunGround raises an error if value is higher than 1. 
+  - Multiplied also the raster-opacity by 4 to make it more realistic with the light hours
 - #319 dat.gui.module has changed in threejs 
 - #320 Cannot read properties of undefined (reading 'appendChild')  
 
