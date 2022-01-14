@@ -1,3 +1,13 @@
+## 2.2.7
+
+Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
+
+#### :beetle: Bug fixes
+- #323 Azure Maps sample doesn't work if you change map style  
+
+- - - 
+
+
 ## 2.2.6
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
