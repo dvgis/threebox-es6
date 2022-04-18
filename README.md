@@ -1,6 +1,7 @@
 # `Threebox`
 
 ![npm](https://img.shields.io/npm/dt/threebox-plugin?style=social)
+![npm](https://img.shields.io/npm/dw/threebox-plugin?style=flat-square)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/jscastro76/threebox?style=flat-square)](https://github.com/jscastro76/threebox/releases/)
 [![NPM version](http://img.shields.io/npm/v/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin)
 [![NPM license](http://img.shields.io/npm/l/threebox-plugin.svg?style=flat-square)](https://www.npmjs.org/package/threebox-plugin)
