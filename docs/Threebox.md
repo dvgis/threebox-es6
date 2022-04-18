@@ -1216,7 +1216,7 @@ Internally this method uses a `CSS2DObject` rendered by [`THREE.CSS2DRenderer`](
 
 #### addHelp
 ```js
-obj.addHelp(helpText [,objName = helpName, mapboxSyle = false, center = obj.anchor, height = 0])
+obj.addHelp(helpText [,objName = helpName, mapboxStyle = false, center = obj.anchor, height = 0])
 ```
 This method creates a browser-like help tooltip instance that is accessible through `obj.help`. 
 This help tooltip is only visible when an object is being dragged for a translation, rotation or altitude change. 
@@ -1247,7 +1247,7 @@ Internally this method calls `obj.drawLabelHTML` to create the needed HTML to wr
 
 #### addTooltip
 ```js
-obj.addTooltip(tooltipText [, mapboxSyle = false, center = obj.anchor, custom = true, height = 1])
+obj.addTooltip(tooltipText [, mapboxStyle = false, center = obj.anchor, custom = true, height = 1])
 ```
 This method creates a browser-like tooltip for the object using the tooltipText. 
 If `mapboxStyle` is true, it applies the same styles the *Mapbox GL* popups.
@@ -1467,7 +1467,7 @@ This get/set property receives and returns a [`THREE.Box3Helper`](https://threej
 
 By Threebox design `.boundingBox` is hidden for [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) even when it's visible for the camera.
 
-*TODO: In next versions of Threebox, this object material will be configurable. In this versión still predefined in Objects.prototype*
+*TODO: In next versions of Threebox, this object material will be configurable. In this versiÃ³n still predefined in Objects.prototype*
 
 <br>
 
@@ -1481,7 +1481,7 @@ This get/set property receives and returns a [`THREE.Box3Helper`](https://threej
 
 By Threebox design `.boundingBoxShadow` is hidden for [`THREE.Raycaster`](https://threejs.org/docs/#api/en/core/Raycaster) even when it's visible for the camera.
 
-*TODO: In next versions of Threebox, this object material will be configurable. In this versión still predefined in Objects.prototype*
+*TODO: In next versions of Threebox, this object material will be configurable. In this versiÃ³n still predefined in Objects.prototype*
 
 <br>
 
