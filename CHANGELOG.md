@@ -2,8 +2,15 @@
 
 Minor version by [@jscastro76](https://github.com/jscastro76), some enhancements and bugs. 
 
+#### :sparkles: Enhancements
+- #356 Is it possible to disable the tooltip when dragging/rotating objects?  
+  - added a new default parameter to Threebox called enableHelpTooltips that will show the help tooltips on dragging, rotating and measuring.
+
 #### :beetle: Bug fixes
 - #323 Azure Maps sample doesn't work if you change map style  
+
+#### :pencil: Documentation
+- Updated [Threebox documentation](/docs/Threebox.md) (`enableHelpTooltips`)
 
 - - - 
 
