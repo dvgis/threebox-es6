@@ -11935,6 +11935,7 @@ Threebox.prototype = {
 		this.enableRotatingObjects = this.options.enableRotatingObjects || false;
 		this.enableTooltips = this.options.enableTooltips || false;
 		this.multiLayer = this.options.multiLayer || false;
+		this.enableHelpTooltips = this.options.enableHelpTooltips || false;
 
 		this.map.on('style.load', function () {
 			this.tb.zoomLayers = [];
@@ -12167,7 +12168,7 @@ Threebox.prototype = {
 					let rotation = { x: 0, y: 0, z: (Math.round(rotationDiff[2] + (~~((current.x - start.x) / this.tb.rotationStep) % 360 * this.tb.rotationStep) % 360)) };
 					//now rotate the model depending the axis
 					this.draggedObject.setRotation(rotation);
-					this.draggedObject.addHelp("rot: " + rotation.z + "&#176;");
+					if (this.enableHelpTooltips) this.draggedObject.addHelp("rot: " + rotation.z + "&#176;");
 					//this.draggedObject.setRotationAxis(rotation);
 					return;
 				}
@@ -12183,7 +12184,7 @@ Threebox.prototype = {
 					let coords = e.lngLat;
 					let options = [Number((coords.lng + lngDiff).toFixed(this.tb.gridStep)), Number((coords.lat + latDiff).toFixed(this.tb.gridStep)), this.draggedObject.modelHeight];
 					this.draggedObject.setCoords(options);
-					this.draggedObject.addHelp("lng: " + options[0] + "&#176;, lat: " + options[1] + "&#176;");
+					if (this.enableHelpTooltips) this.draggedObject.addHelp("lng: " + options[0] + "&#176;, lat: " + options[1] + "&#176;");
 					return;
 				}
 
@@ -12197,7 +12198,7 @@ Threebox.prototype = {
 					let now = (e.point.y * this.tb.altitudeStep);
 					let options = [this.draggedObject.coordinates[0], this.draggedObject.coordinates[1], Number((- now - altDiff).toFixed(this.tb.gridStep))];
 					this.draggedObject.setCoords(options);
-					this.draggedObject.addHelp("alt: " + options[2] + "m");
+					if (this.enableHelpTooltips) this.draggedObject.addHelp("alt: " + options[2] + "m");
 					return;
 				}
 
@@ -12346,7 +12347,7 @@ Threebox.prototype = {
 							sf = dc(sf, 7);
 						}
 
-						obj.addHelp("size(m): " + dc((s.x / sf), 3) + " W, " + dc((s.y / sf), 3) + " L, " + dc((s.z / sf), 3) + " H");
+						if (this.enableHelpTooltips) obj.addHelp("size(m): " + dc((s.x / sf), 3) + " W, " + dc((s.y / sf), 3) + " L, " + dc((s.z / sf), 3) + " H");
 						this.repaint = true;
 					}
 					else {
@@ -13015,6 +13016,7 @@ var defaultOptions = {
 	enableDraggingObjects: false,
 	enableRotatingObjects: false,
 	enableTooltips: false,
+	enableHelpTooltips: false,
 	multiLayer: false,
 	orthographic: false,
 	fov: ThreeboxConstants.FOV_DEGREES,

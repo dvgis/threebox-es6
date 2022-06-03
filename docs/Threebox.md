@@ -122,7 +122,8 @@ Sets up a Threebox scene using an [Mapbox map](https://docs.mapbox.com/mapbox-gl
 | `enableSelectingObjects`     | no       | false   | boolean  | Enables the Mouseover and Selection of 3D objects. This will fire the event [`SelectedChange`](#SelectedChange). This value will set the `options.bbx` value of the objects created.|
 | `enableDraggingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event [`ObjectDragged`](#ObjectDragged) where `draggedAction = 'translate'` or `draggedAction = 'altitude'` |
 | `enableRotatingObjects`     | no       | false   | boolean  | Enables to the option to Drag a 3D object. This will fire the event [`ObjectDragged`](#ObjectDragged)  where `draggedAction = 'rotate'`|
-| `enableToltips`     | no       | false   | boolean  | Enables the default tooltips on fill-extrusion features and 3D Objects|
+| `enableTooltips`     | no       | false   | boolean  | Enables the default tooltips on fill-extrusion features and 3D Objects|
+| `enableHelpTooltips`     | no       | false   | boolean  | Enables the default help tooltips when an object is being moved, rotated or measured. |
 | `multiLayer`     | no       | false   | boolean  | Enables the option for multi layer pages where a default layer will be created internally that will manage the [`tb.update`](#update) calls  |
 | `orthographic`     | no       | false   | boolean  | Enables the option to set a [`THREE.OrthographicCamera`](https://threejs.org/docs/index.html#api/en/cameras/OrthographicCamera) instead of a `THREE.PerspectiveCamera` which is the default in Mapbox  |
 | `fov`     | no       | ThreeboxConstants.FOV_DEGREES | number | Enables to set the FOV of the default [`THREE.PerspectiveCamera`](https://threejs.org/docs/index.html#api/en/cameras/PerspectiveCamera). This value has no effect if `orthographic: true`  |

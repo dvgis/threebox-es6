@@ -159,6 +159,7 @@
     <Content Include="LICENSE.txt" />
     <Content Include="package.json" />
     <Content Include="README.md" />
+    <Content Include="server.stop.js" />
     <Content Include="src\objects\effects\BuildingShadows.js">
       <SubType>Code</SubType>
     </Content>

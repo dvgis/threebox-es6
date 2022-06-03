@@ -21,6 +21,7 @@ These are the examples included in Threebox.
 - Enabled built-in dragging mode for 3D objects through `enableDraggingObjects`, 3D object is dragabble, once selected, using [Shift] key for translation and [Ctrl] for altitude.
 - Enabled built-in rotation mode for 3D objects through `enableRotatingObjects`, 3D objects is rotable on it's vertical axis, once selected, using [Alt] key.
 - Enabled built-in default Labels on altitude for the 3D object through `enableTooltips`.<br/>
+- Enabled built-in default help Labels when dragged, rotated or measured.  
 - Updated to Mapbox 2.2.0
 - - - -
 
